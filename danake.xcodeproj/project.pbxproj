@@ -21,7 +21,10 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		0877F98C201BBBB5004B05B8 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98B201BBBB5004B05B8 /* entity.swift */; };
+		0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98D201BCF68004B05B8 /* EntityTests.swift */; };
+		0877F98F201BD20C004B05B8 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98B201BBBB5004B05B8 /* entity.swift */; };
+		0877F992201BF151004B05B8 /* batch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F990201BF074004B05B8 /* batch.swift */; };
+		0877F994201C0188004B05B8 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F993201C0188004B05B8 /* BatchTests.swift */; };
 		OBJ_22 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
 		OBJ_28 /* danakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* danakeTests.swift */; };
 		OBJ_30 /* danake.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "danake::danake::Product" /* danake.framework */; };
@@ -47,6 +50,9 @@
 
 /* Begin PBXFileReference section */
 		0877F98B201BBBB5004B05B8 /* entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = entity.swift; sourceTree = "<group>"; };
+		0877F98D201BCF68004B05B8 /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
+		0877F990201BF074004B05B8 /* batch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = batch.swift; sourceTree = "<group>"; };
+		0877F993201C0188004B05B8 /* BatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchTests.swift; sourceTree = "<group>"; };
 		OBJ_12 /* danakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danakeTests.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_9 /* danake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danake.swift; sourceTree = "<group>"; };
@@ -85,6 +91,8 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_12 /* danakeTests.swift */,
+				0877F98D201BCF68004B05B8 /* EntityTests.swift */,
+				0877F993201C0188004B05B8 /* BatchTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -131,6 +139,7 @@
 			children = (
 				OBJ_9 /* danake.swift */,
 				0877F98B201BBBB5004B05B8 /* entity.swift */,
+				0877F990201BF074004B05B8 /* batch.swift */,
 			);
 			name = danake;
 			path = Sources/danake;
@@ -219,7 +228,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				0877F98C201BBBB5004B05B8 /* entity.swift in Sources */,
 				OBJ_22 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -228,7 +236,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */,
 				OBJ_28 /* danakeTests.swift in Sources */,
+				0877F994201C0188004B05B8 /* BatchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -236,6 +246,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				0877F98F201BD20C004B05B8 /* entity.swift in Sources */,
+				0877F992201BF151004B05B8 /* batch.swift in Sources */,
 				OBJ_37 /* danake.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
