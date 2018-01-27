@@ -29,7 +29,7 @@ class Entity<T: Codable> : EntityManagement {
         return self.version
     }
     
-    public func incrementVersion() {
+    func incrementVersion() {
         queue.sync {
             version = version + 1
         }
