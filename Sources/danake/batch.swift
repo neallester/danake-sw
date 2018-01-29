@@ -14,12 +14,24 @@ class Batch {
         items = Dictionary()
     }
     
-    public func insert (item: EntityManagement) {
+    public func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
         queue.async {
             self.items[item.getId()] = (item.getVersion(), item)
+            if let closure = closure {
+                closure()
+            }
         }
     }
-    
+
+    public func insertSync (item: EntityManagement, closure: (() -> Void)?) {
+        queue.sync {
+            self.items[item.getId()] = (item.getVersion(), item)
+            if let closure = closure {
+                closure()
+            }
+        }
+    }
+
     public func syncItems (closure: (Dictionary<UUID, (version: Int, item: EntityManagement)>) -> Void) {
         queue.sync () {
             closure (self.items)

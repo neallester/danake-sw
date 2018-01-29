@@ -57,16 +57,18 @@ class Entity<T: Codable> : EntityManagement {
 // Write Access to item
 
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
-        batch.insert(item: self)
         queue.async () {
-            closure (&self.item)
+            batch.insertAsync(item: self) {
+                closure (&self.item)
+            }
         }
     }
     
-    public func sync (batch: Batch, closure: (inout T) -> Void) {
-        batch.insert(item: self)
-        queue.sync () {
-            closure (&self.item)
+    public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
+        queue.sync {
+            batch.insertSync (item: self) {
+                closure (&self.item)
+            }
         }
     }
 
