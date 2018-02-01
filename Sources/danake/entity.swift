@@ -14,7 +14,7 @@ protocol EntityManagement {
     
 }
 
-class Entity<T: Codable> : EntityManagement {
+class Entity<T: Codable> : EntityManagement, Codable {
     
     init (id: UUID, version: Int, item: T) {
         self.id = id
@@ -71,7 +71,30 @@ class Entity<T: Codable> : EntityManagement {
             }
         }
     }
-
+    
+// Codable
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case version
+        case item
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode (id, forKey: .id)
+        try container.encode (version, forKey: .version)
+        try container.encode(item, forKey: .item)
+    }
+    
+    required init (from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try UUID (uuidString: values.decode(String.self, forKey: .id))!
+        version = try values.decode(Int.self, forKey: .version)
+        item = try values.decode (T.self, forKey: .item)
+        self.queue = DispatchQueue (label: id.uuidString)
+    }
+    
 // Attributes
     
     public let id: UUID
@@ -80,3 +103,4 @@ class Entity<T: Codable> : EntityManagement {
     private let queue: DispatchQueue
     
 }
+
