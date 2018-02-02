@@ -36,7 +36,6 @@ class Entity<T: Codable> : EntityManagement, Codable {
             version = version + 1
         }
     }
-
     
     func getId() -> UUID {
         return self.id
