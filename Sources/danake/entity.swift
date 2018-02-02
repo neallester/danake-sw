@@ -11,6 +11,7 @@ protocol EntityManagement {
     func getId() -> UUID
     func getVersion() -> Int
     func incrementVersion() -> Void
+    func getIsPersistent() -> Bool
     
 }
 
@@ -20,6 +21,7 @@ class Entity<T: Codable> : EntityManagement, Codable {
         self.id = id
         self.version = version
         self.item = item
+        isPersistent = false
         self.queue = DispatchQueue (label: id.uuidString)
     }
 
@@ -38,6 +40,10 @@ class Entity<T: Codable> : EntityManagement, Codable {
     
     func getId() -> UUID {
         return self.id
+    }
+    
+    func getIsPersistent() -> Bool {
+        return self.isPersistent
     }
 
 // Read Only Access to item
@@ -94,6 +100,7 @@ class Entity<T: Codable> : EntityManagement, Codable {
         id = try UUID (uuidString: values.decode(String.self, forKey: .id))!
         version = try values.decode(Int.self, forKey: .version)
         item = try values.decode (T.self, forKey: .item)
+        isPersistent = true
         self.queue = DispatchQueue (label: id.uuidString)
     }
     
@@ -103,6 +110,7 @@ class Entity<T: Codable> : EntityManagement, Codable {
     public private(set) var version: Int
     private var item: T
     private let queue: DispatchQueue
+    private var isPersistent: Bool
     
 }
 
