@@ -82,9 +82,11 @@ class Entity<T: Codable> : EntityManagement, Codable {
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode (id, forKey: .id)
-        try container.encode (version, forKey: .version)
-        try container.encode(item, forKey: .item)
+        try queue.sync {
+            try container.encode (id, forKey: .id)
+            try container.encode (version, forKey: .version)
+            try container.encode(item, forKey: .item)
+        }
     }
     
     required init (from decoder: Decoder) throws {
