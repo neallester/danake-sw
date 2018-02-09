@@ -41,7 +41,6 @@ public class PersistentCollection<T: Codable> {
         }
     }
     
-    // TODO Test
     func get (id: UUID) -> Entity<T>? {
         
         var result: Entity<T>? = nil
