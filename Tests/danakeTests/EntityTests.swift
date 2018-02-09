@@ -8,7 +8,6 @@
 import XCTest
 @testable import danake
 
-
 struct MyStruct : Codable {
     
     var myInt = 0
@@ -21,7 +20,8 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myInt = myInt
     myStruct.myString = myString
     let id = UUID()
-    return Entity (id: id, version: 0, item: myStruct)
+    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor())
+    return Entity (collection: collection, id: id, version: 0, item: myStruct)
 
 }
 

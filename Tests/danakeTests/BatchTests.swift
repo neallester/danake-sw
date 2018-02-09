@@ -18,11 +18,11 @@ class BatchTests: XCTestCase {
     }
     
     func newTestClassEntity (myInt: Int, myString: String) -> Entity<MyClass> {
-        var myClass = MyClass()
+        let myClass = MyClass()
         myClass.myInt = myInt
         myClass.myString = myString
         let id = UUID()
-        return Entity (id: id, version: 0, item: myClass)
+        return Entity (collection: PersistentCollection<MyClass>(accessor: InMemoryAccessor()), id: id, version: 0, item: myClass)
         
     }
 

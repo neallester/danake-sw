@@ -25,6 +25,8 @@
 		0877F98F201BD20C004B05B8 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98B201BBBB5004B05B8 /* entity.swift */; };
 		0877F992201BF151004B05B8 /* batch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F990201BF074004B05B8 /* batch.swift */; };
 		0877F994201C0188004B05B8 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F993201C0188004B05B8 /* BatchTests.swift */; };
+		08A780952024E247001AC519 /* persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A780932024D903001AC519 /* persistence.swift */; };
+		08A78099202507CB001AC519 /* persistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A78098202507CB001AC519 /* persistenceTests.swift */; };
 		OBJ_22 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
 		OBJ_28 /* danakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* danakeTests.swift */; };
 		OBJ_30 /* danake.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "danake::danake::Product" /* danake.framework */; };
@@ -53,6 +55,8 @@
 		0877F98D201BCF68004B05B8 /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
 		0877F990201BF074004B05B8 /* batch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = batch.swift; sourceTree = "<group>"; };
 		0877F993201C0188004B05B8 /* BatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchTests.swift; sourceTree = "<group>"; };
+		08A780932024D903001AC519 /* persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = persistence.swift; sourceTree = "<group>"; };
+		08A78098202507CB001AC519 /* persistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = persistenceTests.swift; sourceTree = "<group>"; };
 		OBJ_12 /* danakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danakeTests.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_9 /* danake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danake.swift; sourceTree = "<group>"; };
@@ -93,6 +97,7 @@
 				OBJ_12 /* danakeTests.swift */,
 				0877F98D201BCF68004B05B8 /* EntityTests.swift */,
 				0877F993201C0188004B05B8 /* BatchTests.swift */,
+				08A78098202507CB001AC519 /* persistenceTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -114,7 +119,7 @@
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -123,7 +128,6 @@
 				OBJ_13 /* Dependencies */,
 				OBJ_14 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_7 /* Sources */ = {
@@ -140,6 +144,7 @@
 				OBJ_9 /* danake.swift */,
 				0877F98B201BBBB5004B05B8 /* entity.swift */,
 				0877F990201BF074004B05B8 /* batch.swift */,
+				08A780932024D903001AC519 /* persistence.swift */,
 			);
 			name = danake;
 			path = Sources/danake;
@@ -210,7 +215,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_14 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -237,6 +242,7 @@
 			buildActionMask = 0;
 			files = (
 				0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */,
+				08A78099202507CB001AC519 /* persistenceTests.swift in Sources */,
 				OBJ_28 /* danakeTests.swift in Sources */,
 				0877F994201C0188004B05B8 /* BatchTests.swift in Sources */,
 			);
@@ -247,6 +253,7 @@
 			buildActionMask = 0;
 			files = (
 				0877F98F201BD20C004B05B8 /* entity.swift in Sources */,
+				08A780952024E247001AC519 /* persistence.swift in Sources */,
 				0877F992201BF151004B05B8 /* batch.swift in Sources */,
 				OBJ_37 /* danake.swift in Sources */,
 			);

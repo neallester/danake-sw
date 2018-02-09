@@ -6,7 +6,7 @@
 
 import Foundation
 
-class Batch {
+public class Batch {
     
     init() {
         id = UUID()
@@ -14,7 +14,7 @@ class Batch {
         items = Dictionary()
     }
     
-    public func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
+    func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
         queue.async {
             self.items[item.getId()] = (item.getVersion(), item)
             if let closure = closure {
@@ -23,7 +23,7 @@ class Batch {
         }
     }
 
-    public func insertSync (item: EntityManagement, closure: (() -> Void)?) {
+    func insertSync (item: EntityManagement, closure: (() -> Void)?) {
         queue.sync {
             self.items[item.getId()] = (item.getVersion(), item)
             if let closure = closure {
@@ -32,7 +32,7 @@ class Batch {
         }
     }
 
-    public func syncItems (closure: (Dictionary<UUID, (version: Int, item: EntityManagement)>) -> Void) {
+    func syncItems (closure: (Dictionary<UUID, (version: Int, item: EntityManagement)>) -> Void) {
         queue.sync () {
             closure (self.items)
         }
