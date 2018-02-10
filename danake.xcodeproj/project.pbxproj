@@ -27,6 +27,8 @@
 		0877F994201C0188004B05B8 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F993201C0188004B05B8 /* BatchTests.swift */; };
 		08A780952024E247001AC519 /* persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A780932024D903001AC519 /* persistence.swift */; };
 		08A78099202507CB001AC519 /* persistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A78098202507CB001AC519 /* persistenceTests.swift */; };
+		08A7809E202E6505001AC519 /* loggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A7809D202E6505001AC519 /* loggingTests.swift */; };
+		08A7809F202E6576001AC519 /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A7809B202E63C1001AC519 /* logging.swift */; };
 		OBJ_22 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
 		OBJ_28 /* danakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* danakeTests.swift */; };
 		OBJ_30 /* danake.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "danake::danake::Product" /* danake.framework */; };
@@ -57,6 +59,8 @@
 		0877F993201C0188004B05B8 /* BatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchTests.swift; sourceTree = "<group>"; };
 		08A780932024D903001AC519 /* persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = persistence.swift; sourceTree = "<group>"; };
 		08A78098202507CB001AC519 /* persistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = persistenceTests.swift; sourceTree = "<group>"; };
+		08A7809B202E63C1001AC519 /* logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logging.swift; sourceTree = "<group>"; };
+		08A7809D202E6505001AC519 /* loggingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loggingTests.swift; sourceTree = "<group>"; };
 		OBJ_12 /* danakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danakeTests.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_9 /* danake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = danake.swift; sourceTree = "<group>"; };
@@ -98,6 +102,7 @@
 				0877F98D201BCF68004B05B8 /* EntityTests.swift */,
 				0877F993201C0188004B05B8 /* BatchTests.swift */,
 				08A78098202507CB001AC519 /* persistenceTests.swift */,
+				08A7809D202E6505001AC519 /* loggingTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -145,6 +150,7 @@
 				0877F98B201BBBB5004B05B8 /* entity.swift */,
 				0877F990201BF074004B05B8 /* batch.swift */,
 				08A780932024D903001AC519 /* persistence.swift */,
+				08A7809B202E63C1001AC519 /* logging.swift */,
 			);
 			name = danake;
 			path = Sources/danake;
@@ -244,6 +250,7 @@
 				0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */,
 				08A78099202507CB001AC519 /* persistenceTests.swift in Sources */,
 				OBJ_28 /* danakeTests.swift in Sources */,
+				08A7809E202E6505001AC519 /* loggingTests.swift in Sources */,
 				0877F994201C0188004B05B8 /* BatchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -254,6 +261,7 @@
 			files = (
 				0877F98F201BD20C004B05B8 /* entity.swift in Sources */,
 				08A780952024E247001AC519 /* persistence.swift in Sources */,
+				08A7809F202E6576001AC519 /* logging.swift in Sources */,
 				0877F992201BF151004B05B8 /* batch.swift in Sources */,
 				OBJ_37 /* danake.swift in Sources */,
 			);
