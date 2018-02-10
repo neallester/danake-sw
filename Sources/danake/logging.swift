@@ -25,7 +25,7 @@ public enum LogLevel : String, Comparable {
 
 public protocol Logger {
     
-    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)?])
+    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?)
     
 }
 
