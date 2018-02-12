@@ -29,10 +29,11 @@ struct WeakItem<T: Codable> {
 
 public class PersistentCollection<T: Codable> {
     
-    public init<I: CollectionAccessor> (accessor: I) {
+    public init<I: CollectionAccessor> (accessor: I, logger: Logger?) {
         self.accessor = accessor
         cache = Dictionary<UUID, WeakItem<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(T.self)")
+        self.logger = logger
     }
     
     func remove (id: UUID) {
@@ -58,8 +59,10 @@ public class PersistentCollection<T: Codable> {
                         }
                     }
                 } catch {
-                    print ("error!")
+                    logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8))])
                 }
+            } else {
+                logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [(name:"id",value: id.uuidString)])
             }
         }
         return result
@@ -83,6 +86,7 @@ public class PersistentCollection<T: Codable> {
     private let accessor: CollectionAccessor
     private var cache: Dictionary<UUID, WeakItem<T>>
     private let cacheQueue: DispatchQueue
+    private let logger: Logger?
     
 }
 

@@ -43,6 +43,8 @@ class loggingTests: XCTestCase {
         XCTAssertEqual ("name1=1", LogEntryFormatter.formattedData(data: [(name: "name1", value:1)]))
         XCTAssertEqual ("name1=1;name2=2", LogEntryFormatter.formattedData(data: [(name: "name1", value:1),(name: "name2", value:2)]))
         XCTAssertEqual ("name1=1;name2=2;name3=3", LogEntryFormatter.formattedData(data: [(name: "name1", value:1),(name: "name2", value:2),(name: "name3", value:3)]))
+        XCTAssertEqual ("name1=1;name2=2;name3=3;name4=nil", LogEntryFormatter.formattedData(data: [(name: "name1", value:1),(name: "name2", value:2),(name: "name3", value:3), (name:"name4", nil)]))
+        
     }
     
     func testStandardFormat() {

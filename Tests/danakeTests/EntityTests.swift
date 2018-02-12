@@ -20,7 +20,7 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myInt = myInt
     myStruct.myString = myString
     let id = UUID()
-    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor())
+    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), logger: nil)
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 
 }
@@ -102,7 +102,6 @@ class EntityTests: XCTestCase {
         let entity = newTestEntity(myInt: 100, myString: "A \"Quoted\" String")
         XCTAssertFalse(entity.getIsPersistent())
         let json = try String (data: JSONEncoder().encode(entity), encoding: .utf8)!
-        print (json)
         XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}}", json)
         let entity2 = try JSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)

@@ -12,7 +12,7 @@ class persistenceTests: XCTestCase {
 
     func testPersistenceCollectionNew() {
         let myStruct = MyStruct(myInt: 10, myString: "A String")
-        let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor())
+        let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), logger: nil)
         var entity: Entity<MyStruct>? = collection.new(item: myStruct)
         XCTAssertTrue (collection === entity!.collection!)
         XCTAssertFalse(entity!.getIsPersistent())
@@ -35,8 +35,14 @@ class persistenceTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try JSONEncoder().encode(entity)
         let accessor = InMemoryAccessor()
-        let collection = PersistentCollection<MyStruct>(accessor: accessor)
+        let logger = InMemoryLogger()
+        let collection = PersistentCollection<MyStruct>(accessor: accessor, logger: logger)
         XCTAssertNil (collection.get (id: entity.getId()))
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Unknown id|id=", entries[0].asTestString().prefix(55))
+            
+        }
         // Data In Cache=No; Data in Accessor=Yes
         accessor.add(id: entity.getId(), data: data)
         let retrievedEntity = collection.get(id: entity.getId())!
@@ -53,6 +59,9 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, cache.count)
             XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
         }
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+        }
         // Data In Cache=Yes; Data in Accessor=No
         let entity2 = collection.new(item: MyStruct())
         XCTAssertTrue (entity2 === collection.get(id: entity2.getId()))
@@ -65,6 +74,9 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, storage.count)
             XCTAssertTrue (data == storage[entity.getId()]!)
         }
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+        }
         // Data In Cache=Yes; Data in Accessor=Yes
         XCTAssertTrue (retrievedEntity === collection.get(id: entity.getId())!)
         collection.sync() { cache in
@@ -76,12 +88,23 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, storage.count)
             XCTAssertTrue (data == storage[entity.getId()]!)
         }
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+        }
         // Invalid Data
-        let invalidData = Data()
+        let json = "{}"
+        let invalidData = json.data(using: .utf8)!
         let invalidDataUuid = UUID()
         accessor.add(id: invalidDataUuid, data: invalidData)
         let invalidEntity = collection.get(id: invalidDataUuid)
         XCTAssertNil (invalidEntity)
+        logger.sync() { entries in
+            XCTAssertEqual (2, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Illegal Data|id=", entries[1].asTestString().prefix(57))
+            XCTAssertEqual (";data={}", entries[1].asTestString().suffix(8))
+            
+        }
+
     }
     
     func testInMemoryAccessor() throws {

@@ -25,26 +25,30 @@ public enum LogLevel : String, Comparable {
 
 public protocol Logger {
     
-    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?)
+    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?)
     
 }
 
 public class LogEntryFormatter {
     
-    static func formattedData (data: [(name: String, value: CustomStringConvertible)]?) -> String {
+    static func formattedData (data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var result = ""
         if let data = data {
             for entry in data where data.count > 0 {
                 if (result.count > 0) {
                     result = result + ";"
                 }
-                result = "\(result)\(entry.name)=\(entry.value)"
+                var value: CustomStringConvertible = "nil"
+                if let entryValue = entry.value {
+                    value = entryValue
+                }
+                result = "\(result)\(entry.name)=\(String (describing: value))"
             }
         }
         return result
     }
     
-    static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) -> String {
+    static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var formattedData = LogEntryFormatter.formattedData (data: data)
         if (formattedData.count > 0) {
             formattedData = "|" + formattedData
@@ -57,7 +61,7 @@ public class LogEntryFormatter {
 
 struct LogEntry {
     
-    init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) {
+    init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         time = Date()
         self.level = level
         self.source = source
@@ -71,7 +75,7 @@ struct LogEntry {
     let source: Any
     let featureName: String
     let message: String
-    let data: [(name: String, value: CustomStringConvertible)]?
+    let data: [(name: String, value: CustomStringConvertible?)]?
     
     public func asTestString() -> String {
         return LogEntryFormatter.standardFormat (level: level, source: source, featureName: featureName, message: message, data: data)
@@ -81,7 +85,7 @@ struct LogEntry {
 
 class InMemoryLogger : Logger {
     
-    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) {
+    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         if (level >= self.level) {
             queue.async () {
                 self.entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
