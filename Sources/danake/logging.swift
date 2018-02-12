@@ -29,3 +29,76 @@ public protocol Logger {
     
 }
 
+public class LogEntryFormatter {
+    
+    static func formattedData (data: [(name: String, value: CustomStringConvertible)]?) -> String {
+        var result = ""
+        if let data = data {
+            for entry in data where data.count > 0 {
+                if (result.count > 0) {
+                    result = result + ";"
+                }
+                result = "\(result)\(entry.name)=\(entry.value)"
+            }
+        }
+        return result
+    }
+    
+    static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) -> String {
+        var formattedData = LogEntryFormatter.formattedData (data: data)
+        if (formattedData.count > 0) {
+            formattedData = "|" + formattedData
+        }
+        return "\(level.rawValue.uppercased())|\(type (of: source)).\(featureName)|\(message)\(formattedData)"
+        
+    }
+    
+}
+
+struct LogEntry {
+    
+    init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) {
+        time = Date()
+        self.level = level
+        self.source = source
+        self.featureName = featureName
+        self.message = message
+        self.data = data
+    }
+    
+    let time: Date
+    let level: LogLevel
+    let source: Any
+    let featureName: String
+    let message: String
+    let data: [(name: String, value: CustomStringConvertible)]?
+    
+    public func asTestString() -> String {
+        return LogEntryFormatter.standardFormat (level: level, source: source, featureName: featureName, message: message, data: data)
+    }
+    
+}
+
+class InMemoryLogger : Logger {
+    
+    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible)]?) {
+        if (level >= self.level) {
+            queue.async () {
+                self.entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
+            }
+        }
+    }
+    
+    func sync (closure: ([LogEntry]) -> Void) {
+        queue.sync () {
+            closure (self.entries)
+        }
+    }
+    
+    var level = LogLevel.debug
+    
+    private var entries: [LogEntry] = []
+    private let queue = DispatchQueue (label: UUID().uuidString)
+    
+}
+
