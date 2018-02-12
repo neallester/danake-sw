@@ -41,6 +41,7 @@ class persistenceTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Unknown id|id=", entries[0].asTestString().prefix(55))
+            XCTAssertEqual (91, entries[0].asTestString().count)
             
         }
         // Data In Cache=No; Data in Accessor=Yes
@@ -102,7 +103,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (2, entries.count)
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Illegal Data|id=", entries[1].asTestString().prefix(57))
             XCTAssertEqual (";data={}", entries[1].asTestString().suffix(8))
-            
+            XCTAssertEqual (101, entries[1].asTestString().count)
         }
 
     }
