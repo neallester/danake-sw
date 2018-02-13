@@ -30,6 +30,21 @@ class persistenceTests: XCTestCase {
         }
     }
     
+    func testRetrievalResult() {
+        var result = RetrievalResult.ok("String")
+        XCTAssertTrue (result.isOk())
+        XCTAssertEqual ("String", result.item()!)
+        switch result {
+        case .ok (let item):
+            XCTAssertEqual ("String", item!)
+        default:
+            XCTFail("Expected OK")
+        }
+        result = .invalidData
+        XCTAssertFalse (result.isOk())
+        XCTAssertNil (result.item())       
+    }
+    
     func testPersistentCollectionGet() throws {
         // Data In Cache=No; Data in Accessor=No
         let entity = newTestEntity(myInt: 10, myString: "A String")
