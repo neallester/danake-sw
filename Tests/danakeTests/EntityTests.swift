@@ -100,13 +100,23 @@ class EntityTests: XCTestCase {
     
     func testEncodeDecode() throws {
         let entity = newTestEntity(myInt: 100, myString: "A \"Quoted\" String")
-        XCTAssertFalse(entity.getIsPersistent())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         let json = try String (data: JSONEncoder().encode(entity), encoding: .utf8)!
         XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}}", json)
         let entity2 = try JSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (entity.version, entity2.version)
-        XCTAssertTrue(entity2.getIsPersistent())
+        switch entity2.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
         entity.sync() { item in
             entity2.sync() { item2 in
                 XCTAssertEqual (item.myInt, item2.myInt)

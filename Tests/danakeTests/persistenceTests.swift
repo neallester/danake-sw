@@ -15,7 +15,12 @@ class persistenceTests: XCTestCase {
         let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), logger: nil)
         var entity: Entity<MyStruct>? = collection.new(item: myStruct)
         XCTAssertTrue (collection === entity!.collection!)
-        XCTAssertFalse(entity!.getIsPersistent())
+        switch entity!.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         entity!.sync() { item in
             XCTAssertEqual(10, item.myInt)
             XCTAssertEqual("A String", item.myString)
@@ -67,7 +72,12 @@ class persistenceTests: XCTestCase {
         let retrievedEntity = result.item()!
         XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
-        XCTAssertTrue (retrievedEntity.getIsPersistent())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail("Expected .persistent")
+        }
         entity.sync() { entityStruct in
             retrievedEntity.sync() { retrievedEntityStruct in
                 XCTAssertEqual(entityStruct.myInt, retrievedEntityStruct.myInt)

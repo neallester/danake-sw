@@ -11,7 +11,15 @@ protocol EntityManagement {
     func getId() -> UUID
     func getVersion() -> Int
     func incrementVersion() -> Void
-    func getIsPersistent() -> Bool
+    func getPersistenceState() -> PersistenceState
+    
+}
+
+enum PersistenceState {
+    
+    case new
+    case dirty
+    case persistent
     
 }
 
@@ -22,7 +30,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.id = id
         self.version = version
         self.item = item
-        isPersistent = false
+        persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
     }
 
@@ -42,8 +50,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return self.id
     }
     
-    func getIsPersistent() -> Bool {
-        return self.isPersistent
+    func getPersistenceState() -> PersistenceState {
+        var result = PersistenceState.new
+        queue.sync {
+            result = self.persistenceState
+        }
+        return result
     }
 
 // Read Only Access to item
@@ -100,7 +112,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         id = try UUID (uuidString: values.decode(String.self, forKey: .id))!
         version = try values.decode(Int.self, forKey: .version)
         item = try values.decode (T.self, forKey: .item)
-        isPersistent = true
+        persistenceState = .persistent
         self.queue = DispatchQueue (label: id.uuidString)
     }
     
@@ -122,7 +134,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public private(set) var version: Int
     private var item: T
     private let queue: DispatchQueue
-    private var isPersistent: Bool
+    private var persistenceState: PersistenceState
     internal private(set) var collection: PersistentCollection<T>?
     
 }
