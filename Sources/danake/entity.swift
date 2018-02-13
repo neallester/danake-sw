@@ -76,6 +76,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
+            self.persistenceState = .dirty
             batch.insertAsync(item: self) {
                 closure (&self.item)
             }
@@ -84,6 +85,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.sync {
+            self.persistenceState = .dirty
             batch.insertSync (item: self) {
                 closure (&self.item)
             }

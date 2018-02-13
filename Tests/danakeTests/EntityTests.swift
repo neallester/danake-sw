@@ -37,6 +37,12 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         itemInt = 0
         itemString = ""
         let waitFor = expectation(description: "testSyncAsync")
@@ -48,14 +54,26 @@ class EntityTests: XCTestCase {
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
     }
 
     func testWriteAccess() {
-        let entity = newTestEntity(myInt: 0, myString: "")
+        var entity = newTestEntity(myInt: 0, myString: "")
         var batch = Batch()
         entity.incrementVersion()
         var itemInt = 0
         var itemString = ""
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 10
             item.myString = "Test Completed"
@@ -64,8 +82,15 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
+        
         batch.syncItems() { (items: Dictionary<UUID, (version: Int, item: EntityManagement)>) in
             XCTAssertEqual(1, items.count)
             XCTAssertEqual(1, entity.getVersion())
@@ -73,6 +98,8 @@ class EntityTests: XCTestCase {
             let retrievedEntity = items[entity.getId()]!.item as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
+        entity = newTestEntity(myInt: 0, myString: "")
+        entity.incrementVersion()
         batch = Batch()
         itemInt = 0
         itemString = ""
@@ -86,6 +113,12 @@ class EntityTests: XCTestCase {
         entity.sync() { (item: MyStruct) in
             itemInt = item.myInt
             itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .new")
         }
         XCTAssertEqual(20, itemInt)
         XCTAssertEqual("Test 2 Completed", itemString)
