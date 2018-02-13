@@ -37,7 +37,9 @@ class persistenceTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let collection = PersistentCollection<MyStruct>(accessor: accessor, logger: logger)
-        XCTAssertNil (collection.get (id: entity.getId()))
+        var result = collection.get (id: entity.getId())
+        XCTAssertTrue (result.isOk())
+        XCTAssertNil (result.item())
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Unknown id|id=", entries[0].asTestString().prefix(55))
@@ -46,7 +48,8 @@ class persistenceTests: XCTestCase {
         }
         // Data In Cache=No; Data in Accessor=Yes
         accessor.add(id: entity.getId(), data: data)
-        let retrievedEntity = collection.get(id: entity.getId())!
+        result = collection.get(id: entity.getId())
+        let retrievedEntity = result.item()!
         XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
         XCTAssertTrue (retrievedEntity.getIsPersistent())
@@ -65,7 +68,7 @@ class persistenceTests: XCTestCase {
         }
         // Data In Cache=Yes; Data in Accessor=No
         let entity2 = collection.new(item: MyStruct())
-        XCTAssertTrue (entity2 === collection.get(id: entity2.getId()))
+        XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
             XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
@@ -79,7 +82,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=Yes
-        XCTAssertTrue (retrievedEntity === collection.get(id: entity.getId())!)
+        XCTAssertTrue (retrievedEntity === collection.get(id: entity.getId()).item()!)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
             XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
@@ -98,7 +101,13 @@ class persistenceTests: XCTestCase {
         let invalidDataUuid = UUID()
         accessor.add(id: invalidDataUuid, data: invalidData)
         let invalidEntity = collection.get(id: invalidDataUuid)
-        XCTAssertNil (invalidEntity)
+        switch invalidEntity {
+        case .invalidData:
+            break
+        default:
+            XCTFail ("Expected .invalidData")
+        }
+        XCTAssertNil (invalidEntity.item())
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Illegal Data|id=", entries[1].asTestString().prefix(57))

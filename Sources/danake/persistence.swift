@@ -27,6 +27,32 @@ struct WeakItem<T: Codable> {
     
 }
 
+enum RetrievalResult<T> {
+    
+    func item() -> T? {
+        switch self {
+        case .ok(let item):
+            return item
+        default:
+            return nil
+        }
+    }
+    
+    func isOk() -> Bool {
+        switch self {
+        case .ok:
+            return true
+        default:
+            return false
+        }
+    }
+
+    case ok (T?)
+    
+    case invalidData
+    
+}
+
 public class PersistentCollection<T: Codable> {
     
     public init<I: CollectionAccessor> (accessor: I, logger: Logger?) {
@@ -42,7 +68,7 @@ public class PersistentCollection<T: Codable> {
         }
     }
     
-    func get (id: UUID) -> Entity<T>? {
+    func get (id: UUID) -> RetrievalResult<Entity<T>> {
         
         var result: Entity<T>? = nil
         cacheQueue.sync {
@@ -60,12 +86,13 @@ public class PersistentCollection<T: Codable> {
                     }
                 } catch {
                     logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8))])
+                    return .invalidData
                 }
             } else {
                 logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [(name:"id",value: id.uuidString)])
             }
         }
-        return result
+        return .ok(result)
     }
     
     public func new (item: T) -> Entity<T> {
