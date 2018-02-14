@@ -139,6 +139,23 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (";data={}", entries[1].asTestString().suffix(8))
             XCTAssertEqual (101, entries[1].asTestString().count)
         }
+        // Database Error
+        let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
+        let data3 = try JSONEncoder().encode(entity)
+        accessor.add(id: entity3.getId(), data: data3)
+        accessor.setThrowError()
+        switch collection.get(id: entity3.getId()) {
+        case .databaseError:
+            break
+        default:
+            XCTFail("Expected .databaseError")
+        }
+        logger.sync() { entries in
+            XCTAssertEqual (3, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Database Error|id=", entries[2].asTestString().prefix(59))
+            XCTAssertEqual (95, entries[2].asTestString().count)
+        }
+
     }
     
     func testPersistentCollectionGetAsync () throws {
@@ -334,21 +351,97 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (";data={\"notanattribute\":1000}", entries[3].asTestString().suffix(29))
             XCTAssertEqual (122, entries[3].asTestString().count)
         }
-    }
+        // Database Error
+        let entity5 = newTestEntity(myInt: 50, myString: "A String5")
+        let data5 = try JSONEncoder().encode(entity1)
+        let entity6 = newTestEntity(myInt: 60, myString: "A String6")
+        let data6 = try JSONEncoder().encode(entity2)
+        accessor.add(id: entity5.getId(), data: data5)
+        accessor.add(id: entity6.getId(), data: data6)
+        accessor.setThrowError()
+        waitFor1 = expectation(description: "wait1.6")
+        waitFor2 = expectation(description: "wait2.6")
+        var errorsReported = 0
+        collection.get(id: entity5.getId()) { item in
+            switch item {
+            case .databaseError:
+                errorsReported = errorsReported + 1
+            default:
+                break
+            }
+            waitFor1.fulfill()
+        }
+        collection.get(id: entity6.getId()) { item in
+            switch item {
+            case .databaseError:
+                errorsReported = errorsReported + 1
+            default:
+                break
+            }
+            waitFor2.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        XCTAssertEqual (1, errorsReported)
+        logger.sync() { entries in
+            XCTAssertEqual (5, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Database Error|id=", entries[4].asTestString().prefix(59))
+            XCTAssertEqual (95, entries[4].asTestString().count)
+        }
 
+    }
     
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let uuid = UUID()
-        XCTAssertNil(accessor.get(id: uuid))
+        switch accessor.get(id: uuid) {
+        case .ok (let retrievedData):
+            XCTAssertNil (retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try JSONEncoder().encode(entity)
         accessor.add(id: entity.getId(), data: data)
-        XCTAssertTrue (data == accessor.get(id: entity.getId()))
-        XCTAssertNil(accessor.get(id: uuid))
+        switch accessor.get(id: entity.getId()) {
+        case .ok (let retrievedData):
+            XCTAssertTrue (data == retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        switch accessor.get(id: uuid) {
+        case .ok (let retrievedData):
+            XCTAssertNil (retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+
         accessor.update(id: entity.getId(), data: data)
-        XCTAssertTrue (data == accessor.get(id: entity.getId()))
-        XCTAssertNil(accessor.get(id: uuid))
+        switch accessor.get(id: entity.getId()) {
+        case .ok (let retrievedData):
+            XCTAssertTrue (data == retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        switch accessor.get(id: uuid) {
+        case .ok (let retrievedData):
+            XCTAssertNil (retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        accessor.setThrowError()
+        switch accessor.get(id: entity.getId()) {
+        case .testError:
+            break
+        default:
+            XCTFail("Expected databaseError")
+        }
+        switch accessor.get(id: entity.getId()) {
+        case .ok (let retrievedData):
+            XCTAssertTrue (data == retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
     }
 
 }

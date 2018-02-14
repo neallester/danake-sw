@@ -9,7 +9,7 @@ import Foundation
 
 public protocol CollectionAccessor {
     
-    func get (id: UUID) -> Data?
+    func get (id: UUID) -> DatabaseAccessResult
     
     func add (id: UUID, data: Data)
     
@@ -51,6 +51,16 @@ enum RetrievalResult<T> {
     
     case invalidData
     
+    case databaseError
+    
+}
+
+public enum DatabaseAccessResult {
+    
+    case ok (Data?)
+    
+    case testError
+    
 }
 
 public class PersistentCollection<T: Codable> {
@@ -76,21 +86,27 @@ public class PersistentCollection<T: Codable> {
             result = cache[id]?.item
         }
         if (result == nil) {
-            if let data = accessor.get (id: id) {
-                do {
-                    try result = JSONDecoder().decode(Entity<T>.self, from: data)
-                    result?.setCollection(self)
-                    if let result = result {
-                        cacheQueue.async {
-                            self.cache[id] = WeakItem (item: result)
+            switch accessor.get (id: id) {
+            case .ok (let data):
+                if let data = data {
+                    do {
+                        try result = JSONDecoder().decode(Entity<T>.self, from: data)
+                        result?.setCollection(self)
+                        if let result = result {
+                            cacheQueue.async {
+                                self.cache[id] = WeakItem (item: result)
+                            }
                         }
+                    } catch {
+                        logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8))])
+                        return .invalidData
                     }
-                } catch {
-                    logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8))])
-                    return .invalidData
+                } else {
+                    logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [(name:"id",value: id.uuidString)])
                 }
-            } else {
-                logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [(name:"id",value: id.uuidString)])
+            default:
+                logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [(name:"id",value: id.uuidString)])
+                return .databaseError
             }
         }
         return .ok(result)
@@ -127,12 +143,21 @@ public class PersistentCollection<T: Codable> {
 
 public class InMemoryAccessor: CollectionAccessor {
     
-    public func get(id: UUID) -> Data? {
+    public func get(id: UUID) -> DatabaseAccessResult {
         var result: Data? = nil
+        var returnError = false
         queue.sync() {
-            result = storage[id]
+            if self.throwError {
+                returnError = true
+                self.throwError = false
+            } else {
+                result = storage[id]
+            }
         }
-        return result
+        if returnError {
+            return .testError
+        }
+        return .ok (result)
     }
     
     public func add (id: UUID, data: Data) {
@@ -145,12 +170,19 @@ public class InMemoryAccessor: CollectionAccessor {
         add (id: id, data: data)
     }
     
+    public func setThrowError() {
+        queue.async {
+            self.throwError = true
+        }
+    }
+    
     func sync (closure: (Dictionary<UUID, Data>) -> Void) {
         queue.sync () {
             closure (storage)
         }
     }
     
+    private var throwError = false
     private var storage = Dictionary<UUID, Data>()
     private let queue = DispatchQueue (label: "InMemoryAccessor \(UUID().uuidString)")
     
