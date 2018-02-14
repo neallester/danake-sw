@@ -55,10 +55,11 @@ enum RetrievalResult<T> {
 
 public class PersistentCollection<T: Codable> {
     
-    public init<I: CollectionAccessor> (accessor: I, logger: Logger?) {
+    public init<I: CollectionAccessor> (accessor: I, workQueue: DispatchQueue, logger: Logger?) {
         self.accessor = accessor
         cache = Dictionary<UUID, WeakItem<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(T.self)")
+        self.workQueue = workQueue
         self.logger = logger
     }
     
@@ -95,6 +96,12 @@ public class PersistentCollection<T: Codable> {
         return .ok(result)
     }
     
+    func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
+        workQueue.async {
+            closure (self.get (id: id))
+        }
+    }
+    
     public func new (item: T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
@@ -113,11 +120,13 @@ public class PersistentCollection<T: Codable> {
     private let accessor: CollectionAccessor
     private var cache: Dictionary<UUID, WeakItem<T>>
     private let cacheQueue: DispatchQueue
+    private let workQueue: DispatchQueue
     private let logger: Logger?
     
 }
 
 public class InMemoryAccessor: CollectionAccessor {
+    
     public func get(id: UUID) -> Data? {
         var result: Data? = nil
         queue.sync() {
@@ -141,7 +150,6 @@ public class InMemoryAccessor: CollectionAccessor {
             closure (storage)
         }
     }
-
     
     private var storage = Dictionary<UUID, Data>()
     private let queue = DispatchQueue (label: "InMemoryAccessor \(UUID().uuidString)")

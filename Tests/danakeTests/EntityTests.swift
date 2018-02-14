@@ -20,7 +20,7 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myInt = myInt
     myStruct.myString = myString
     let id = UUID()
-    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), logger: nil)
+    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 
 }

@@ -22,7 +22,7 @@ class BatchTests: XCTestCase {
         myClass.myInt = myInt
         myClass.myString = myString
         let id = UUID()
-        return Entity (collection: PersistentCollection<MyClass>(accessor: InMemoryAccessor(), logger: nil), id: id, version: 0, item: myClass)
+        return Entity (collection: PersistentCollection<MyClass>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil), id: id, version: 0, item: myClass)
         
     }
 
