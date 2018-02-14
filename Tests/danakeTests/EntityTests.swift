@@ -22,10 +22,48 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     let id = UUID()
     let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
-
 }
 
 class EntityTests: XCTestCase {
+    
+    func testEntityCreation() {
+        // Creation with item
+        var myStruct = MyStruct()
+        myStruct.myInt = 100
+        myStruct.myString = "Test String 1"
+        let id = UUID()
+        let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
+        let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
+        XCTAssertEqual (id.uuidString, entity1.getId().uuidString)
+        XCTAssertEqual (10, entity1.getVersion())
+        switch entity1.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        entity1.sync() { item in
+            XCTAssertEqual (100, item.myInt)
+            XCTAssertEqual ("Test String 1", item.myString)
+        }
+        // Creation with itemClosure
+        let id2 = UUID()
+        let entity2 = Entity (collection: collection, id: id2, version: 20) { reference in
+            return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
+        }
+        XCTAssertEqual (id2.uuidString, entity2.getId().uuidString)
+        XCTAssertEqual (20, entity2.getVersion())
+        switch entity2.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        entity2.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual (entity2.getId().uuidString, item.myString)
+        }
+    }
     
     func testReadAccess() {
         let entity = newTestEntity(myInt: 10, myString: "Test Completed")

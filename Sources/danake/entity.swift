@@ -34,6 +34,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.queue = DispatchQueue (label: id.uuidString)
     }
 
+    convenience init (collection: PersistentCollection<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
+        let selfReference = EntityReferenceData (collection: collection, id: id, version: version)
+        let item = itemClosure(selfReference)
+        self.init (collection: collection, id: id, version: version, item: item)
+    }
+
 // EntityManagement
     
     func getVersion() -> Int {
@@ -141,3 +147,16 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 }
 
+public struct EntityReferenceData<T: Codable> {
+    
+    public init (collection: PersistentCollection<T>, id: UUID, version: Int) {
+        self.collection = collection
+        self.id = id
+        self.version = version
+    }
+
+    let collection: PersistentCollection<T>
+    let id: UUID
+    let version: Int
+    
+}

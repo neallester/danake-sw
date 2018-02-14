@@ -126,6 +126,20 @@ public class PersistentCollection<T: Codable> {
         return result
     }
     
+    // Use when creation of some attribute of T requires a back reference to T
+    // e.g.
+    // class Parent
+    //    let child: EntityReference<Child>
+    // class Child
+    //    let parent: EntityReference<Parent>
+    public func new (itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
+        let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
+        cacheQueue.async() {
+            self.cache[result.getId()] = WeakItem (item:result)
+        }
+        return result
+    }
+
     func sync (closure: (Dictionary<UUID, WeakItem<T>>) -> Void) {
         cacheQueue.sync () {
             closure (cache)

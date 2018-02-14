@@ -11,6 +11,7 @@ import XCTest
 class persistenceTests: XCTestCase {
 
     func testPersistenceCollectionNew() {
+        // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
         var entity: Entity<MyStruct>? = collection.new(item: myStruct)
@@ -33,6 +34,31 @@ class persistenceTests: XCTestCase {
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
+        // Creation with itemClosure
+        entity = collection.new() { reference in
+            return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
+        }
+        XCTAssertTrue (collection === entity!.collection!)
+        switch entity!.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        entity!.sync() { item in
+            XCTAssertEqual(0, item.myInt)
+            XCTAssertEqual(entity!.getId().uuidString, item.myString)
+        }
+        collection.sync() { cache in
+            XCTAssertEqual(1, cache.count)
+            XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
+        }
+        entity = nil
+        collection.sync() { cache in
+            XCTAssertEqual(0, cache.count)
+        }
+
+        
     }
     
     func testRetrievalResult() {
