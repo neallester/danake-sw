@@ -181,8 +181,83 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Database Error|id=", entries[2].asTestString().prefix(59))
             XCTAssertEqual (95, entries[2].asTestString().count)
         }
-
     }
+    
+    func testPerssistentCollectionGetParallel() throws {
+        let accessor = InMemoryAccessor()
+        let entity1 = newTestEntity(myInt: 10, myString: "A String1")
+        let data1 = try JSONEncoder().encode(entity1)
+        let entity2 = newTestEntity(myInt: 20, myString: "A String2")
+        let data2 = try JSONEncoder().encode(entity2)
+        accessor.add(id: entity1.getId(), data: data1)
+        accessor.add(id: entity2.getId(), data: data2)
+        let collection = PersistentCollection<MyStruct>(accessor: accessor, workQueue: DispatchQueue (label: "Test"), logger: nil)
+        let sempaphore = DispatchSemaphore (value: 1)
+        sempaphore.wait()
+        accessor.setPreFetch() { uuid in
+            if uuid == entity1.getId() {
+                sempaphore.wait()
+            }
+        }
+        var result1a: RetrievalResult<Entity<MyStruct>>? = nil
+        var result1b: RetrievalResult<Entity<MyStruct>>? = nil
+        var result2: RetrievalResult<Entity<MyStruct>>? = nil
+        let waitFor1 = expectation(description: "Entity2")
+        var releaseSemaphore = false
+        let workQueue = DispatchQueue (label: "WorkQueue", attributes: .concurrent)
+        let semaphoreReleaseQueue = DispatchQueue (label: "SemaphoreRelease")
+        workQueue.async {
+            result1a = collection.get(id: entity1.getId())
+            semaphoreReleaseQueue.sync {
+                if releaseSemaphore {
+                    sempaphore.signal()
+                } else {
+                    releaseSemaphore = true
+                }
+            }
+        }
+        workQueue.async {
+            result1b = collection.get(id: entity1.getId())
+            semaphoreReleaseQueue.sync {
+                if releaseSemaphore {
+                    sempaphore.signal()
+                } else {
+                    releaseSemaphore = true
+                }
+            }
+        }
+        workQueue.async {
+            result2 = collection.get(id: entity2.getId())
+            waitFor1.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        XCTAssertNil (result1a)
+        XCTAssertNil (result1b)
+        switch result2! {
+        case .ok (let retrievedEntity):
+            XCTAssertTrue (entity2 === retrievedEntity!)
+        default:
+            XCTFail("Expected data2")
+        }
+        sempaphore.signal()
+        sempaphore.wait()
+        var retrievedEntity1a: Entity<MyStruct>? = nil
+        var retrievedEntity1b: Entity<MyStruct>? = nil
+        switch result1a! {
+        case .ok (let retrievedEntity):
+            retrievedEntity1a = retrievedEntity
+        default:
+            XCTFail("Expected data1a")
+        }
+        switch result1b! {
+        case .ok (let retrievedEntity):
+            retrievedEntity1b = retrievedEntity
+        default:
+            XCTFail("Expected data1b")
+        }
+        XCTAssertTrue (retrievedEntity1a! === retrievedEntity1b!)
+    }
+
     
     func testPersistentCollectionGetAsync () throws {
         // Data In Cache=No; Data in Accessor=No
@@ -468,6 +543,19 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail("Expected data")
         }
+        // Test preFetch
+        var prefetchUuid: String? = nil
+        accessor.setPreFetch() { uuid in
+            prefetchUuid = uuid.uuidString
+        }
+        switch accessor.get(id: entity.getId()) {
+        case .ok (let retrievedData):
+            XCTAssertEqual (prefetchUuid!, entity.getId().uuidString)
+            XCTAssertTrue (data == retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+
     }
 
 }
