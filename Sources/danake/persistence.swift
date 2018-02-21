@@ -70,12 +70,22 @@ public enum DatabaseAccessResult {
     
 }
 
+public class PendingRequestData<T: Codable> {
+    
+    init (queue: DispatchQueue) {
+        self.queue = queue
+    }
+    
+    let queue: DispatchQueue
+    var result: Entity<T>? = nil
+}
+
 public class PersistentCollection<T: Codable> {
     
     public init<I: CollectionAccessor> (accessor: I, workQueue: DispatchQueue, logger: Logger?) {
         self.accessor = accessor
         cache = Dictionary<UUID, WeakItem<T>>()
-        pendingRequests = Dictionary<UUID, (queue: DispatchQueue, result: Entity<T>?)>()
+        pendingRequests = Dictionary<UUID, PendingRequestData<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(T.self)")
         pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(T.self)")
         self.workQueue = workQueue
@@ -89,15 +99,13 @@ public class PersistentCollection<T: Codable> {
     }
     
     func get (id: UUID) -> RetrievalResult<Entity<T>> {
-        
         var result: Entity<T>? = nil
         var errorResult: RetrievalResult<Entity<T>>? = nil
-
         cacheQueue.sync {
             result = cache[id]?.item
         }
         if (result == nil) {
-            // We must serialize all accessor requests for the same id
+            // Serialize all accessor requests for the same id
             var requestQueue: DispatchQueue? = nil
             var closure: (() -> Void)? = nil
             pendingRequestsQueue.sync {
@@ -108,7 +116,7 @@ public class PersistentCollection<T: Codable> {
                     }
                 } else {
                     requestQueue = DispatchQueue (label: "PendingRequest \(id.uuidString)")
-                    var pendingRequest: (queue: DispatchQueue, result: Entity<T>?) = (queue: requestQueue!, result: nil)
+                    let pendingRequest: PendingRequestData<T> = PendingRequestData(queue: requestQueue!)
                     pendingRequests[id] = pendingRequest
                     closure = {
                         switch self.accessor.get (id: id) {
@@ -123,9 +131,6 @@ public class PersistentCollection<T: Codable> {
                                         }
                                     }
                                     pendingRequest.result = result
-                                    self.pendingRequestsQueue.async {
-                                        let _ = self.pendingRequests.removeValue(forKey: id)
-                                    }
                                 } catch {
                                     self.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                                     errorResult = .invalidData
@@ -137,10 +142,14 @@ public class PersistentCollection<T: Codable> {
                             self.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [(name:"id",value: id.uuidString)])
                             errorResult = .databaseError
                         }
+                        self.pendingRequestsQueue.async {
+                            let _ = self.pendingRequests.removeValue(forKey: id)
+                        }
                     }
                 }
+                requestQueue!.async (execute: closure!)
             }
-            requestQueue!.sync (execute: closure!)
+            requestQueue!.sync () {}
         }
         if let errorResult = errorResult {
             return errorResult
@@ -185,7 +194,7 @@ public class PersistentCollection<T: Codable> {
     
     private let accessor: CollectionAccessor
     private var cache: Dictionary<UUID, WeakItem<T>>
-    private var pendingRequests: Dictionary<UUID, (queue: DispatchQueue, result: Entity<T>?)>
+    private var pendingRequests: Dictionary<UUID, PendingRequestData<T>>
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue
     private let pendingRequestsQueue: DispatchQueue
@@ -198,10 +207,10 @@ public class InMemoryAccessor: CollectionAccessor {
     public func get(id: UUID) -> DatabaseAccessResult {
         var result: Data? = nil
         var returnError = false
+        if let preFetch = preFetch {
+            preFetch (id)
+        }
         queue.sync() {
-            if let preFetch = preFetch {
-                preFetch (id)
-            }
             if self.throwError {
                 returnError = true
                 self.throwError = false
