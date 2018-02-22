@@ -163,11 +163,12 @@ public class PersistentCollection<T: Codable> {
         }
     }
     
-    public func new (item: T) -> Entity<T> {
+    public func new (batch: Batch, item: T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
+        batch.insertAsync(item: result, closure: nil)
         return result
     }
     
@@ -177,11 +178,12 @@ public class PersistentCollection<T: Codable> {
     //    let child: EntityReference<Child>
     // class Child
     //    let parent: EntityReference<Parent>
-    public func new (itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
+    public func new (batch: Batch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
+        batch.insertAsync(item: result, closure: nil)
         return result
     }
 

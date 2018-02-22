@@ -36,8 +36,14 @@ class persistenceTests: XCTestCase {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
-        var entity: Entity<MyStruct>? = collection.new(item: myStruct)
+        var batch = Batch()
+        var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.collection!)
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            let item = items[entity!.getId()]!.item as! Entity<MyStruct>
+            XCTAssertTrue (item === entity!)
+        }
         switch entity!.getPersistenceState() {
         case .new:
             break
@@ -53,14 +59,22 @@ class persistenceTests: XCTestCase {
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
         entity = nil
+        
+        batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
         // Creation with itemClosure
-        entity = collection.new() { reference in
+        
+        entity = collection.new(batch: batch) { reference in
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
         XCTAssertTrue (collection === entity!.collection!)
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            let item = items[entity!.getId()]!.item as! Entity<MyStruct>
+            XCTAssertTrue (item === entity!)
+        }
         switch entity!.getPersistenceState() {
         case .new:
             break
@@ -76,6 +90,7 @@ class persistenceTests: XCTestCase {
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
         entity = nil
+        batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
@@ -140,7 +155,8 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=No
-        let entity2 = collection.new(item: MyStruct())
+        let batch = Batch()
+        let entity2 = collection.new(batch: batch, item: MyStruct())
         XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
@@ -370,8 +386,9 @@ class persistenceTests: XCTestCase {
             // Data In Cache=Yes; Data in Accessor=No
             waitFor1 = expectation(description: "wait1.3")
             waitFor2 = expectation(description: "wait2.3")
-            let entity3 = collection.new(item: MyStruct())
-            let entity4 = collection.new(item: MyStruct())
+            let batch = Batch()
+            let entity3 = collection.new(batch: batch, item: MyStruct())
+            let entity4 = collection.new(batch: batch, item: MyStruct())
             collection.get(id: entity3.getId()) { item in
                 result1 = item
                 waitFor1.fulfill()
