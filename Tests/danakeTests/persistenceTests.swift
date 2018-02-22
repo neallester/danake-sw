@@ -8,6 +8,7 @@
 import XCTest
 @testable import danake
 
+// from https://digitalsprouts.org/countdownlatch-for-swift/
 final class CountDownLock {
     private var remainingJobs: Int32
     private let isDownloading = DispatchSemaphore(value: 0) // initially locked
