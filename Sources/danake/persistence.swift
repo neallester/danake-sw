@@ -74,7 +74,7 @@ class Registrar<K: Hashable, V: AnyObject> {
     func register (key: K, value: V) -> Bool {
         var result = false
         queue.sync {
-            if let _ = items[key]?.item {
+            if let storedValue = items[key]?.item, storedValue !== value {
                 // Do nothing
             } else {
                 items[key] = WeakObject (item: value)
