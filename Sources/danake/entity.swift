@@ -25,7 +25,7 @@ enum PersistenceState {
 
 public class Entity<T: Codable> : EntityManagement, Codable {
     
-    init (collection: PersistentCollection<T>, id: UUID, version: Int, item: T) {
+    init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
         self.collection = collection
         self.id = id
         self.version = version
@@ -34,7 +34,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.queue = DispatchQueue (label: id.uuidString)
     }
 
-    convenience init (collection: PersistentCollection<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
+    convenience init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
         let selfReference = EntityReferenceData (collection: collection, id: id, version: version)
         let item = itemClosure(selfReference)
         self.init (collection: collection, id: id, version: version, item: item)
@@ -132,7 +132,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Setters
     
-    func setCollection (_ collection: PersistentCollection<T>) {
+    func setCollection (_ collection: PersistentCollection<Database, T>) {
         self.collection = collection
     }
     
@@ -143,19 +143,19 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var item: T
     private let queue: DispatchQueue
     private var persistenceState: PersistenceState
-    internal private(set) var collection: PersistentCollection<T>?
+    internal private(set) var collection: PersistentCollection<Database, T>?
     
 }
 
 public struct EntityReferenceData<T: Codable> {
     
-    public init (collection: PersistentCollection<T>, id: UUID, version: Int) {
+    public init (collection: PersistentCollection<Database, T>, id: UUID, version: Int) {
         self.collection = collection
         self.id = id
         self.version = version
     }
 
-    let collection: PersistentCollection<T>
+    let collection: PersistentCollection<Database, T>
     let id: UUID
     let version: Int
     

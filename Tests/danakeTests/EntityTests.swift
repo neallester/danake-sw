@@ -20,7 +20,8 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myInt = myInt
     myStruct.myString = myString
     let id = UUID()
-    let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
+    let database = Database (accessor: InMemoryAccessor())
+    let collection = PersistentCollection<Database, MyStruct>(database: database, workQueue: DispatchQueue (label: "Test"), logger: nil)
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 }
 
@@ -32,7 +33,8 @@ class EntityTests: XCTestCase {
         myStruct.myInt = 100
         myStruct.myString = "Test String 1"
         let id = UUID()
-        let collection = PersistentCollection<MyStruct>(accessor: InMemoryAccessor(), workQueue: DispatchQueue (label: "Test"), logger: nil)
+        let database = Database (accessor: InMemoryAccessor())
+        let collection = PersistentCollection<Database, MyStruct> (database: database, workQueue: DispatchQueue (label: "Test"), logger: nil)
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.getId().uuidString)
         XCTAssertEqual (10, entity1.getVersion())

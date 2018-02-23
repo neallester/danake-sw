@@ -13,8 +13,50 @@ import Foundation
 //    }
 //}
 
+protocol DatabaseProtocol {
+}
 
-public protocol CollectionAccessor {
+public class Database {
+    
+    init (accessor: DatabaseAccessor) {
+        self.accessor = accessor
+    }
+
+    func getAccessor() -> DatabaseAccessor {
+        return accessor
+    }
+
+    public let accessor: DatabaseAccessor
+//    private collections: Dictionary <S, PersistentCollection>
+    
+}
+
+protocol MyAccesor:  DatabaseAccessor {
+    
+    func doSomething()
+
+}
+
+class AccessorItem<A: DatabaseAccessor> {
+    
+}
+
+class MyDB: Database {
+
+    init (accessor: MyAccesor) {
+        super.init (accessor: accessor)
+    }
+
+    func getAccessor() -> MyAccesor {
+        return super.getAccessor() as! MyAccesor
+    }
+
+    func doSomething() {
+        getAccessor().doSomething()
+    }
+}
+
+public protocol DatabaseAccessor {
     
     func get (id: UUID) -> DatabaseAccessResult
     
@@ -80,10 +122,10 @@ public class PendingRequestData<T: Codable> {
     var result: Entity<T>? = nil
 }
 
-public class PersistentCollection<T: Codable> {
+public class PersistentCollection<D: Database, T: Codable> {
     
-    public init<I: CollectionAccessor> (accessor: I, workQueue: DispatchQueue, logger: Logger?) {
-        self.accessor = accessor
+    public init (database: D, workQueue: DispatchQueue, logger: Logger?) {
+        self.database = database
         cache = Dictionary<UUID, WeakItem<T>>()
         pendingRequests = Dictionary<UUID, PendingRequestData<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(T.self)")
@@ -119,12 +161,12 @@ public class PersistentCollection<T: Codable> {
                     let pendingRequest: PendingRequestData<T> = PendingRequestData(queue: requestQueue!)
                     pendingRequests[id] = pendingRequest
                     closure = {
-                        switch self.accessor.get (id: id) {
+                        switch self.database.getAccessor().get(id: id) {
                         case .ok (let data):
                             if let data = data {
                                 do {
                                     try result = JSONDecoder().decode(Entity<T>.self, from: data)
-                                    result?.setCollection(self)
+                                    result?.setCollection(self as! PersistentCollection<Database, T>)
                                     if let result = result {
                                         self.cacheQueue.async {
                                             self.cache[id] = WeakItem (item: result)
@@ -164,7 +206,7 @@ public class PersistentCollection<T: Codable> {
     }
     
     public func new (batch: Batch, item: T) -> Entity<T> {
-        let result = Entity (collection: self, id: UUID(), version: 0, item: item)
+        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
@@ -172,14 +214,16 @@ public class PersistentCollection<T: Codable> {
         return result
     }
     
-    // Use when creation of some attribute of T requires a back reference to T
-    // e.g.
-    // class Parent
-    //    let child: EntityReference<Child>
-    // class Child
-    //    let parent: EntityReference<Parent>
+/*
+     Use when creation of some attribute of T requires a back reference to T
+     e.g.
+        class Parent
+            let child: EntityReference<Child>
+        class Child
+            let parent: EntityReference<Parent>
+ */
     public func new (batch: Batch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
-        let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
+        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
@@ -194,7 +238,7 @@ public class PersistentCollection<T: Codable> {
     }
 
     
-    private let accessor: CollectionAccessor
+    private let database: Database
     private var cache: Dictionary<UUID, WeakItem<T>>
     private var pendingRequests: Dictionary<UUID, PendingRequestData<T>>
     private let cacheQueue: DispatchQueue
@@ -204,7 +248,7 @@ public class PersistentCollection<T: Codable> {
     
 }
 
-public class InMemoryAccessor: CollectionAccessor {
+public class InMemoryAccessor: DatabaseAccessor {
     
     public func get(id: UUID) -> DatabaseAccessResult {
         var result: Data? = nil
