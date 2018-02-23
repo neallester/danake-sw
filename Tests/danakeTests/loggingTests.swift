@@ -16,22 +16,25 @@ class loggingTests: XCTestCase {
         XCTAssertEqual ("debug", LogLevel.debug.rawValue)
         XCTAssertEqual ("fine", LogLevel.fine.rawValue)
         XCTAssertEqual ("info", LogLevel.info.rawValue)
-        XCTAssertEqual ("business", LogLevel.business.rawValue)
+        XCTAssertEqual ("warning", LogLevel.warning.rawValue)
         XCTAssertEqual ("error", LogLevel.error.rawValue)
+        XCTAssertEqual ("business", LogLevel.business.rawValue)
         XCTAssertEqual ("emergency", LogLevel.emergency.rawValue)
-        XCTAssertTrue (LogLevel.debug > LogLevel.none)
         XCTAssertTrue (LogLevel.fine > LogLevel.debug)
         XCTAssertTrue (LogLevel.info > LogLevel.fine)
-        XCTAssertTrue (LogLevel.business > LogLevel.info)
-        XCTAssertTrue (LogLevel.error > LogLevel.business)
-        XCTAssertTrue (LogLevel.emergency > LogLevel.error)
+        XCTAssertTrue (LogLevel.warning > LogLevel.info)
+        XCTAssertTrue (LogLevel.error > LogLevel.warning)
+        XCTAssertTrue (LogLevel.business > LogLevel.error)
+        XCTAssertTrue (LogLevel.emergency > LogLevel.business)
         XCTAssertEqual (LogLevel.none, LogLevel.none)
         XCTAssertEqual (LogLevel.debug, LogLevel.debug)
         XCTAssertEqual (LogLevel.fine, LogLevel.fine)
         XCTAssertEqual (LogLevel.info, LogLevel.info)
-        XCTAssertEqual (LogLevel.business, LogLevel.business)
+        XCTAssertEqual (LogLevel.warning, LogLevel.warning)
         XCTAssertEqual (LogLevel.error, LogLevel.error)
+        XCTAssertEqual (LogLevel.business, LogLevel.business)
         XCTAssertEqual (LogLevel.emergency, LogLevel.emergency)
+        XCTAssertTrue (LogLevel.none > LogLevel.emergency)
     }
     
     func testFormattedData() {
@@ -71,7 +74,7 @@ class loggingTests: XCTestCase {
     }
     
     func testInMemoryLogger() {
-        let logger = InMemoryLogger()
+        var logger = InMemoryLogger()
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
@@ -93,15 +96,15 @@ class loggingTests: XCTestCase {
             XCTAssertEqual (1, entryValue1)
             XCTAssertEqual ("DEBUG|loggingTests.testInMemoryLogger|Message 1|name1=1", entry.asTestString())
         }
-        logger.level = .business
+        logger = InMemoryLogger (level: .business)
         logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 2", data: [(name: "name1", value:1)])
         logger.sync() { entries in
-            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual (0, entries.count)
         }
         logger.log (level: .business, source: self, featureName: "testInMemoryLogger", message: "Message 3", data: [(name: "name1", value:1)])
         logger.sync() { entries in
-            XCTAssertEqual (2, entries.count)
-            let entry = entries[1]
+            XCTAssertEqual (1, entries.count)
+            let entry = entries[0]
             let now = Date();
             XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
             XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
@@ -116,6 +119,16 @@ class loggingTests: XCTestCase {
             XCTAssertEqual (1, entryValue1)
             XCTAssertEqual ("BUSINESS|loggingTests.testInMemoryLogger|Message 3|name1=1", entry.asTestString())
         }
-
+        logger = InMemoryLogger (level: .none)
+        logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 4", data: [(name: "name1", value:1)])
+        logger.log (level: .fine, source: self, featureName: "testInMemoryLogger", message: "Message 5", data: [(name: "name1", value:1)])
+        logger.log (level: .info, source: self, featureName: "testInMemoryLogger", message: "Message 6", data: [(name: "name1", value:1)])
+        logger.log (level: .warning, source: self, featureName: "testInMemoryLogger", message: "Message 7", data: [(name: "name1", value:1)])
+        logger.log (level: .error, source: self, featureName: "testInMemoryLogger", message: "Message 8", data: [(name: "name1", value:1)])
+        logger.log (level: .business, source: self, featureName: "testInMemoryLogger", message: "Message 9", data: [(name: "name1", value:1)])
+        logger.log (level: .emergency, source: self, featureName: "testInMemoryLogger", message: "Message 10", data: [(name: "name1", value:1)])
+        logger.sync() { entries in
+            XCTAssertEqual (0, entries.count)
+        }
     }
 }

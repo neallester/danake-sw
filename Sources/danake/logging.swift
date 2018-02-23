@@ -9,14 +9,15 @@ import Foundation
 
 public enum LogLevel : String, Comparable {
     
-    case none
     case debug
     case fine
     case info
-    case business
+    case warning
     case error
+    case business
     case emergency
-    
+    case none
+
     public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
         return lhs.hashValue < rhs.hashValue
     }
@@ -85,6 +86,14 @@ struct LogEntry {
 
 class InMemoryLogger : Logger {
     
+    init() {
+        level = .debug
+    }
+    
+    init (level: LogLevel) {
+        self.level = level
+    }
+    
     func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         if (level >= self.level) {
             queue.async () {
@@ -99,7 +108,7 @@ class InMemoryLogger : Logger {
         }
     }
     
-    var level = LogLevel.debug
+    let level: LogLevel
     
     private var entries: [LogEntry] = []
     private let queue = DispatchQueue (label: UUID().uuidString)
