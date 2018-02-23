@@ -15,9 +15,11 @@ import Foundation
 
 public class Database {
     
-    init (accessor: DatabaseAccessor) {
+    init (accessor: DatabaseAccessor, logger: Logger?) {
         self.accessor = accessor
+        self.logger = logger
         workQueue = DispatchQueue (label: "workQueue Database \(accessor.hashValue)", attributes: .concurrent)
+        logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", accessor.hashValue())])
     }
 
     func getAccessor() -> DatabaseAccessor {
@@ -25,6 +27,7 @@ public class Database {
     }
 
     public let accessor: DatabaseAccessor
+    public let logger: Logger?
     public let workQueue: DispatchQueue
     
 //    private collections: Dictionary <S, PersistentCollection>
@@ -44,7 +47,7 @@ class AccessorItem<A: DatabaseAccessor> {
 class MyDB: Database {
 
     init (accessor: MyAccesor) {
-        super.init (accessor: accessor)
+        super.init (accessor: accessor, logger: nil)
     }
 
     func getAccessor() -> MyAccesor {
@@ -129,7 +132,7 @@ public class PendingRequestData<T: Codable> {
 
 public class PersistentCollection<D: Database, T: Codable> {
     
-    public init (database: D, name: CollectionName, logger: Logger?) {
+    public init (database: D, name: CollectionName) {
         self.database = database
         self.name = name
         cache = Dictionary<UUID, WeakItem<T>>()
@@ -137,7 +140,6 @@ public class PersistentCollection<D: Database, T: Codable> {
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(name)")
         self.workQueue = database.workQueue
-        self.logger = logger
     }
     
     func remove (id: UUID) {
@@ -180,14 +182,14 @@ public class PersistentCollection<D: Database, T: Codable> {
                                     }
                                     pendingRequest.result = result
                                 } catch {
-                                    self.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
+                                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                                     errorResult = .invalidData
                                 }
                             } else {
-                                self.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
+                                self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                             }
                         default:
-                            self.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
+                            self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                             errorResult = .databaseError
                         }
                         self.pendingRequestsQueue.async {
@@ -250,7 +252,6 @@ public class PersistentCollection<D: Database, T: Codable> {
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue
     private let pendingRequestsQueue: DispatchQueue
-    private let logger: Logger?
     
 }
 

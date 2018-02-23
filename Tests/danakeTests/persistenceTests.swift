@@ -31,12 +31,24 @@ final class CountDownLock {
 }
 
 class persistenceTests: XCTestCase {
+    
+    func testDatabaseCreation() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, logger: logger)
+        XCTAssertTrue (accessor === database.getAccessor() as! InMemoryAccessor)
+        XCTAssertTrue (logger === database.logger as! InMemoryLogger)
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("INFO|Database.init|created|hashValue=\(accessor.hashValue())", entries[0].asTestString())
+        }
+    }
 
     func testPersistenceCollectionNew() {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
-        let database = Database (accessor: InMemoryAccessor())
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: nil)
+        let database = Database (accessor: InMemoryAccessor(), logger: nil)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
         var batch = Batch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.collection!)
@@ -119,9 +131,9 @@ class persistenceTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try JSONEncoder().encode(entity)
         let accessor = InMemoryAccessor()
-        let logger = InMemoryLogger()
-        let database = Database (accessor: accessor)
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: logger)
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, logger: logger)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
         var result = collection.get (id: entity.getId())
         XCTAssertTrue (result.isOk())
         XCTAssertNil (result.item())
@@ -234,7 +246,7 @@ class persistenceTests: XCTestCase {
         var counter = 0
         while counter < 100 {
             let accessor = InMemoryAccessor()
-            let database = Database (accessor: accessor)
+            let database = Database (accessor: accessor, logger: nil)
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
             let data1 = try JSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
@@ -242,7 +254,7 @@ class persistenceTests: XCTestCase {
             let countdownLock = CountDownLock(count: 2)
             accessor.add(id: entity1.getId(), data: data1)
             accessor.add(id: entity2.getId(), data: data2)
-            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: nil)
+            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
@@ -310,9 +322,9 @@ class persistenceTests: XCTestCase {
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try JSONEncoder().encode(entity2)
             let accessor = InMemoryAccessor()
-            let database = Database (accessor: accessor)
-            let logger = InMemoryLogger()
-            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: logger)
+            let logger = InMemoryLogger(level: .error)
+            let database = Database (accessor: accessor, logger: logger)
+            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
             var waitFor1 = expectation(description: "wait1.1")
             var waitFor2 = expectation(description: "wait2.1")
             var result1: RetrievalResult<Entity<MyStruct>>? = nil
