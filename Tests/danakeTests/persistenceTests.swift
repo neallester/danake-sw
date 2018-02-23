@@ -36,7 +36,7 @@ class persistenceTests: XCTestCase {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let database = Database (accessor: InMemoryAccessor())
-        let collection = PersistentCollection<Database, MyStruct>(database: database, workQueue: DispatchQueue (label: "Test"), logger: nil)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: nil)
         var batch = Batch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.collection!)
@@ -121,14 +121,16 @@ class persistenceTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor)
-        let collection = PersistentCollection<Database, MyStruct>(database: database, workQueue: DispatchQueue (label: "Test"), logger: logger)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: logger)
         var result = collection.get (id: entity.getId())
         XCTAssertTrue (result.isOk())
         XCTAssertNil (result.item())
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|id=", entries[0].asTestString().prefix(65))
-            XCTAssertEqual (101, entries[0].asTestString().count)
+            let entry = entries[0].asTestString()
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
+            XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
+            XCTAssertEqual (180, entries[0].asTestString().count)
             
         }
         // Data In Cache=No; Data in Accessor=Yes
@@ -201,9 +203,12 @@ class persistenceTests: XCTestCase {
         XCTAssertNil (invalidEntity.item())
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Illegal Data|id=", entries[1].asTestString().prefix(67))
+            
+            let entry = entries[1].asTestString()
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Illegal Data|databaseHashValue=", entry.prefix(82))
+            XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 118)..<entry.index(entry.startIndex, offsetBy: 146)])
             XCTAssertEqual (";data={};error=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entries[1].asTestString().suffix(207))
-            XCTAssertEqual (310, entries[1].asTestString().count)
+            XCTAssertEqual (389, entries[1].asTestString().count)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -218,8 +223,10 @@ class persistenceTests: XCTestCase {
         }
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
-            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|id=", entries[2].asTestString().prefix(69))
-            XCTAssertEqual (105, entries[2].asTestString().count)
+            let entry = entries[2].asTestString()
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=", entry.prefix(84))
+            XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 120)..<entry.index(entry.startIndex, offsetBy: 148)])
+            XCTAssertEqual (184, entry.count)
         }
     }
     
@@ -235,11 +242,7 @@ class persistenceTests: XCTestCase {
             let countdownLock = CountDownLock(count: 2)
             accessor.add(id: entity1.getId(), data: data1)
             accessor.add(id: entity2.getId(), data: data2)
-            
-//            print ("entity1: \(entity1.getId().uuidString)")
-//            print ("entity2: \(entity2.getId().uuidString)")
-            
-            let collection = PersistentCollection<Database, MyStruct>(database: database, workQueue: DispatchQueue (label: "Test"), logger: nil)
+            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: nil)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
@@ -309,7 +312,7 @@ class persistenceTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let database = Database (accessor: accessor)
             let logger = InMemoryLogger()
-            let collection = PersistentCollection<Database, MyStruct>(database: database, workQueue: DispatchQueue (label: "Test", attributes: .concurrent), logger: logger)
+            let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection", logger: logger)
             var waitFor1 = expectation(description: "wait1.1")
             var waitFor2 = expectation(description: "wait2.1")
             var result1: RetrievalResult<Entity<MyStruct>>? = nil
@@ -329,10 +332,15 @@ class persistenceTests: XCTestCase {
             XCTAssertNil (result2!.item())
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
-                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|id=", entries[0].asTestString().prefix(65))
-                XCTAssertEqual (101, entries[0].asTestString().count)
-                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|id=", entries[1].asTestString().prefix(65))
-                XCTAssertEqual (101, entries[1].asTestString().count)
+                var entry = entries[0].asTestString()
+                print (entry)
+                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
+                XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
+                XCTAssertEqual (180, entries[0].asTestString().count)
+                entry = entries[1].asTestString()
+                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
+                XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
+                XCTAssertEqual (180, entries[0].asTestString().count)
 
             }
             // Data In Cache=No; Data in Accessor=Yes
@@ -522,8 +530,10 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, errorsReported)
             logger.sync() { entries in
                 XCTAssertEqual (5, entries.count)
-                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|id=", entries[4].asTestString().prefix(69))
-                XCTAssertEqual (105, entries[4].asTestString().count)
+                let entry = entries[4].asTestString()
+                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=", entry.prefix(84))
+                XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 120)..<entry.index(entry.startIndex, offsetBy: 148)])
+                XCTAssertEqual (184, entry.count)
             }
             counter = counter + 1
         }

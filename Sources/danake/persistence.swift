@@ -13,13 +13,11 @@ import Foundation
 //    }
 //}
 
-protocol DatabaseProtocol {
-}
-
 public class Database {
     
     init (accessor: DatabaseAccessor) {
         self.accessor = accessor
+        workQueue = DispatchQueue (label: "workQueue Database \(accessor.hashValue)", attributes: .concurrent)
     }
 
     func getAccessor() -> DatabaseAccessor {
@@ -27,6 +25,8 @@ public class Database {
     }
 
     public let accessor: DatabaseAccessor
+    public let workQueue: DispatchQueue
+    
 //    private collections: Dictionary <S, PersistentCollection>
     
 }
@@ -63,6 +63,9 @@ public protocol DatabaseAccessor {
     func add (id: UUID, data: Data)
     
     func update (id: UUID, data: Data)
+    
+    // A unique identifier for the database being accessed
+    func hashValue() -> String
     
 }
 
@@ -112,6 +115,8 @@ public enum DatabaseAccessResult {
     
 }
 
+public typealias CollectionName = String
+
 public class PendingRequestData<T: Codable> {
     
     init (queue: DispatchQueue) {
@@ -124,13 +129,14 @@ public class PendingRequestData<T: Codable> {
 
 public class PersistentCollection<D: Database, T: Codable> {
     
-    public init (database: D, workQueue: DispatchQueue, logger: Logger?) {
+    public init (database: D, name: CollectionName, logger: Logger?) {
         self.database = database
+        self.name = name
         cache = Dictionary<UUID, WeakItem<T>>()
         pendingRequests = Dictionary<UUID, PendingRequestData<T>>()
-        cacheQueue = DispatchQueue(label: "Collection \(T.self)")
-        pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(T.self)")
-        self.workQueue = workQueue
+        cacheQueue = DispatchQueue(label: "Collection \(name)")
+        pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(name)")
+        self.workQueue = database.workQueue
         self.logger = logger
     }
     
@@ -174,14 +180,14 @@ public class PersistentCollection<D: Database, T: Codable> {
                                     }
                                     pendingRequest.result = result
                                 } catch {
-                                    self.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [(name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
+                                    self.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                                     errorResult = .invalidData
                                 }
                             } else {
-                                self.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [(name:"id",value: id.uuidString)])
+                                self.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                             }
                         default:
-                            self.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [(name:"id",value: id.uuidString)])
+                            self.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                             errorResult = .databaseError
                         }
                         self.pendingRequestsQueue.async {
@@ -237,7 +243,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
 
-    
+    private let name: CollectionName
     private let database: Database
     private var cache: Dictionary<UUID, WeakItem<T>>
     private var pendingRequests: Dictionary<UUID, PendingRequestData<T>>
@@ -249,6 +255,11 @@ public class PersistentCollection<D: Database, T: Codable> {
 }
 
 public class InMemoryAccessor: DatabaseAccessor {
+    
+    init() {
+        id = UUID()
+        queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
+    }
     
     public func get(id: UUID) -> DatabaseAccessResult {
         var result: Data? = nil
@@ -296,9 +307,14 @@ public class InMemoryAccessor: DatabaseAccessor {
         self.preFetch = preFetch
     }
     
+    public func hashValue() -> String {
+        return id.uuidString
+    }
+    
     private var preFetch: ((UUID) -> Void)? = nil
     private var throwError = false
     private var storage = Dictionary<UUID, Data>()
-    private let queue = DispatchQueue (label: "InMemoryAccessor \(UUID().uuidString)")
+    private var id: UUID
+    private let queue: DispatchQueue
     
 }
