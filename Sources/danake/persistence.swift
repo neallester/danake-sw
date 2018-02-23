@@ -30,33 +30,6 @@ public class Database {
     public let logger: Logger?
     public let workQueue: DispatchQueue
     
-//    private collections: Dictionary <S, PersistentCollection>
-    
-}
-
-protocol MyAccesor:  DatabaseAccessor {
-    
-    func doSomething()
-
-}
-
-class AccessorItem<A: DatabaseAccessor> {
-    
-}
-
-class MyDB: Database {
-
-    init (accessor: MyAccesor) {
-        super.init (accessor: accessor, logger: nil)
-    }
-
-    func getAccessor() -> MyAccesor {
-        return super.getAccessor() as! MyAccesor
-    }
-
-    func doSomething() {
-        getAccessor().doSomething()
-    }
 }
 
 public protocol DatabaseAccessor {
@@ -79,8 +52,69 @@ struct WeakItem<T: Codable> {
     }
     
     weak var item: Entity<T>?
+}
+
+struct WeakObject<T: AnyObject> {
+    
+    init (item: T) {
+        self.item = item
+    }
+    
+    weak var item: T?
+}
+
+class Registrar<K: Hashable, V: AnyObject> {
+    
+    init() {
+        queue = DispatchQueue (label: "\(type (of: self)): \(UUID().uuidString)")
+    }
+    
+    // Returns true if registration succeeded
+    // Fails if there is already an object registered under this key
+    func register (key: K, value: V) -> Bool {
+        var result = false
+        queue.sync {
+            if let _ = items[key]?.item {
+                // Do nothing
+            } else {
+                items[key] = WeakObject (item: value)
+                result = true
+            }
+
+        }
+        return result
+    }
+    
+    func deRegister (key: K) {
+        queue.sync {
+            let _ = items.removeValue(forKey: key)
+        }
+    }
+    
+    func isRegistered (key: K) -> Bool {
+        var result = false
+        queue.sync {
+            if let _ = items[key]?.item {
+                result = true
+            }
+            
+        }
+        return result
+    }
+    
+    func count() -> Int {
+        var result = 0
+        queue.sync {
+            result = items.count
+        }
+        return result
+    }
+    
+    let queue: DispatchQueue
+    var items = Dictionary<K, WeakObject<V>>()
     
 }
+
 
 enum RetrievalResult<T> {
     

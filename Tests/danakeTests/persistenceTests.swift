@@ -614,7 +614,66 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail("Expected data")
         }
-
+    }
+    
+    class RegistrarTestItem {
+        
+        init (stringValue: String) {
+            self.stringValue = stringValue
+        }
+        
+        let stringValue: String
+    }
+    
+    func testRegistrar() {
+        let registrar = Registrar<Int, RegistrarTestItem>()
+        XCTAssertEqual (0, registrar.count())
+        let key1 = 10
+        let value1 = RegistrarTestItem (stringValue: "10")
+        let key2 = 20
+        let value2 = RegistrarTestItem (stringValue: "20")
+        let key3 = 30
+        var value3: RegistrarTestItem? = RegistrarTestItem (stringValue: "30")
+        XCTAssertTrue (registrar.register(key: key1, value: value1))
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        XCTAssertEqual (1, registrar.count())
+        XCTAssertFalse (registrar.register(key: key1, value: value1))
+        XCTAssertEqual (1, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        XCTAssertTrue (registrar.register(key: key2, value: value2))
+        XCTAssertEqual (2, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertTrue (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        XCTAssertFalse (registrar.register(key: key2, value: value2))
+        XCTAssertEqual (2, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertTrue (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        registrar.deRegister(key: key2)
+        XCTAssertEqual (1, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        XCTAssertTrue (registrar.register(key: key3, value: value3!))
+        XCTAssertEqual (2, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertTrue (registrar.isRegistered (key: key3))
+        value3 = nil
+        XCTAssertEqual (2, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
+        registrar.deRegister(key: key3)
+        XCTAssertEqual (1, registrar.count())
+        XCTAssertTrue (registrar.isRegistered (key: key1))
+        XCTAssertFalse (registrar.isRegistered (key: key2))
+        XCTAssertFalse (registrar.isRegistered (key: key3))
     }
 
 }
