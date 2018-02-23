@@ -345,7 +345,6 @@ class persistenceTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 var entry = entries[0].asTestString()
-                print (entry)
                 XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
                 XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
                 XCTAssertEqual (180, entries[0].asTestString().count)
