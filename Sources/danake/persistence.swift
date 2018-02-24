@@ -35,6 +35,7 @@ public class Database {
     public let logger: Logger?
     public let workQueue: DispatchQueue
     private let hashValue: String
+    let collectionRegistrar = Registrar<CollectionName, AnyObject>()
 
     deinit {
         Database.registrar.deRegister(key: hashValue)
@@ -186,6 +187,7 @@ public class PendingRequestData<T: Codable> {
 
 public class PersistentCollection<D: Database, T: Codable> {
     
+    // Name must be unique within Database and a valid collection/table identifier in all persistence media to be used
     public init (database: D, name: CollectionName) {
         self.database = database
         self.name = name
@@ -194,6 +196,13 @@ public class PersistentCollection<D: Database, T: Codable> {
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(name)")
         self.workQueue = database.workQueue
+        if !database.collectionRegistrar.register(key: name, value: self) {
+            database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
+        }
+    }
+
+    deinit {
+        database.collectionRegistrar.deRegister(key: name)
     }
     
     func remove (id: UUID) {

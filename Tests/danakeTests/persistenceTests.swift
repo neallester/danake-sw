@@ -55,7 +55,28 @@ class persistenceTests: XCTestCase {
         database = nil
         XCTAssertFalse (Database.registrar.isRegistered(key: accessor.hashValue()))
         XCTAssertEqual (0, Database.registrar.count())
+    }
 
+    func testPersistentCollectionCreation() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        var collection: PersistentCollection<Database, MyStruct>? = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let _ = collection // Quite a spurious xcode warning
+        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertEqual (1, database.collectionRegistrar.count())
+        logger.sync() { entries in
+            XCTAssertEqual (0, entries.count)
+        }
+        let _ = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.getAccessor().hashValue());collectionName=myCollection", entries[0].asTestString())
+        }
+        collection = nil
+        XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertEqual (0, database.collectionRegistrar.count())
     }
 
     func testPersistenceCollectionNew() {
