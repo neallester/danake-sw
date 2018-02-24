@@ -62,8 +62,7 @@ class loggingTests: XCTestCase {
         XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
         XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
         XCTAssertEqual(LogLevel.debug, entry.level)
-        let entrySource = entry.source as! loggingTests
-        XCTAssertTrue (entrySource == self)
+        XCTAssertEqual ("loggingTests", entry.source)
         XCTAssertEqual ("testLogEntry", entry.featureName)
         XCTAssertEqual ("Message 1", entry.message)
         XCTAssertEqual (1, entry.data!.count)
@@ -86,8 +85,7 @@ class loggingTests: XCTestCase {
             XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
             XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
             XCTAssertEqual(LogLevel.debug, entry.level)
-            let entrySource = entry.source as! loggingTests
-            XCTAssertTrue (entrySource == self)
+            XCTAssertEqual ("loggingTests", entry.source)
             XCTAssertEqual ("testInMemoryLogger", entry.featureName)
             XCTAssertEqual ("Message 1", entry.message)
             XCTAssertEqual (1, entry.data!.count)
@@ -109,8 +107,7 @@ class loggingTests: XCTestCase {
             XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
             XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
             XCTAssertEqual(LogLevel.business, entry.level)
-            let entrySource = entry.source as! loggingTests
-            XCTAssertTrue (entrySource == self)
+            XCTAssertEqual ("loggingTests", entry.source)
             XCTAssertEqual ("testInMemoryLogger", entry.featureName)
             XCTAssertEqual ("Message 3", entry.message)
             XCTAssertEqual (1, entry.data!.count)

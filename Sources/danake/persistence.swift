@@ -18,8 +18,13 @@ public class Database {
     init (accessor: DatabaseAccessor, logger: Logger?) {
         self.accessor = accessor
         self.logger = logger
-        workQueue = DispatchQueue (label: "workQueue Database \(accessor.hashValue)", attributes: .concurrent)
-        logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", accessor.hashValue())])
+        self.hashValue = accessor.hashValue()
+        workQueue = DispatchQueue (label: "workQueue Database \(hashValue)", attributes: .concurrent)
+        if Database.registrar.register(key: hashValue, value: self) {
+            logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
+        } else {
+            logger?.log(level: .emergency, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
+        }
     }
 
     func getAccessor() -> DatabaseAccessor {
@@ -29,6 +34,13 @@ public class Database {
     public let accessor: DatabaseAccessor
     public let logger: Logger?
     public let workQueue: DispatchQueue
+    private let hashValue: String
+
+    deinit {
+        Database.registrar.deRegister(key: hashValue)
+    }
+    
+    static let registrar = Registrar<String, Database>()
     
 }
 
@@ -63,6 +75,9 @@ struct WeakObject<T: AnyObject> {
     weak var item: T?
 }
 
+/*
+    Registers objects against a key until the object is deallocated
+*/
 class Registrar<K: Hashable, V: AnyObject> {
     
     init() {
@@ -85,9 +100,14 @@ class Registrar<K: Hashable, V: AnyObject> {
         return result
     }
     
+    // Only permitted if item associated with key is nil
     func deRegister (key: K) {
         queue.sync {
-            let _ = items.removeValue(forKey: key)
+            if let _ = items[key]?.item{
+                // Do nothing
+            } else {
+                let _ = items.removeValue(forKey: key)
+            }
         }
     }
     

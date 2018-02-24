@@ -48,13 +48,17 @@ public class LogEntryFormatter {
         }
         return result
     }
-    
+
     static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
+        return LogEntryFormatter.standardEntryFormat (level: level, source: "\(type (of: source))", featureName: featureName, message: message, data: data)
+    }
+    
+    static func standardEntryFormat (level: LogLevel, source: String, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var formattedData = LogEntryFormatter.formattedData (data: data)
         if (formattedData.count > 0) {
             formattedData = "|" + formattedData
         }
-        return "\(level.rawValue.uppercased())|\(type (of: source)).\(featureName)|\(message)\(formattedData)"
+        return "\(level.rawValue.uppercased())|\(source).\(featureName)|\(message)\(formattedData)"
         
     }
     
@@ -65,7 +69,7 @@ struct LogEntry {
     init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         time = Date()
         self.level = level
-        self.source = source
+        self.source = "\(type (of: source))"
         self.featureName = featureName
         self.message = message
         self.data = data
@@ -73,13 +77,13 @@ struct LogEntry {
     
     let time: Date
     let level: LogLevel
-    let source: Any
+    let source: String
     let featureName: String
     let message: String
     let data: [(name: String, value: CustomStringConvertible?)]?
     
     public func asTestString() -> String {
-        return LogEntryFormatter.standardFormat (level: level, source: source, featureName: featureName, message: message, data: data)
+        return LogEntryFormatter.standardEntryFormat (level: level, source: source, featureName: featureName, message: message, data: data)
     }
     
 }
