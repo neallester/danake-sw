@@ -13,6 +13,18 @@ import Foundation
 //    }
 //}
 
+public func newJSONEncoder() -> JSONEncoder {
+    let result = JSONEncoder()
+    result.dateEncodingStrategy = .secondsSince1970
+    return result
+}
+
+public func newJSONDecoder() -> JSONDecoder {
+    let result = JSONDecoder()
+    result.dateDecodingStrategy = .secondsSince1970
+    return result
+}
+
 public class Database {
     
     init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
@@ -241,7 +253,7 @@ public class PersistentCollection<D: Database, T: Codable> {
                         case .ok (let data):
                             if let data = data {
                                 do {
-                                    try result = JSONDecoder().decode(Entity<T>.self, from: data)
+                                    try result = newJSONDecoder().decode(Entity<T>.self, from: data)
                                     result?.setCollection(self as! PersistentCollection<Database, T>)
                                     result?.schemaVersion = self.database.schemaVersion
                                     if let result = result {

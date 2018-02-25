@@ -167,7 +167,8 @@ class persistenceTests: XCTestCase {
         // Data In Cache=No; Data in Accessor=No
         let entity = newTestEntity(myInt: 10, myString: "A String")
         entity.schemaVersion = 3 // Verify that get updates the schema version
-        let data = try JSONEncoder().encode(entity)
+        entity.saved = Date()
+        let data = try newJSONEncoder().encode(entity)
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
@@ -191,6 +192,8 @@ class persistenceTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
         XCTAssertEqual (5, retrievedEntity.schemaVersion)
         XCTAssertTrue (retrievedEntity.collection === collection)
+        XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        XCTAssertEqual ((entity.saved!.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.saved!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
         switch retrievedEntity.getPersistenceState() {
         case .persistent:
             break
@@ -291,9 +294,9 @@ class persistenceTests: XCTestCase {
             let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
             entity1.schemaVersion = 3 // Verify that get updates the schema version
-            let data1 = try JSONEncoder().encode(entity1)
+            let data1 = try newJSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
-            let data2 = try JSONEncoder().encode(entity2)
+            let data2 = try newJSONEncoder().encode(entity2)
             let countdownLock = CountDownLock(count: 2)
             accessor.add(id: entity1.getId(), data: data1)
             accessor.add(id: entity2.getId(), data: data2)
@@ -328,7 +331,10 @@ class persistenceTests: XCTestCase {
             XCTAssertNil (result1b)
             switch result2! {
             case .ok (let retrievedEntity):
-                try XCTAssertEqual (JSONEncoder().encode (entity2), JSONEncoder().encode (retrievedEntity!))
+                XCTAssertEqual (entity2.getId(), retrievedEntity!.getId())
+                XCTAssertEqual (entity2.getVersion(), retrievedEntity!.getVersion())
+                XCTAssertEqual ((entity2.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity!.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+                XCTAssertNil (retrievedEntity!.saved)
             default:
                 XCTFail("Expected data2")
             }

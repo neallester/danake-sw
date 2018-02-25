@@ -33,6 +33,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.schemaVersion = collection.database.schemaVersion
         persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
+        created = Date()
     }
 
     convenience init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
@@ -106,6 +107,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         case version
         case item
         case schemaVersion
+        case created
+        case saved
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -114,6 +117,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         try container.encode (version, forKey: .version)
         try container.encode (schemaVersion, forKey: .schemaVersion)
         try container.encode(item, forKey: .item)
+        try container.encode (created, forKey:. created)
+        if let saved = saved {
+            try container.encode (saved, forKey: .saved)
+        }
     }
     
     public required init (from decoder: Decoder) throws {
@@ -122,6 +129,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         version = try values.decode(Int.self, forKey: .version)
         item = try values.decode (T.self, forKey: .item)
         schemaVersion = try values.decode (Int.self, forKey: .schemaVersion)
+        created = try values.decode (Date.self, forKey: .created)
+        if values.contains(.saved) {
+            saved = try values.decode (Date.self, forKey: .saved)
+        }
         persistenceState = .persistent
         self.queue = DispatchQueue (label: id.uuidString)
     }
@@ -145,10 +156,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public let id: UUID
     public private(set) var version: Int
     internal var schemaVersion: Int
+    internal let created: Date
+    internal var saved: Date?
     private var item: T
     private let queue: DispatchQueue
     private var persistenceState: PersistenceState
     internal private(set) var collection: PersistentCollection<Database, T>?
+    
     
 }
 

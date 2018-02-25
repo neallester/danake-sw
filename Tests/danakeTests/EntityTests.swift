@@ -181,12 +181,13 @@ class EntityTests: XCTestCase {
         default:
             XCTFail("Expected .new")
         }
-        let json = try String (data: JSONEncoder().encode(entity), encoding: .utf8)!
-        XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":0}", json)
-        let entity2 = try JSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
+        var json = try String (data: newJSONEncoder().encode(entity), encoding: .utf8)!
+        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":0}", json)
+        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":10}"
+        var entity2 = try newJSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
-        XCTAssertEqual (entity.version, entity2.version)
-        XCTAssertEqual (5, entity.schemaVersion)
+        XCTAssertEqual (5, entity2.schemaVersion)
+        XCTAssertEqual (10, entity2.version)
         switch entity2.getPersistenceState() {
         case .persistent:
             break
@@ -199,6 +200,51 @@ class EntityTests: XCTestCase {
                 XCTAssertEqual(item.myString, item2.myString)
             }
         }
+        XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (entity2.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        // With a saved time
+        let savedTime = Date()
+        entity.saved = savedTime
+        json = try String (data: newJSONEncoder().encode(entity), encoding: .utf8)!
+        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":0}", json)
+        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":10}"
+        entity2 = try newJSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
+        XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
+        XCTAssertEqual (5, entity2.schemaVersion)
+        XCTAssertEqual (10, entity2.version)
+        switch entity2.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        entity.sync() { item in
+            entity2.sync() { item2 in
+                XCTAssertEqual (item.myInt, item2.myInt)
+                XCTAssertEqual(item.myString, item2.myString)
+            }
+        }
+        XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (entity2.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        XCTAssertEqual ((entity.saved!.timeIntervalSince1970 * 1000.0).rounded(), (entity2.saved!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+
+    }
+    
+    // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
+    func jsonEncodedDate (date: Date) throws -> String? {
+        struct DateContainer : Encodable {
+            init (_ d: Date) {
+                self.d = d
+            }
+            let d: Date
+        }
+        let container = DateContainer.init(date)
+        let encoded = try newJSONEncoder().encode (container)
+        let protoResult = String (data: encoded, encoding: .utf8)
+        var result: String? = nil
+        if let protoResult = protoResult {
+            result = String (protoResult[protoResult.index (protoResult.startIndex, offsetBy: 5)...])
+            result = String (result!.prefix(result!.count - 1))
+        }
+        return result
     }
     
 }
