@@ -15,10 +15,11 @@ import Foundation
 
 public class Database {
     
-    init (accessor: DatabaseAccessor, logger: Logger?) {
+    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
         self.accessor = accessor
         self.logger = logger
         self.hashValue = accessor.hashValue()
+        self.schemaVersion = schemaVersion
         workQueue = DispatchQueue (label: "workQueue Database \(hashValue)", attributes: .concurrent)
         if Database.registrar.register(key: hashValue, value: self) {
             logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
@@ -33,6 +34,7 @@ public class Database {
 
     public let accessor: DatabaseAccessor
     public let logger: Logger?
+    public let schemaVersion: Int
     public let workQueue: DispatchQueue
     private let hashValue: String
     let collectionRegistrar = Registrar<CollectionName, AnyObject>()
@@ -187,6 +189,9 @@ public class PendingRequestData<T: Codable> {
 
 public class PersistentCollection<D: Database, T: Codable> {
     
+    // ******* TODO should verify with the database accessor that collectionName is valid for that medium ***************"
+    // ******* TODO Add CollectionName argument to DatabaseAccessor features
+    
     // Name must be unique within Database and a valid collection/table identifier in all persistence media to be used
     public init (database: D, name: CollectionName) {
         self.database = database
@@ -238,6 +243,7 @@ public class PersistentCollection<D: Database, T: Codable> {
                                 do {
                                     try result = JSONDecoder().decode(Entity<T>.self, from: data)
                                     result?.setCollection(self as! PersistentCollection<Database, T>)
+                                    result?.schemaVersion = self.database.schemaVersion
                                     if let result = result {
                                         self.cacheQueue.async {
                                             self.cache[id] = WeakItem (item: result)
@@ -308,8 +314,8 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
 
-    private let name: CollectionName
-    private let database: Database
+    internal let database: Database
+    public let name: CollectionName
     private var cache: Dictionary<UUID, WeakItem<T>>
     private var pendingRequests: Dictionary<UUID, PendingRequestData<T>>
     private let cacheQueue: DispatchQueue

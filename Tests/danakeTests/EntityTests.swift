@@ -20,7 +20,7 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myInt = myInt
     myStruct.myString = myString
     let id = UUID()
-    let database = Database (accessor: InMemoryAccessor(), logger: nil)
+    let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
     let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 }
@@ -33,11 +33,12 @@ class EntityTests: XCTestCase {
         myStruct.myInt = 100
         myStruct.myString = "Test String 1"
         let id = UUID()
-        let database = Database (accessor: InMemoryAccessor(), logger: nil)
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.getId().uuidString)
         XCTAssertEqual (10, entity1.getVersion())
+        XCTAssertEqual (5, entity1.schemaVersion)
         switch entity1.getPersistenceState() {
         case .new:
             break
@@ -55,6 +56,7 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual (id2.uuidString, entity2.getId().uuidString)
         XCTAssertEqual (20, entity2.getVersion())
+        XCTAssertEqual (5, entity1.schemaVersion)
         switch entity2.getPersistenceState() {
         case .new:
             break
@@ -180,10 +182,11 @@ class EntityTests: XCTestCase {
             XCTFail("Expected .new")
         }
         let json = try String (data: JSONEncoder().encode(entity), encoding: .utf8)!
-        XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}}", json)
+        XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":0}", json)
         let entity2 = try JSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (entity.version, entity2.version)
+        XCTAssertEqual (5, entity.schemaVersion)
         switch entity2.getPersistenceState() {
         case .persistent:
             break

@@ -30,6 +30,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.id = id
         self.version = version
         self.item = item
+        self.schemaVersion = collection.database.schemaVersion
         persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
     }
@@ -104,15 +105,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         case id
         case version
         case item
+        case schemaVersion
     }
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try queue.sync {
-            try container.encode (id, forKey: .id)
-            try container.encode (version, forKey: .version)
-            try container.encode(item, forKey: .item)
-        }
+        try container.encode (id, forKey: .id)
+        try container.encode (version, forKey: .version)
+        try container.encode (schemaVersion, forKey: .schemaVersion)
+        try container.encode(item, forKey: .item)
     }
     
     public required init (from decoder: Decoder) throws {
@@ -120,6 +121,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         id = try UUID (uuidString: values.decode(String.self, forKey: .id))!
         version = try values.decode(Int.self, forKey: .version)
         item = try values.decode (T.self, forKey: .item)
+        schemaVersion = try values.decode (Int.self, forKey: .schemaVersion)
         persistenceState = .persistent
         self.queue = DispatchQueue (label: id.uuidString)
     }
@@ -138,8 +140,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Attributes
     
+    
+    
     public let id: UUID
     public private(set) var version: Int
+    internal var schemaVersion: Int
     private var item: T
     private let queue: DispatchQueue
     private var persistenceState: PersistenceState

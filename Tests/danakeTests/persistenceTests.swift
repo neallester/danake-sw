@@ -35,16 +35,17 @@ class persistenceTests: XCTestCase {
     func testDatabaseCreation() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
-        var database: Database? = Database (accessor: accessor, logger: logger)
+        var database: Database? = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         XCTAssertTrue (accessor === database!.getAccessor() as! InMemoryAccessor)
         XCTAssertTrue (logger === database!.logger as! InMemoryLogger)
         XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue()))
+        XCTAssertEqual (5, database?.schemaVersion)
         XCTAssertEqual (1, Database.registrar.count())
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             XCTAssertEqual ("INFO|Database.init|created|hashValue=\(accessor.hashValue())", entries[0].asTestString())
         }
-        let _ = Database (accessor: accessor, logger: logger)
+        let _ = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             XCTAssertEqual ("EMERGENCY|Database.init|registrationFailed|hashValue=\(accessor.hashValue())", entries[1].asTestString())
@@ -60,7 +61,7 @@ class persistenceTests: XCTestCase {
     func testPersistentCollectionCreation() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
-        let database = Database (accessor: accessor, logger: logger)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
         var collection: PersistentCollection<Database, MyStruct>? = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
         let _ = collection // Quite a spurious xcode warning
@@ -82,7 +83,7 @@ class persistenceTests: XCTestCase {
     func testPersistenceCollectionNew() {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
-        let database = Database (accessor: InMemoryAccessor(), logger: nil)
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
         var batch = Batch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
@@ -106,8 +107,8 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual(1, cache.count)
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
+        XCTAssertEqual (5, entity?.schemaVersion)
         entity = nil
-        
         batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
@@ -137,6 +138,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual(1, cache.count)
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
+        XCTAssertEqual (5, entity?.schemaVersion)
         entity = nil
         batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
@@ -164,10 +166,11 @@ class persistenceTests: XCTestCase {
     func testPersistentCollectionGet() throws {
         // Data In Cache=No; Data in Accessor=No
         let entity = newTestEntity(myInt: 10, myString: "A String")
+        entity.schemaVersion = 3 // Verify that get updates the schema version
         let data = try JSONEncoder().encode(entity)
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
-        let database = Database (accessor: accessor, logger: logger)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
         var result = collection.get (id: entity.getId())
         XCTAssertTrue (result.isOk())
@@ -186,6 +189,8 @@ class persistenceTests: XCTestCase {
         let retrievedEntity = result.item()!
         XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
+        XCTAssertEqual (5, retrievedEntity.schemaVersion)
+        XCTAssertTrue (retrievedEntity.collection === collection)
         switch retrievedEntity.getPersistenceState() {
         case .persistent:
             break
@@ -209,6 +214,8 @@ class persistenceTests: XCTestCase {
         let batch = Batch()
         let entity2 = collection.new(batch: batch, item: MyStruct())
         XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
+        XCTAssertEqual (5, entity2.schemaVersion)
+        XCTAssertTrue (entity2.collection === collection)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
             XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
@@ -281,8 +288,9 @@ class persistenceTests: XCTestCase {
         var counter = 0
         while counter < 100 {
             let accessor = InMemoryAccessor()
-            let database = Database (accessor: accessor, logger: nil)
+            let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
+            entity1.schemaVersion = 3 // Verify that get updates the schema version
             let data1 = try JSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try JSONEncoder().encode(entity2)
@@ -353,12 +361,13 @@ class persistenceTests: XCTestCase {
         while counter < 100 {
             // Data In Cache=No; Data in Accessor=No
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
+            entity1.schemaVersion = 3 // Verify that get updates the schema version
             let data1 = try JSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try JSONEncoder().encode(entity2)
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .error)
-            let database = Database (accessor: accessor, logger: logger)
+            let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
             var waitFor1 = expectation(description: "wait1.1")
             var waitFor2 = expectation(description: "wait2.1")
@@ -409,6 +418,10 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (entity1.getVersion(), retrievedEntity1.getVersion())
             XCTAssertEqual (entity2.getId().uuidString, retrievedEntity2.getId().uuidString)
             XCTAssertEqual (entity2.getVersion(), retrievedEntity2.getVersion())
+            XCTAssertEqual (5, retrievedEntity1.schemaVersion)
+            XCTAssertEqual (5, retrievedEntity2.schemaVersion)
+            XCTAssertTrue (retrievedEntity1.collection === collection)
+            XCTAssertTrue (retrievedEntity2.collection === collection)
             switch retrievedEntity1.getPersistenceState() {
             case .persistent:
                 break
