@@ -61,11 +61,11 @@ public class Database {
 
 public protocol DatabaseAccessor {
     
-    func get (id: UUID) -> DatabaseAccessResult
+    func get (name: CollectionName, id: UUID) -> DatabaseAccessResult
     
-    func add (id: UUID, data: Data)
+    func add (name: CollectionName, id: UUID, data: Data)
     
-    func update (id: UUID, data: Data)
+    func update (name: CollectionName, id: UUID, data: Data)
     
     // A unique identifier for the database being accessed
     func hashValue() -> String
@@ -202,7 +202,6 @@ public class PendingRequestData<T: Codable> {
 public class PersistentCollection<D: Database, T: Codable> {
     
     // ******* TODO should verify with the database accessor that collectionName is valid for that medium ***************"
-    // ******* TODO Add CollectionName argument to DatabaseAccessor features
     
     // Name must be unique within Database and a valid collection/table identifier in all persistence media to be used
     public init (database: D, name: CollectionName) {
@@ -249,7 +248,7 @@ public class PersistentCollection<D: Database, T: Codable> {
                     let pendingRequest: PendingRequestData<T> = PendingRequestData(queue: requestQueue!)
                     pendingRequests[id] = pendingRequest
                     closure = {
-                        switch self.database.getAccessor().get(id: id) {
+                        switch self.database.getAccessor().get(name: self.name, id: id) {
                         case .ok (let data):
                             if let data = data {
                                 do {
@@ -343,7 +342,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
     }
     
-    public func get(id: UUID) -> DatabaseAccessResult {
+    public func get(name: CollectionName, id: UUID) -> DatabaseAccessResult {
         var result: Data? = nil
         var returnError = false
         if let preFetch = preFetch {
@@ -353,8 +352,8 @@ public class InMemoryAccessor: DatabaseAccessor {
             if self.throwError {
                 returnError = true
                 self.throwError = false
-            } else {
-                result = storage[id]
+            } else if let collectionDictionary = storage[name] {
+                result = collectionDictionary[id]
             }
         }
         if returnError {
@@ -363,14 +362,18 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func add (id: UUID, data: Data) {
+    public func add (name: CollectionName, id: UUID, data: Data) {
         queue.async {
-            self.storage[id] = data
+            if self.storage[name] == nil {
+                let collectionDictionary = Dictionary<UUID, Data>()
+                self.storage[name] = collectionDictionary
+            }
+            self.storage[name]![id] = data
         }
     }
         
-    public func update (id: UUID, data: Data) {
-        add (id: id, data: data)
+    public func update (name: CollectionName, id: UUID, data: Data) {
+        add (name: name, id: id, data: data)
     }
     
     public func setThrowError() {
@@ -379,7 +382,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
-    func sync (closure: (Dictionary<UUID, Data>) -> Void) {
+    func sync (closure: (Dictionary<CollectionName, Dictionary<UUID, Data>>) -> Void) {
         queue.sync () {
             closure (storage)
         }
@@ -395,7 +398,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     private var preFetch: ((UUID) -> Void)? = nil
     private var throwError = false
-    private var storage = Dictionary<UUID, Data>()
+    private var storage = Dictionary<CollectionName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue
     
