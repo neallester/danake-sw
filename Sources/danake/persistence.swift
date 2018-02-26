@@ -27,6 +27,14 @@ public func newJSONDecoder() -> JSONDecoder {
 
 public class Database {
     
+    /*
+        The current ** schemaVersion ** is stored as metadata with every Entity when it is stored in the database. The value of ** schemaVersion **
+        should be incremented whenever an Decodable incompatible change is made to any Entity.item stored in the database. That is, increment
+        ** schemaVersion ** if an Entity.item (anywhere in the database) is no longer capable of decoding data stored under a previous
+        ** schemaVersion **. The intention is that the ** schemaVersion ** at the time an Entity.item was stored will be made available to the
+        code performing an Entity.item decode operation where it would facilitate decoding legacy JSON to the existing object structure. However,
+        a mechanism for actually doing this is currently not present in the framework.
+    */
     init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
         self.accessor = accessor
         self.logger = logger
@@ -91,7 +99,7 @@ public protocol DatabaseAccessor {
     
     func update (name: CollectionName, id: UUID, data: Data)
     
-//    func scan (name: CollectionName)
+    func scan (name: CollectionName) -> DatabaseAccessListResult
     
     /*
         Is the format of ** name ** a valid CollectionName in this storage medium and,
@@ -217,6 +225,14 @@ enum RetrievalResult<T> {
 public enum DatabaseAccessResult {
     
     case ok (Data?)
+    
+    case error (String)
+    
+}
+
+public enum DatabaseAccessListResult {
+    
+    case ok ([Data])
     
     case error (String)
     
@@ -412,6 +428,25 @@ public class InMemoryAccessor: DatabaseAccessor {
     public func update (name: CollectionName, id: UUID, data: Data) {
         add (name: name, id: id, data: data)
     }
+    
+    public func scan(name: CollectionName) -> DatabaseAccessListResult {
+        var resultData: [Data] = []
+        var result = DatabaseAccessListResult.ok (resultData)
+        queue.sync {
+            if self.throwError {
+                result = .error ("Test Error")
+                self.throwError = false
+            } else if let collectionDictionary = storage [name] {
+                resultData.reserveCapacity (collectionDictionary.count)
+                for item in collectionDictionary.values {
+                    resultData.append (item)
+                }
+                result = .ok (resultData)
+            }
+        }
+        return result
+    }
+
     
     public func isValidCollectionName(name: CollectionName) -> ValidationResult {
         if name.count > 0 {

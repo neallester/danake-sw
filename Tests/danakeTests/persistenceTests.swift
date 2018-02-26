@@ -628,7 +628,12 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail("Expected data")
         }
-        
+        switch accessor.scan(name: standardCollectionName) {
+        case .ok (let retrievedData):
+            XCTAssertEqual (0, retrievedData.count)
+        default:
+            XCTFail("Expected data")
+        }
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try JSONEncoder().encode(entity)
         accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
@@ -641,6 +646,13 @@ class persistenceTests: XCTestCase {
         switch accessor.get(name: standardCollectionName, id: uuid) {
         case .ok (let retrievedData):
             XCTAssertNil (retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        switch accessor.scan(name: standardCollectionName) {
+        case .ok (let retrievedData):
+            XCTAssertEqual (1, retrievedData.count)
+            XCTAssertTrue (retrievedData[0] == data)
         default:
             XCTFail("Expected data")
         }
@@ -668,6 +680,33 @@ class persistenceTests: XCTestCase {
         switch accessor.get(name: standardCollectionName, id: entity.getId()) {
         case .ok (let retrievedData):
             XCTAssertTrue (data == retrievedData)
+        default:
+            XCTFail("Expected data")
+        }
+        accessor.setThrowError()
+        switch accessor.scan (name: standardCollectionName) {
+        case .error(let errorMessage):
+            XCTAssertEqual ("Test Error", errorMessage)
+        default:
+            XCTFail ("Expected databaseError")
+        
+        }
+        switch accessor.scan(name: standardCollectionName) {
+        case .ok (let retrievedData):
+            XCTAssertEqual (1, retrievedData.count)
+            XCTAssertTrue (retrievedData[0] == data)
+        default:
+            XCTFail("Expected data")
+        }
+        // Second Entity
+        let entity2 = newTestEntity(myInt: 10, myString: "A String")
+        let data2 = try JSONEncoder().encode(entity)
+        accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+        switch accessor.scan(name: standardCollectionName) {
+        case .ok (let retrievedData):
+            XCTAssertEqual (2, retrievedData.count)
+            XCTAssertTrue (retrievedData.contains(data))
+            XCTAssertTrue (retrievedData.contains(data2))
         default:
             XCTFail("Expected data")
         }
