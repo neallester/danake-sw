@@ -59,6 +59,30 @@ public class Database {
     
 }
 
+public enum ValidationResult {
+    
+    case ok
+    case error (String)
+    
+    func isOk() -> Bool {
+        switch self {
+        case .ok:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    func description() -> String {
+        switch self {
+        case .ok:
+            return "ok"
+        case .error (let description):
+            return description
+        }
+    }
+}
+
 public protocol DatabaseAccessor {
     
     func get (name: CollectionName, id: UUID) -> DatabaseAccessResult
@@ -67,7 +91,16 @@ public protocol DatabaseAccessor {
     
     func update (name: CollectionName, id: UUID, data: Data)
     
-    // A unique identifier for the database being accessed
+    /*
+        Is the format of ** name ** a valid CollectionName in this storage medium and,
+        is ** name ** NOT a reserved word in this storage medium?
+    */
+    func isValidCollectionName (name: CollectionName) -> ValidationResult
+    
+    /*
+        A unique identifier for the database being accessed
+        Ideally this should be stored in and retrieved from the storage medium
+    */
     func hashValue() -> String
     
 }
@@ -201,9 +234,7 @@ public class PendingRequestData<T: Codable> {
 
 public class PersistentCollection<D: Database, T: Codable> {
     
-    // ******* TODO should verify with the database accessor that collectionName is valid for that medium ***************"
-    
-    // Name must be unique within Database and a valid collection/table identifier in all persistence media to be used
+    // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
     public init (database: D, name: CollectionName) {
         self.database = database
         self.name = name
@@ -214,6 +245,10 @@ public class PersistentCollection<D: Database, T: Codable> {
         self.workQueue = database.workQueue
         if !database.collectionRegistrar.register(key: name, value: self) {
             database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
+        }
+        let nameValidationResult = database.getAccessor().isValidCollectionName(name: name)
+        if !nameValidationResult.isOk() {
+            database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.getAccessor()))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
         }
     }
 
@@ -374,6 +409,14 @@ public class InMemoryAccessor: DatabaseAccessor {
         
     public func update (name: CollectionName, id: UUID, data: Data) {
         add (name: name, id: id, data: data)
+    }
+    
+    public func isValidCollectionName(name: CollectionName) -> ValidationResult {
+        if name.count > 0 {
+            return .ok
+        } else {
+            return .error ("Empty String is an illegal CollectionName")
+        }
     }
     
     public func setThrowError() {

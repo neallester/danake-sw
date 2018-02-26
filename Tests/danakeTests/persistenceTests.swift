@@ -60,6 +60,21 @@ class persistenceTests: XCTestCase {
         XCTAssertEqual (0, Database.registrar.count())
     }
 
+    func testRetrievalResult() {
+        var result = RetrievalResult.ok("String")
+        XCTAssertTrue (result.isOk())
+        XCTAssertEqual ("String", result.item()!)
+        switch result {
+        case .ok (let item):
+            XCTAssertEqual ("String", item!)
+        default:
+            XCTFail("Expected OK")
+        }
+        result = .invalidData
+        XCTAssertFalse (result.isOk())
+        XCTAssertNil (result.item())
+    }
+    
     func testPersistentCollectionCreation() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
@@ -80,6 +95,18 @@ class persistenceTests: XCTestCase {
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (0, database.collectionRegistrar.count())
+    }
+
+    func testPersistentCollectionCreationInvalidName() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = ""
+        let _ = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue());collectionName=", entries[0].asTestString())
+        }
     }
 
     func testPersistenceCollectionNew() {
@@ -148,21 +175,6 @@ class persistenceTests: XCTestCase {
         }
 
         
-    }
-    
-    func testRetrievalResult() {
-        var result = RetrievalResult.ok("String")
-        XCTAssertTrue (result.isOk())
-        XCTAssertEqual ("String", result.item()!)
-        switch result {
-        case .ok (let item):
-            XCTAssertEqual ("String", item!)
-        default:
-            XCTFail("Expected OK")
-        }
-        result = .invalidData
-        XCTAssertFalse (result.isOk())
-        XCTAssertNil (result.item())       
     }
     
     func testPersistentCollectionGet() throws {
@@ -743,6 +755,15 @@ class persistenceTests: XCTestCase {
         XCTAssertTrue (registrar.isRegistered (key: key1))
         XCTAssertFalse (registrar.isRegistered (key: key2))
         XCTAssertFalse (registrar.isRegistered (key: key3))
+    }
+    
+    func testValidationResult() {
+        var validationResult = ValidationResult.ok
+        XCTAssertTrue (validationResult.isOk())
+        XCTAssertEqual ("ok", validationResult.description())
+        validationResult = ValidationResult.error("Error Description")
+        XCTAssertFalse (validationResult.isOk())
+        XCTAssertEqual ("Error Description", validationResult.description())       
     }
 
 }
