@@ -98,7 +98,7 @@ public protocol DatabaseAccessor {
     func isValidCollectionName (name: CollectionName) -> ValidationResult
     
     /*
-        A unique identifier for the database being accessed
+        A unique identifier for the specific instance of the database being accessed
         Ideally this should be stored in and retrieved from the storage medium
     */
     func hashValue() -> String
