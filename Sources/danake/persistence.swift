@@ -13,18 +13,6 @@ import Foundation
 //    }
 //}
 
-public func newJSONEncoder() -> JSONEncoder {
-    let result = JSONEncoder()
-    result.dateEncodingStrategy = .secondsSince1970
-    return result
-}
-
-public func newJSONDecoder() -> JSONDecoder {
-    let result = JSONDecoder()
-    result.dateDecodingStrategy = .secondsSince1970
-    return result
-}
-
 public class Database {
     
     /*
@@ -100,6 +88,10 @@ public protocol DatabaseAccessor {
     func update (name: CollectionName, id: UUID, data: Data)
     
     func scan (name: CollectionName) -> DatabaseAccessListResult
+    
+    func encoder() -> JSONEncoder
+    
+    func decoder() -> JSONDecoder
     
     /*
         Is the format of ** name ** a valid CollectionName in this storage medium and,
@@ -305,18 +297,11 @@ public class PersistentCollection<D: Database, T: Codable> {
                         case .ok (let data):
                             if let data = data {
                                 do {
-                                    try result = newJSONDecoder().decode(Entity<T>.self, from: data)
-                                    result?.setCollection(self as! PersistentCollection<Database, T>)
-                                    result?.schemaVersion = self.database.schemaVersion
-                                    if let result = result {
-                                        self.cacheQueue.async {
-                                            self.cache[id] = WeakItem (item: result)
-                                        }
-                                    }
+                                    result = try self.newEntity (data: data)
                                     pendingRequest.result = result
                                 } catch {
-                                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                                     errorResult = .invalidData
+                                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                                 }
                             } else {
                                 self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
@@ -339,6 +324,40 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
         return .ok(result)
     }
+    
+    internal func newEntity (data: Data) throws -> Entity<T>? {
+        var result: Entity<T>? = nil
+        try result = database.getAccessor().decoder().decode(Entity<T>.self, from: data)
+        if let unwrappedResult = result {
+            unwrappedResult.setCollection(self as! PersistentCollection<Database, T>)
+            unwrappedResult.schemaVersion = self.database.schemaVersion
+            self.cacheQueue.sync {
+                if let cachedResult = self.cache[unwrappedResult.getId()]?.item {
+                    result = cachedResult
+                } else {
+                    self.cache[unwrappedResult.getId()] = WeakItem (item: unwrappedResult)
+                    result = unwrappedResult
+                }
+            }
+        }
+        return result
+    }
+    
+    /*
+        Returns entities for ** data ** (retrieving from cache if applicable) meeting the
+        optional ** criteria. **
+    */
+//    public func entitiesForData (data: [Data], criteria: ((Entity<T>) -> Bool)?) -> [Entity<T>] {
+//        var result: [Entity<T>] = []
+//        if criteria == nil {
+//            result.reserveCapacity(data.count)
+//        }
+//        let decoder = database.getAccessor().decoder()
+//        for datum in data {
+//            
+//        }
+//        return result
+//    }
     
     func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
         workQueue.async {
@@ -456,6 +475,14 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
+    public func encoder() -> JSONEncoder {
+        return encoderCache
+    }
+    
+    public func decoder() -> JSONDecoder {
+        return decoderCache
+    }
+    
     public func setThrowError() {
         queue.async {
             self.throwError = true
@@ -475,6 +502,18 @@ public class InMemoryAccessor: DatabaseAccessor {
     public func hashValue() -> String {
         return id.uuidString
     }
+    
+    private let encoderCache: JSONEncoder = {
+        let result = JSONEncoder()
+        result.dateEncodingStrategy = .secondsSince1970
+        return result
+    }()
+    
+    private let decoderCache: JSONDecoder = {
+        let result = JSONDecoder()
+        result.dateDecodingStrategy = .secondsSince1970
+        return result
+    }()
     
     private var preFetch: ((UUID) -> Void)? = nil
     private var throwError = false

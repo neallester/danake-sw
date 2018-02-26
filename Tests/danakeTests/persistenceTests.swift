@@ -173,8 +173,39 @@ class persistenceTests: XCTestCase {
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
-
+    }
+    
+    func testPersistentCollectionNewEntity() throws {
+        let entity = newTestEntity(myInt: 10, myString: "A String")
+        entity.schemaVersion = 3 // Verify that get updates the schema version
+        entity.saved = Date()
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        let data = try accessor.encoder().encode(entity)
+        let newEntity = try collection.newEntity (data: data)!
+        XCTAssertEqual (entity.getId(), newEntity.getId())
+        XCTAssertEqual (entity.getVersion(), newEntity.getVersion())
+        XCTAssertEqual (msRounded (date: entity.created), msRounded(date: newEntity.created))
+        XCTAssertEqual (msRounded (date: entity.saved!), msRounded (date: newEntity.saved!))
+        entity.sync() { sourceStruct in
+            newEntity.sync() { targetStruct in
+                XCTAssertEqual (sourceStruct.myInt, targetStruct.myInt)
+                XCTAssertEqual (sourceStruct.myString, targetStruct.myString)
+            }
+        }
+        collection.sync() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (newEntity === items[entity.getId()]!.item!)
+        }
+        let newEntity2 = try collection.newEntity(data: data)!
+        XCTAssertTrue (newEntity === newEntity2)
         
+    }
+    
+    func msRounded (date: Date) -> Double {
+        return (date.timeIntervalSince1970 * 1000).rounded()
     }
     
     func testPersistentCollectionGet() throws {
@@ -182,11 +213,11 @@ class persistenceTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         entity.schemaVersion = 3 // Verify that get updates the schema version
         entity.saved = Date()
-        let data = try newJSONEncoder().encode(entity)
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        let data = try accessor.encoder().encode(entity)
         var result = collection.get (id: entity.getId())
         XCTAssertTrue (result.isOk())
         XCTAssertNil (result.item())
@@ -308,9 +339,9 @@ class persistenceTests: XCTestCase {
             let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
             entity1.schemaVersion = 3 // Verify that get updates the schema version
-            let data1 = try newJSONEncoder().encode(entity1)
+            let data1 = try accessor.encoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
-            let data2 = try newJSONEncoder().encode(entity2)
+            let data2 = try accessor.encoder().encode(entity2)
             let countdownLock = CountDownLock(count: 2)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)

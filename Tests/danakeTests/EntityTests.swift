@@ -175,16 +175,17 @@ class EntityTests: XCTestCase {
     
     func testEncodeDecode() throws {
         let entity = newTestEntity(myInt: 100, myString: "A \"Quoted\" String")
+        let accessor = InMemoryAccessor()
         switch entity.getPersistenceState() {
         case .new:
             break
         default:
             XCTFail("Expected .new")
         }
-        var json = try String (data: newJSONEncoder().encode(entity), encoding: .utf8)!
+        var json = try String (data: accessor.encoder().encode(entity), encoding: .utf8)!
         try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":0}", json)
         try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":10}"
-        var entity2 = try newJSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
+        var entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)
         XCTAssertEqual (10, entity2.version)
@@ -204,10 +205,10 @@ class EntityTests: XCTestCase {
         // With a saved time
         let savedTime = Date()
         entity.saved = savedTime
-        json = try String (data: newJSONEncoder().encode(entity), encoding: .utf8)!
+        json = try String (data: accessor.encoder().encode(entity), encoding: .utf8)!
         try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":0}", json)
         try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":10}"
-        entity2 = try newJSONDecoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
+        entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)
         XCTAssertEqual (10, entity2.version)
@@ -230,6 +231,7 @@ class EntityTests: XCTestCase {
     
     // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
     func jsonEncodedDate (date: Date) throws -> String? {
+        let accessor = InMemoryAccessor()
         struct DateContainer : Encodable {
             init (_ d: Date) {
                 self.d = d
@@ -237,7 +239,7 @@ class EntityTests: XCTestCase {
             let d: Date
         }
         let container = DateContainer.init(date)
-        let encoded = try newJSONEncoder().encode (container)
+        let encoded = try accessor.encoder().encode (container)
         let protoResult = String (data: encoded, encoding: .utf8)
         var result: String? = nil
         if let protoResult = protoResult {
