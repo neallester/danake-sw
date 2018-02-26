@@ -196,7 +196,6 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
             XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
             XCTAssertEqual (180, entries[0].asTestString().count)
-            
         }
         // Data In Cache=No; Data in Accessor=Yes
         accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
@@ -297,7 +296,8 @@ class persistenceTests: XCTestCase {
             let entry = entries[2].asTestString()
             XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=", entry.prefix(84))
             XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 120)..<entry.index(entry.startIndex, offsetBy: 148)])
-            XCTAssertEqual (184, entry.count)
+            XCTAssertEqual (";errorMessage=Test Error", entry.suffix (24))
+            XCTAssertEqual (208, entry.count)
         }
     }
     
@@ -612,7 +612,8 @@ class persistenceTests: XCTestCase {
                 let entry = entries[4].asTestString()
                 XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=", entry.prefix(84))
                 XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 120)..<entry.index(entry.startIndex, offsetBy: 148)])
-                XCTAssertEqual (184, entry.count)
+                XCTAssertEqual (";errorMessage=Test Error", entry.suffix (24))
+                XCTAssertEqual (208, entry.count)
             }
             counter = counter + 1
         }
@@ -659,7 +660,7 @@ class persistenceTests: XCTestCase {
         }
         accessor.setThrowError()
         switch accessor.get(name: standardCollectionName, id: entity.getId()) {
-        case .testError:
+        case .error:
             break
         default:
             XCTFail("Expected databaseError")

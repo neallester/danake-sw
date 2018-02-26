@@ -91,6 +91,8 @@ public protocol DatabaseAccessor {
     
     func update (name: CollectionName, id: UUID, data: Data)
     
+//    func scan (name: CollectionName)
+    
     /*
         Is the format of ** name ** a valid CollectionName in this storage medium and,
         is ** name ** NOT a reserved word in this storage medium?
@@ -216,7 +218,7 @@ public enum DatabaseAccessResult {
     
     case ok (Data?)
     
-    case testError
+    case error (String)
     
 }
 
@@ -303,8 +305,8 @@ public class PersistentCollection<D: Database, T: Codable> {
                             } else {
                                 self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                             }
-                        default:
-                            self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
+                        case .error (let errorMessage):
+                            self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
                             errorResult = .databaseError
                         }
                         self.pendingRequestsQueue.async {
@@ -392,7 +394,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             }
         }
         if returnError {
-            return .testError
+            return .error ("Test Error")
         }
         return .ok (result)
     }
