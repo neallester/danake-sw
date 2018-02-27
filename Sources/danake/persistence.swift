@@ -334,7 +334,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     
     // **************** TODO Test both versions of scan and convert *********************
     
-    public func scan (criteria: ((Entity<T>) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
+    public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
         let retrievalResult = database.getAccessor().scan(name: name)
         switch retrievalResult {
         case .ok (let data):
@@ -345,7 +345,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
     
-    func scan (criteria: ((Entity<T>) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
+    func scan (criteria: ((T) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
         workQueue.async {
             closure (self.scan (criteria: criteria))
         }
@@ -355,7 +355,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         converts all ** data ** to Entity (returns cached Entity if present)
         If ** criteria ** is provided, only those entities where criteria returns true are included
     */
-    func convert (data: [Data], criteria: ((Entity<T>) -> Bool)?) -> [Entity<T>] {
+    func convert (data: [Data], criteria: ((T) -> Bool)?) -> [Entity<T>] {
         var result: [Entity<T>] = []
         if criteria == nil {
             result.reserveCapacity(data.count)
@@ -365,7 +365,11 @@ public class PersistentCollection<D: Database, T: Codable> {
                 let entity = try entityForData (data: datum)
                 if let entity = entity {
                     if let criteria = criteria {
-                        if criteria(entity) {
+                        var isIncluded = false
+                        entity.sync() { item in
+                            isIncluded = criteria (item)
+                        }
+                        if isIncluded {
                             result.append (entity)
                         }
                     } else {
