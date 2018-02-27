@@ -9,7 +9,7 @@ import XCTest
 @testable import danake
 
 // from https://digitalsprouts.org/countdownlatch-for-swift/
-final class CountDownLock {
+final class CountDownLatch {
     private var remainingJobs: Int32
     private let isDownloading = DispatchSemaphore(value: 0) // initially locked
     
@@ -342,7 +342,7 @@ class persistenceTests: XCTestCase {
             let data1 = try accessor.encoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try accessor.encoder().encode(entity2)
-            let countdownLock = CountDownLock(count: 2)
+            let countdownLock = CountDownLatch(count: 2)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
