@@ -183,14 +183,14 @@ class EntityTests: XCTestCase {
             XCTFail("Expected .new")
         }
         var json = try String (data: accessor.encoder().encode(entity), encoding: .utf8)!
-        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":0}", json)
-        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":10}"
+        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":0}", json)
+        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         var entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)
         XCTAssertEqual (10, entity2.version)
         switch entity2.getPersistenceState() {
-        case .persistent:
+        case .new:
             break
         default:
             XCTFail ("Expected .persistent")
@@ -205,9 +205,11 @@ class EntityTests: XCTestCase {
         // With a saved time
         let savedTime = Date()
         entity.saved = savedTime
+        entity.persistenceState = .persistent
         json = try String (data: accessor.encoder().encode(entity), encoding: .utf8)!
-        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":0}", json)
-        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"version\":10}"
+        try XCTAssertEqual("{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"created\":\(jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", json)
+        try json = "{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"created\":\(jsonEncodedDate(date: entity.created)!),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}"
+        //
         entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)

@@ -178,6 +178,7 @@ class persistenceTests: XCTestCase {
     func testPersistentCollectionEntityForData() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         entity.schemaVersion = 3 // Verify that get updates the schema version
+        entity.persistenceState = .persistent
         entity.saved = Date()
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
@@ -189,6 +190,12 @@ class persistenceTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), entityForData.getVersion())
         XCTAssertEqual (msRounded (date: entity.created), msRounded(date: entityForData.created))
         XCTAssertEqual (msRounded (date: entity.saved!), msRounded (date: entityForData.saved!))
+        switch entityForData.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
         entity.sync() { sourceStruct in
             entityForData.sync() { targetStruct in
                 XCTAssertEqual (sourceStruct.myInt, targetStruct.myInt)
@@ -201,7 +208,12 @@ class persistenceTests: XCTestCase {
         }
         let entityForData2 = try collection.entityForData (data: data)!
         XCTAssertTrue (entityForData === entityForData2)
-        
+        switch entityForData2.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
     }
     
     func msRounded (date: Date) -> Double {
@@ -239,7 +251,7 @@ class persistenceTests: XCTestCase {
         XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
         XCTAssertEqual ((entity.saved!.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.saved!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
         switch retrievedEntity.getPersistenceState() {
-        case .persistent:
+        case .new:
             break
         default:
             XCTFail("Expected .persistent")
@@ -418,6 +430,7 @@ class persistenceTests: XCTestCase {
             // Data In Cache=No; Data in Accessor=No
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
             entity1.schemaVersion = 3 // Verify that get updates the schema version
+            entity1.persistenceState = .persistent
             let data1 = try JSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try JSONEncoder().encode(entity2)
@@ -485,10 +498,10 @@ class persistenceTests: XCTestCase {
                 XCTFail("Expected .persistent")
             }
             switch retrievedEntity2.getPersistenceState() {
-            case .persistent:
+            case .new:
                 break
             default:
-                XCTFail("Expected .persistent")
+                XCTFail("Expected .new")
             }
             entity1.sync() { entityStruct in
                 retrievedEntity1.sync() { retrievedEntityStruct in

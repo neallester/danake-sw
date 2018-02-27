@@ -354,6 +354,8 @@ public class PersistentCollection<D: Database, T: Codable> {
     /*
         converts all ** data ** to Entity (returns cached Entity if present)
         If ** criteria ** is provided, only those entities where criteria returns true are included
+     
+     
     */
     func convert (data: [Data], criteria: ((T) -> Bool)?) -> [Entity<T>] {
         var result: [Entity<T>] = []

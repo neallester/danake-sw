@@ -15,7 +15,7 @@ protocol EntityManagement {
     
 }
 
-enum PersistenceState {
+enum PersistenceState : String, Codable {
     
     case new
     case dirty
@@ -117,6 +117,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         case schemaVersion
         case created
         case saved
+        case persistenceState
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -125,7 +126,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         try container.encode (version, forKey: .version)
         try container.encode (schemaVersion, forKey: .schemaVersion)
         try container.encode(item, forKey: .item)
-        try container.encode (created, forKey:. created)
+        try container.encode (created, forKey: .created)
+        try container.encode (persistenceState, forKey: .persistenceState)
         if let saved = saved {
             try container.encode (saved, forKey: .saved)
         }
@@ -141,7 +143,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         if values.contains(.saved) {
             saved = try values.decode (Date.self, forKey: .saved)
         }
-        persistenceState = .persistent
+        persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
         self.queue = DispatchQueue (label: id.uuidString)
     }
     
@@ -162,7 +164,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     internal var saved: Date?
     private var item: T
     private let queue: DispatchQueue
-    private var persistenceState: PersistenceState
+    internal var persistenceState: PersistenceState
     internal private(set) var collection: PersistentCollection<Database, T>?
     
     
