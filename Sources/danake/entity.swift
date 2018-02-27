@@ -41,6 +41,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         let item = itemClosure(selfReference)
         self.init (collection: collection, id: id, version: version, item: item)
     }
+    
+    // deiniitalize
+    
+    deinit {
+        collection?.decache (id: id)
+    }
+    
+
 
 // EntityManagement
     
@@ -135,12 +143,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         persistenceState = .persistent
         self.queue = DispatchQueue (label: id.uuidString)
-    }
-    
-// deiniitalize
-    
-    deinit {
-        collection?.remove(id: id)
     }
     
 // Setters

@@ -25,8 +25,8 @@ final class CountDownLock {
         }
     }
     
-    func waitUntilZero(timeout: TimeInterval) {
-        let _ = self.isDownloading.wait(timeout: DispatchTime.now() + timeout)
+    func waitUntilZero(timeout: TimeInterval) -> DispatchTimeoutResult {
+        return self.isDownloading.wait(timeout: DispatchTime.now() + timeout)
     }    
 }
 
@@ -175,7 +175,7 @@ class persistenceTests: XCTestCase {
         }
     }
     
-    func testPersistentCollectionNewEntity() throws {
+    func testPersistentCollectionEntityForData() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         entity.schemaVersion = 3 // Verify that get updates the schema version
         entity.saved = Date()
@@ -184,23 +184,23 @@ class persistenceTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
         let data = try accessor.encoder().encode(entity)
-        let newEntity = try collection.newEntity (data: data)!
-        XCTAssertEqual (entity.getId(), newEntity.getId())
-        XCTAssertEqual (entity.getVersion(), newEntity.getVersion())
-        XCTAssertEqual (msRounded (date: entity.created), msRounded(date: newEntity.created))
-        XCTAssertEqual (msRounded (date: entity.saved!), msRounded (date: newEntity.saved!))
+        let entityForData = try collection.entityForData (data: data)!
+        XCTAssertEqual (entity.getId(), entityForData.getId())
+        XCTAssertEqual (entity.getVersion(), entityForData.getVersion())
+        XCTAssertEqual (msRounded (date: entity.created), msRounded(date: entityForData.created))
+        XCTAssertEqual (msRounded (date: entity.saved!), msRounded (date: entityForData.saved!))
         entity.sync() { sourceStruct in
-            newEntity.sync() { targetStruct in
+            entityForData.sync() { targetStruct in
                 XCTAssertEqual (sourceStruct.myInt, targetStruct.myInt)
                 XCTAssertEqual (sourceStruct.myString, targetStruct.myString)
             }
         }
         collection.sync() { items in
             XCTAssertEqual (1, items.count)
-            XCTAssertTrue (newEntity === items[entity.getId()]!.item!)
+            XCTAssertTrue (entityForData === items[entity.getId()]!.item!)
         }
-        let newEntity2 = try collection.newEntity(data: data)!
-        XCTAssertTrue (newEntity === newEntity2)
+        let entityForData2 = try collection.entityForData (data: data)!
+        XCTAssertTrue (entityForData === entityForData2)
         
     }
     
@@ -384,7 +384,12 @@ class persistenceTests: XCTestCase {
                 XCTFail("Expected data2")
             }
             startSempaphore.signal()
-            countdownLock.waitUntilZero (timeout: 10.0)
+            switch countdownLock.waitUntilZero (timeout: 10.0) {
+            case .success:
+                break
+            default:
+                XCTFail ("Timed Out")
+            }
             var retrievedEntity1a: Entity<MyStruct>? = nil
             var retrievedEntity1b: Entity<MyStruct>? = nil
             switch result1a! {
@@ -447,7 +452,7 @@ class persistenceTests: XCTestCase {
                 XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=", entry.prefix(80))
                 XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 116)..<entry.index(entry.startIndex, offsetBy: 144)])
                 XCTAssertEqual (180, entries[0].asTestString().count)
-
+                
             }
             // Data In Cache=No; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.2")
@@ -649,7 +654,7 @@ class persistenceTests: XCTestCase {
             counter = counter + 1
         }
     }
-    
+
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let uuid = UUID()
@@ -762,6 +767,96 @@ class persistenceTests: XCTestCase {
         }
         
         let stringValue: String
+    }
+    
+    func testPersistentCollectionConvert() throws {
+        
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        var convertedEntities = collection.convert(data: [], criteria: nil)
+        XCTAssertEqual (0, convertedEntities.count)
+        convertedEntities = collection.convert(data: []) { entity in
+            var result = false
+            entity.sync() { item in
+                result = (item.myInt == 20)
+            }
+            return result
+        }
+        XCTAssertEqual (0, convertedEntities.count)
+        // entity1: Data in accessor
+        let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
+        entity1.schemaVersion = 3 // Verify that get updates the schema version
+        entity1.saved = Date()
+        let data1 = try accessor.encoder().encode(entity1)
+        accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+        // entity2: Entity in cache, data not in accessor
+        let batch = Batch()
+        let myStruct = MyStruct (myInt: 20, myString: "A String 2")
+        let entity2 = collection.new(batch: batch, item: myStruct)
+        let data2 = try accessor.encoder().encode(entity2)
+        // entity3: Entity in cache, data in accessor
+        var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
+        entity3.schemaVersion = 5
+        entity3.saved = Date()
+        let data3 = try accessor.encoder().encode(entity3)
+        accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+        entity3 = collection.get (id: entity3.getId()).item()!
+        // entity4: Entity not in cache, data not in accessor
+        let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
+        let data4 = try accessor.encoder().encode(entity4)
+        // Invalid Data
+        let json = "{}"
+        let invalidData = json.data(using: .utf8)!
+        let invalidDataUuid = UUID()
+        accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+        let dataList = [data1, data2, data3, data4, invalidData]
+        collection.sync() { cache in
+            XCTAssertEqual (2, cache.count)
+            XCTAssertTrue (cache[entity2.getId()]!.item! === entity2)
+            XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
+        }
+
+        convertedEntities = collection.convert(data: dataList, criteria: nil)
+        var convertedEntity1: Entity<MyStruct>? = nil
+        var convertedEntity2: Entity<MyStruct>? = nil
+        var convertedEntity3: Entity<MyStruct>? = nil
+        var convertedEntity4: Entity<MyStruct>? = nil
+        for convertedEntity in convertedEntities {
+            if convertedEntity.getId().uuidString == entity1.getId().uuidString {
+                XCTAssertNil (convertedEntity1)
+                convertedEntity1 = convertedEntity
+            } else if convertedEntity.getId().uuidString == entity2.getId().uuidString {
+                XCTAssertNil (convertedEntity2)
+                convertedEntity2 = convertedEntity
+            } else if convertedEntity.getId().uuidString == entity3.getId().uuidString {
+                XCTAssertNil (convertedEntity3)
+                convertedEntity3 = convertedEntity
+            } else if convertedEntity.getId().uuidString == entity4.getId().uuidString {
+                XCTAssertNil (convertedEntity4)
+                convertedEntity4 = convertedEntity
+            } else {
+                XCTFail("Unknown Cnverted Entity")
+            }
+        }
+        XCTAssertEqual (4, convertedEntities.count)
+        XCTAssertNotNil(convertedEntity1)
+        XCTAssertTrue (entity2 === convertedEntity2)
+        XCTAssertTrue (entity3 === convertedEntity3)
+        XCTAssertNotNil(convertedEntity4)
+        collection.sync() { cache in
+            XCTAssertEqual (4, cache.count)
+            XCTAssertTrue (cache[entity1.getId()]!.item! === convertedEntity1!)
+            XCTAssertTrue (cache[entity2.getId()]!.item! === convertedEntity2!)
+            XCTAssertTrue (cache[entity3.getId()]!.item! === convertedEntity3!)
+            XCTAssertTrue (cache[entity4.getId()]!.item! === convertedEntity4!)
+        }
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            let entry = entries[0].asTestString()
+            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.convert|Illegal Data|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;data={};error=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entry)
+        }
     }
     
     func testRegistrar() {

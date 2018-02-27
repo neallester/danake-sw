@@ -186,7 +186,7 @@ class Registrar<K: Hashable, V: AnyObject> {
 }
 
 
-enum RetrievalResult<T> {
+public enum RetrievalResult<T> {
     
     func item() -> T? {
         switch self {
@@ -265,13 +265,15 @@ public class PersistentCollection<D: Database, T: Codable> {
         database.collectionRegistrar.deRegister(key: name)
     }
     
-    func remove (id: UUID) {
-        cacheQueue.async() {
-            self.cache.removeValue (forKey: id)
+    func decache (id: UUID) {
+        cacheQueue.sync() {
+            if let cachedEntity = self.cache[id], cachedEntity.item == nil {
+                self.cache.removeValue (forKey: id)
+            }
         }
     }
     
-    func get (id: UUID) -> RetrievalResult<Entity<T>> {
+    public func get (id: UUID) -> RetrievalResult<Entity<T>> {
         var result: Entity<T>? = nil
         var errorResult: RetrievalResult<Entity<T>>? = nil
         cacheQueue.sync {
@@ -282,7 +284,7 @@ public class PersistentCollection<D: Database, T: Codable> {
             case .ok (let data):
                 if let data = data {
                     do {
-                        result = try self.newEntity (data: data)
+                        result = try self.entityForData (data: data)
                     } catch {
                         errorResult = .invalidData
                         self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
@@ -300,8 +302,14 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
         return .ok(result)
     }
+
+    func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
+        workQueue.async {
+            closure (self.get (id: id))
+        }
+    }
     
-    internal func newEntity (data: Data) throws -> Entity<T>? {
+    internal func entityForData (data: Data) throws -> Entity<T>? {
         var result: Entity<T>? = nil
         try result = database.getAccessor().decoder().decode(Entity<T>.self, from: data)
         if let unwrappedResult = result {
@@ -320,25 +328,55 @@ public class PersistentCollection<D: Database, T: Codable> {
     }
     
     /*
-        Returns entities for ** data ** (retrieving from cache if applicable) meeting the
-        optional ** criteria. **
+        Returns all entities in collection
+        If ** criteria ** is provided, only those entities where criteria returns true are included
     */
-//    public func entitiesForData (data: [Data], criteria: ((Entity<T>) -> Bool)?) -> [Entity<T>] {
-//        var result: [Entity<T>] = []
-//        if criteria == nil {
-//            result.reserveCapacity(data.count)
-//        }
-//        let decoder = database.getAccessor().decoder()
-//        for datum in data {
-//            
-//        }
-//        return result
-//    }
     
-    func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
-        workQueue.async {
-            closure (self.get (id: id))
+    // **************** TODO Test both versions of scan and convert *********************
+    
+    public func scan (criteria: ((Entity<T>) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
+        let retrievalResult = database.getAccessor().scan(name: name)
+        switch retrievalResult {
+        case .ok (let data):
+            return .ok (convert (data: data, criteria: criteria))
+        case .error (let errorMessage):
+            self.database.logger?.log (level: .error, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name: "errorMessage", errorMessage)])
+            return .databaseError
         }
+    }
+    
+    func scan (criteria: ((Entity<T>) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
+        workQueue.async {
+            closure (self.scan (criteria: criteria))
+        }
+    }
+
+    /*
+        converts all ** data ** to Entity (returns cached Entity if present)
+        If ** criteria ** is provided, only those entities where criteria returns true are included
+    */
+    func convert (data: [Data], criteria: ((Entity<T>) -> Bool)?) -> [Entity<T>] {
+        var result: [Entity<T>] = []
+        if criteria == nil {
+            result.reserveCapacity(data.count)
+        }
+        for datum in data {
+            do {
+                let entity = try entityForData (data: datum)
+                if let entity = entity {
+                    if let criteria = criteria {
+                        if criteria(entity) {
+                            result.append (entity)
+                        }
+                    } else {
+                        result.append (entity)
+                    }
+                }
+            } catch {
+                self.database.logger?.log (level: .error, source: self, featureName: "convert",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"data", value: String (data: datum, encoding: .utf8)), ("error", "\(error)")])
+            }
+        }
+        return result
     }
     
     public func new (batch: Batch, item: T) -> Entity<T> {
