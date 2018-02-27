@@ -251,7 +251,6 @@ public class PersistentCollection<D: Database, T: Codable> {
         cache = Dictionary<UUID, WeakItem<T>>()
         pendingRequests = Dictionary<UUID, PendingRequestData<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(name)")
-        pendingRequestsQueue = DispatchQueue(label: "CollectionPendingRequests \(name)")
         self.workQueue = database.workQueue
         if !database.collectionRegistrar.register(key: name, value: self) {
             database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
@@ -279,45 +278,22 @@ public class PersistentCollection<D: Database, T: Codable> {
             result = cache[id]?.item
         }
         if (result == nil) {
-            // Serialize all accessor requests for the same id
-            var requestQueue: DispatchQueue? = nil
-            var closure: (() -> Void)? = nil
-            pendingRequestsQueue.sync {
-                if let pendingRequest = pendingRequests[id] {
-                    requestQueue = pendingRequest.queue
-                    closure = {
-                        result = pendingRequest.result
+            switch self.database.getAccessor().get(name: self.name, id: id) {
+            case .ok (let data):
+                if let data = data {
+                    do {
+                        result = try self.newEntity (data: data)
+                    } catch {
+                        errorResult = .invalidData
+                        self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
                     }
                 } else {
-                    requestQueue = DispatchQueue (label: "PendingRequest \(id.uuidString)")
-                    let pendingRequest: PendingRequestData<T> = PendingRequestData(queue: requestQueue!)
-                    pendingRequests[id] = pendingRequest
-                    closure = {
-                        switch self.database.getAccessor().get(name: self.name, id: id) {
-                        case .ok (let data):
-                            if let data = data {
-                                do {
-                                    result = try self.newEntity (data: data)
-                                    pendingRequest.result = result
-                                } catch {
-                                    errorResult = .invalidData
-                                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
-                                }
-                            } else {
-                                self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
-                            }
-                        case .error (let errorMessage):
-                            self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
-                            errorResult = .databaseError
-                        }
-                        self.pendingRequestsQueue.async {
-                            let _ = self.pendingRequests.removeValue(forKey: id)
-                        }
-                    }
+                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                 }
-                requestQueue!.async (execute: closure!)
+            case .error (let errorMessage):
+                self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
+                errorResult = .databaseError
             }
-            requestQueue!.sync () {}
         }
         if let errorResult = errorResult {
             return errorResult
@@ -403,7 +379,6 @@ public class PersistentCollection<D: Database, T: Codable> {
     private var pendingRequests: Dictionary<UUID, PendingRequestData<T>>
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue
-    private let pendingRequestsQueue: DispatchQueue
     
 }
 
