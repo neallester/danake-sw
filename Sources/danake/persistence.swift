@@ -266,7 +266,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     }
     
     func decache (id: UUID) {
-        cacheQueue.sync() {
+        cacheQueue.async() {
             if let cachedEntity = self.cache[id], cachedEntity.item == nil {
                 self.cache.removeValue (forKey: id)
             }
@@ -331,8 +331,6 @@ public class PersistentCollection<D: Database, T: Codable> {
         Returns all entities in collection
         If ** criteria ** is provided, only those entities where criteria returns true are included
     */
-    
-    // **************** TODO Test both versions of scan and convert *********************
     
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
         let retrievalResult = database.getAccessor().scan(name: name)
