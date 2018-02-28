@@ -847,7 +847,7 @@ class persistenceTests: XCTestCase {
                     XCTAssertNil (convertedEntity4)
                     convertedEntity4 = convertedEntity
                 } else {
-                    XCTFail("Unknown Cnverted Entity")
+                    XCTFail("Unknown Converted Entity")
                 }
             }
             XCTAssertEqual (4, convertedEntities.count)
@@ -1206,7 +1206,7 @@ class persistenceTests: XCTestCase {
                                         XCTAssertNil (convertedEntity4)
                                         convertedEntity4 = convertedEntity
                                     } else {
-                                        XCTFail("Unknown Cnverted Entity")
+                                        XCTFail("Unknown Converted Entity")
                                     }
                                 }
                                 XCTAssertEqual (4, convertedEntities.count)
@@ -1332,7 +1332,7 @@ class persistenceTests: XCTestCase {
                     XCTAssertNil (retrievedEntity4)
                     retrievedEntity4 = retrievedEntity
                 } else {
-                    XCTFail("Unknown Cnverted Entity")
+                    XCTFail("Unknown Converted Entity")
                 }
             }
             XCTAssertEqual (4, retrievedEntities.count)
@@ -1658,7 +1658,7 @@ class persistenceTests: XCTestCase {
                                 XCTAssertNil (retrievedEntity4)
                                 retrievedEntity4 = retrievedEntity
                             } else {
-                                XCTFail("Unknown Cnverted Entity")
+                                XCTFail("Unknown Converted Entity")
                             }
                         }
                         XCTAssertEqual (4, retrievedEntities.count)
