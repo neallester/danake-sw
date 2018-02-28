@@ -8,28 +8,6 @@
 import XCTest
 @testable import danake
 
-// from https://digitalsprouts.org/countdownlatch-for-swift/
-final class CountDownLatch {
-    private var remainingJobs: Int32
-    private let isDownloading = DispatchSemaphore(value: 0) // initially locked
-    
-    init(count: Int32) {
-        remainingJobs = count
-    }
-    
-    func countDown() {
-        OSAtomicDecrement32(&remainingJobs)
-        
-        if (remainingJobs == 0) {
-            self.isDownloading.signal() // unlock
-        }
-    }
-    
-    func waitUntilZero(timeout: TimeInterval) -> DispatchTimeoutResult {
-        return self.isDownloading.wait(timeout: DispatchTime.now() + timeout)
-    }    
-}
-
 class persistenceTests: XCTestCase {
     
     let standardCollectionName = "myCollection"
@@ -354,7 +332,7 @@ class persistenceTests: XCTestCase {
             let data1 = try accessor.encoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try accessor.encoder().encode(entity2)
-            let countdownLock = CountDownLatch(count: 2)
+            let dispatchGroup = DispatchGroup()
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
@@ -371,13 +349,15 @@ class persistenceTests: XCTestCase {
             var result2: RetrievalResult<Entity<MyStruct>>? = nil
             let waitFor1 = expectation(description: "Entity2")
             let workQueue = DispatchQueue (label: "WorkQueue", attributes: .concurrent)
+            dispatchGroup.enter()
             workQueue.async {
                 result1a = collection.get(id: entity1.getId())
-                countdownLock.countDown()
+                dispatchGroup.leave()
             }
+            dispatchGroup.enter()
             workQueue.async {
                 result1b = collection.get(id: entity1.getId())
-                countdownLock.countDown()
+                dispatchGroup.leave()
             }
             workQueue.async {
                 result2 = collection.get(id: entity2.getId())
@@ -396,7 +376,7 @@ class persistenceTests: XCTestCase {
                 XCTFail("Expected data2")
             }
             startSempaphore.signal()
-            switch countdownLock.waitUntilZero (timeout: 10.0) {
+            switch dispatchGroup.wait(timeout: DispatchTime.now() + 10.0) {
             case .success:
                 break
             default:
@@ -1596,7 +1576,7 @@ class persistenceTests: XCTestCase {
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
                 let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
-                let countDown = CountDownLatch (count: 3)
+                let dispatchGroup = DispatchGroup()
                 // entity1, entity2: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
                 entity1.schemaVersion = 3 // Verify that get updates the schema version
@@ -1680,7 +1660,7 @@ class persistenceTests: XCTestCase {
                         XCTAssertTrue (entity3 === retrievedEntity3!)
                         XCTAssertEqual (entity4.getId().uuidString, retrievedEntity4?.getId().uuidString)
                         XCTAssertTrue (entity4 === retrievedEntity4!)
-                        countDown.countDown()
+                        dispatchGroup.leave()
                     }
                 }
                 let test2 = {
@@ -1702,7 +1682,7 @@ class persistenceTests: XCTestCase {
                                 XCTAssertEqual (item1.myString, retrievedItem.myString)
                             }
                         }
-                        countDown.countDown()
+                        dispatchGroup.leave()
                     }
                 }
                 let test3 = {
@@ -1718,7 +1698,7 @@ class persistenceTests: XCTestCase {
                             XCTFail ("Expected .persistent")
                         }
                         XCTAssert (entity3 === retrievedEntity)
-                        countDown.countDown()
+                        dispatchGroup.leave()
                     }
                 }
                 var jobs: [() -> ()] = []
@@ -1735,9 +1715,10 @@ class persistenceTests: XCTestCase {
                     XCTFail ("Unexpected Case")
                 }
                 for job in jobs {
+                    dispatchGroup.enter()
                     job()
                 }
-                switch countDown.waitUntilZero(timeout: 10) {
+                switch dispatchGroup.wait(timeout: DispatchTime.now() + 10) {
                 case .success:
                     break
                 default:
