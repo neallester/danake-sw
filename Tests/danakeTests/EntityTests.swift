@@ -231,6 +231,27 @@ class EntityTests: XCTestCase {
 
     }
     
+    func testUpdateStatement() {
+        let entity = newTestEntity(myInt: 10, myString: "A String")
+        let result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
+            do {
+                let accessor = InMemoryAccessor()
+                let result = try accessor.encoder().encode (entity)
+                return .ok(result)
+            } catch {
+                return .error ("\(error)")
+            }
+        }
+        switch result {
+        case .ok (let data):
+            try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(jsonEncodedDate(date: entity.saved!)!),\"created\":\(jsonEncodedDate(date: entity.created)!),\"version\":1,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}", String (data: data, encoding: .utf8))
+            break
+        default:
+            XCTFail()
+        }
+        // There is no convenient way to test the nil collection error condition, which as it should be
+    }
+    
     // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
     func jsonEncodedDate (date: Date) throws -> String? {
         let accessor = InMemoryAccessor()
@@ -250,5 +271,5 @@ class EntityTests: XCTestCase {
         }
         return result
     }
-    
 }
+

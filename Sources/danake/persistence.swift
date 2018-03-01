@@ -152,11 +152,11 @@ class Registrar<K: Hashable, V: AnyObject> {
     
     // Only permitted if item associated with key is nil
     func deRegister (key: K) {
-        queue.sync {
-            if let _ = items[key]?.item{
+        queue.async {
+            if let _ = self.items[key]?.item{
                 // Do nothing
             } else {
-                let _ = items.removeValue(forKey: key)
+                let _ = self.items.removeValue(forKey: key)
             }
         }
     }

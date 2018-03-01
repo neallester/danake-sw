@@ -13,6 +13,7 @@ class persistenceTests: XCTestCase {
     let standardCollectionName = "myCollection"
     
     func testDatabaseCreation() {
+        XCTAssertEqual (0, Database.registrar.count())
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         var database: Database? = Database (accessor: accessor, schemaVersion: 5, logger: logger)
