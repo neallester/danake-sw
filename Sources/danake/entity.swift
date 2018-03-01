@@ -6,16 +6,24 @@
 
 import Foundation
 
-protocol EntityManagement : Encodable {
-    
+public protocol EntityProtocol {
+
     func getId() -> UUID
     func getVersion() -> Int
+    func getPersistenceState() -> PersistenceState
+    func getCreated() -> Date
+    func getSaved() -> Date?
+
+}
+
+internal protocol EntityManagement : EntityProtocol, Encodable {
+    
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
     func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
     
 }
 
-enum PersistenceState : String, Codable {
+public enum PersistenceState : String, Codable {
     
     case new
     case dirty
@@ -23,14 +31,46 @@ enum PersistenceState : String, Codable {
     
 }
 
-enum EntityConversionResult<R> {
+internal enum EntityConversionResult<R> {
     case ok (R)
     case error (String)
 }
 
-class AnyEntityManagement : EntityManagement {
+// type erased access to the metadata for any Entity
+public class AnyEntity : EntityProtocol {
     
-    public func encode(to encoder: Encoder) throws {
+    init (item: EntityProtocol) {
+        self.item = item
+    }
+    
+    public func getId() -> UUID {
+        return item.getId()
+    }
+    
+    public func getVersion() -> Int {
+        return item.getVersion()
+    }
+    
+    public func getPersistenceState() -> PersistenceState {
+        return item.getPersistenceState()
+    }
+    
+    public func getCreated() -> Date {
+        return item.getCreated()
+    }
+    
+    public func getSaved() -> Date? {
+        return item.getSaved()
+    }
+    
+    let item: EntityProtocol
+    
+}
+
+internal class AnyEntityManagement : EntityManagement {
+
+    // Not Thread Safe
+    func encode(to encoder: Encoder) throws {
         try item.encode (to: encoder)
     }
     
@@ -40,6 +80,19 @@ class AnyEntityManagement : EntityManagement {
     func getVersion() -> Int {
         return item.getVersion()
     }
+    
+    func getPersistenceState() -> PersistenceState {
+        return item.getPersistenceState()
+    }
+    
+    func getCreated() -> Date {
+        return item.getCreated()
+    }
+    
+    func getSaved() -> Date? {
+        return item.getSaved()
+    }
+    
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         return item.updateStatement(converter: converter)
     }
@@ -80,13 +133,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     deinit {
         collection?.decache (id: id)
     }
-    
-
 
 // EntityManagement
     
+    public func getId() -> UUID {
+        return self.id
+    }
+    
     // Version is incremented each time the entity is stored in the persistent media
-    func getVersion() -> Int {
+    public func getVersion() -> Int {
         var result: Int? = nil
         queue.sync {
             result = version
@@ -94,11 +149,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result!
     }
     
-    func getId() -> UUID {
-        return self.id
-    }
-    
-    func getPersistenceState() -> PersistenceState {
+    public func getPersistenceState() -> PersistenceState {
         var result = PersistenceState.new
         queue.sync {
             result = self.persistenceState
@@ -106,6 +157,24 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
+    public func getCreated() -> Date {
+        return created
+    }
+    
+    public func getSaved() -> Date? {
+        var result: Date? = nil
+        queue.sync {
+            result = self.saved
+        }
+        return result
+    }
+
+    /*
+        Update Entity metadata to reflect being saved to the persistent media and return the media specific update statement to make it so
+     
+        Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
+        will produce a thread deadlock
+    */
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
             var result: EntityConversionResult<S>? = nil
@@ -121,6 +190,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
+    /*
+        Update Entity metadata to reflect being removed from the persistent media and return the media specific update statement to make it so
+     
+        Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
+        will produce a thread deadlock
+     */
     func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
             var result: EntityConversionResult<S>? = nil
@@ -224,25 +299,30 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Setters
     
-    func setCollection (_ collection: PersistentCollection<Database, T>) {
+    internal func initialize (collection: PersistentCollection<Database, T>, schemaVersion: Int) {
         self.collection = collection
+        self.schemaVersion = schemaVersion
     }
     
 // Attributes
     
-    
+    // Internal access on set for the following attributes is for test purposes only
     
     public let id: UUID
-    public internal (set) var version: Int
-    internal var schemaVersion: Int
+    internal var version: Int
     internal let created: Date
     internal var saved: Date?
     private var item: T
     private let queue: DispatchQueue
     internal var persistenceState: PersistenceState
+
+    // collection and schemaVersion are set when the Entity is first created (before the entity has been made available to
+    // the rest of the framework or application) and then is not expected to be changed.
+    // Thus thread unsafe access to these attributes is acceptable
+
     internal private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
-    
-    
+    internal var schemaVersion: Int
+
 }
 
 public struct EntityReferenceData<T: Codable> {

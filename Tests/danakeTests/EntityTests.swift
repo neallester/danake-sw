@@ -184,7 +184,7 @@ class EntityTests: XCTestCase {
         var entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)
-        XCTAssertEqual (10, entity2.version)
+        XCTAssertEqual (10, entity2.getVersion() )
         switch entity2.getPersistenceState() {
         case .new:
             break
@@ -209,7 +209,7 @@ class EntityTests: XCTestCase {
         entity2 = try accessor.decoder().decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.schemaVersion)
-        XCTAssertEqual (10, entity2.version)
+        XCTAssertEqual (10, entity2.getVersion())
         switch entity2.getPersistenceState() {
         case .persistent:
             break
@@ -227,8 +227,35 @@ class EntityTests: XCTestCase {
 
     }
     
+    func testAnyEntity() {
+        let entity = newTestEntity(myInt: 10, myString: "A String")
+        let anyEntity: AnyEntity = AnyEntity (item: entity)
+        XCTAssertEqual (entity.getId(), anyEntity.getId())
+        XCTAssertEqual (entity.getVersion(), anyEntity.getVersion())
+        XCTAssertEqual (entity.getPersistenceState(), anyEntity.getPersistenceState())
+        XCTAssertEqual (entity.getCreated(), anyEntity.getCreated())
+        XCTAssertEqual (entity.getSaved(), anyEntity.getSaved())
+    }
+
+    func testAnyEntityManagement() throws {
+        let entity = newTestEntity(myInt: 10, myString: "A String")
+        let anyEntity: AnyEntityManagement = AnyEntityManagement (item: entity)
+        XCTAssertEqual (entity.getId(), anyEntity.getId())
+        XCTAssertEqual (entity.getVersion(), anyEntity.getVersion())
+        XCTAssertEqual (entity.getPersistenceState(), anyEntity.getPersistenceState())
+        XCTAssertEqual (entity.getCreated(), anyEntity.getCreated())
+        XCTAssertEqual (entity.getSaved(), anyEntity.getSaved())
+        let encoder = JSONEncoder()
+        let entityData = try encoder.encode(entity)
+        let anyEntityData = try encoder.encode (anyEntity)
+        let entityJson = String (data: entityData, encoding: .utf8)
+        let anyEntityJson = String (data: anyEntityData, encoding: .utf8)
+        XCTAssertEqual (entityJson, anyEntityJson)
+    }
+
     func testUpdateStatement() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
+        var anyEntity: AnyEntityManagement? = nil
         XCTAssertEqual (0, entity.getVersion())
         switch entity.getPersistenceState() {
         case .new:
@@ -238,6 +265,7 @@ class EntityTests: XCTestCase {
         }
         let result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
             do {
+                anyEntity = entity
                 let accessor = InMemoryAccessor()
                 let result = try accessor.encoder().encode (entity)
                 return .ok(result)
@@ -259,11 +287,17 @@ class EntityTests: XCTestCase {
         default:
             XCTFail("Expected .persistent")
         }
+        XCTAssertEqual (entity.getId(), anyEntity!.getId())
+        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
+        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
+        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
+        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
        // There is no convenient way to test the nil collection error condition, which as it should be
     }
     
     func testRemoveStatement() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
+        var anyEntity: AnyEntityManagement? = nil
         XCTAssertEqual (0, entity.getVersion())
         switch entity.getPersistenceState() {
         case .new:
@@ -272,6 +306,7 @@ class EntityTests: XCTestCase {
             XCTFail("Expected .new")
         }
         let result = entity.removeStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<String> in
+            anyEntity = entity
             return .ok("remove:collection=\(name);id=\(entity.getId())")
         }
         switch result {
@@ -288,6 +323,11 @@ class EntityTests: XCTestCase {
         default:
             XCTFail("Expected .new")
         }
+        XCTAssertEqual (entity.getId(), anyEntity!.getId())
+        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
+        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
+        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
+        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
         // There is no convenient way to test the nil collection error condition, which as it should be
     }
     

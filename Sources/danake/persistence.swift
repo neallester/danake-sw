@@ -313,8 +313,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         var result: Entity<T>? = nil
         try result = database.getAccessor().decoder().decode(Entity<T>.self, from: data)
         if let unwrappedResult = result {
-            unwrappedResult.setCollection(self as! PersistentCollection<Database, T>)
-            unwrappedResult.schemaVersion = self.database.schemaVersion
+            unwrappedResult.initialize(collection: self as! PersistentCollection<Database, T>, schemaVersion: self.database.schemaVersion)
             self.cacheQueue.sync {
                 if let cachedResult = self.cache[unwrappedResult.getId()]?.item {
                     result = cachedResult
