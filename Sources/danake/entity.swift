@@ -11,6 +11,7 @@ protocol EntityManagement : Encodable {
     func getId() -> UUID
     func getVersion() -> Int
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
+    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
     
 }
 
@@ -41,6 +42,10 @@ class AnyEntityManagement : EntityManagement {
     }
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         return item.updateStatement(converter: converter)
+    }
+
+    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+        return item.removeStatement(converter: converter)
     }
 
     init (item: EntityManagement) {
@@ -119,7 +124,22 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
-// Read Only Access to item
+    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+        if let collection = collection {
+            var result: EntityConversionResult<S>? = nil
+            queue.sync {
+                version = version + 1
+                persistenceState = .new
+                saved = Date()
+                result = converter (collection.name, AnyEntityManagement (item: self))
+            }
+            return result!
+        } else {
+            return .error ("\(type (of: self)): Missing Collection; id=\(id.uuidString)")
+        }
+    }
+
+    // Read Only Access to item
     
     public func async (closure: @escaping (T) -> Void) {
         queue.async () {

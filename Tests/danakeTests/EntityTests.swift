@@ -233,6 +233,13 @@ class EntityTests: XCTestCase {
     
     func testUpdateStatement() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
+        XCTAssertEqual (0, entity.getVersion())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
         let result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
             do {
                 let accessor = InMemoryAccessor()
@@ -248,6 +255,42 @@ class EntityTests: XCTestCase {
             break
         default:
             XCTFail()
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        switch entity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail("Expected .persistent")
+        }
+       // There is no convenient way to test the nil collection error condition, which as it should be
+    }
+    
+    func testRemoveStatement() {
+        let entity = newTestEntity(myInt: 10, myString: "A String")
+        XCTAssertEqual (0, entity.getVersion())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        let result = entity.removeStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<String> in
+            return .ok("remove:collection=\(name);id=\(entity.getId())")
+        }
+        switch result {
+        case .ok (let statement):
+            XCTAssertEqual ("remove:collection=myCollection;id=\(entity.getId().uuidString)", statement)
+            break
+        default:
+            XCTFail()
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
         }
         // There is no convenient way to test the nil collection error condition, which as it should be
     }
