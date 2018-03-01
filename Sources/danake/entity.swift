@@ -85,16 +85,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // EntityManagement
     
-    // TODO Should go into queue (Batch doesn't need to access version, which is why this isn't in the queue
-    //      but this change can't be done until the change to Batch is made
+    // Version is incremented each time the entity is stored in the persistent media
     func getVersion() -> Int {
-            return version
-    }
-    
-    func incrementVersion() {
+        var result: Int? = nil
         queue.sync {
-            version = version + 1
+            result = version
         }
+        return result!
     }
     
     func getId() -> UUID {

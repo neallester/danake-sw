@@ -98,7 +98,7 @@ class persistenceTests: XCTestCase {
         XCTAssertTrue (collection === entity!.collection!)
         batch.syncItems() { items in
             XCTAssertEqual (1, items.count)
-            let item = items[entity!.getId()]!.item as! Entity<MyStruct>
+            let item = items[entity!.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {
@@ -129,7 +129,7 @@ class persistenceTests: XCTestCase {
         XCTAssertTrue (collection === entity!.collection!)
         batch.syncItems() { items in
             XCTAssertEqual (1, items.count)
-            let item = items[entity!.getId()]!.item as! Entity<MyStruct>
+            let item = items[entity!.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {

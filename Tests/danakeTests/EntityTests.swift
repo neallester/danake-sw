@@ -107,7 +107,6 @@ class EntityTests: XCTestCase {
     func testWriteAccess() {
         var entity = newTestEntity(myInt: 0, myString: "")
         var batch = Batch()
-        entity.incrementVersion()
         var itemInt = 0
         var itemString = ""
         switch entity.getPersistenceState() {
@@ -133,15 +132,13 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, (version: Int, item: EntityManagement)>) in
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, items.count)
-            XCTAssertEqual(1, entity.getVersion())
-            XCTAssertEqual(entity.getVersion(), items[entity.getId()]!.version)
-            let retrievedEntity = items[entity.getId()]!.item as! Entity<MyStruct>
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         entity = newTestEntity(myInt: 0, myString: "")
-        entity.incrementVersion()
         batch = Batch()
         itemInt = 0
         itemString = ""
@@ -164,11 +161,10 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual(20, itemInt)
         XCTAssertEqual("Test 2 Completed", itemString)
-        batch.syncItems() { (items: Dictionary<UUID, (version: Int, item: EntityManagement)>) in
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, items.count)
-            XCTAssertEqual(1, entity.getVersion())
-            XCTAssertEqual(entity.getVersion(), items[entity.getId()]!.version)
-            let retrievedEntity = items[entity.getId()]!.item as! Entity<MyStruct>
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
     }

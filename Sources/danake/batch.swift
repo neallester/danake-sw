@@ -16,7 +16,7 @@ public class Batch {
     
     func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
         queue.async {
-            self.items[item.getId()] = (item.getVersion(), item)
+            self.items[item.getId()] = item
             if let closure = closure {
                 closure()
             }
@@ -25,14 +25,14 @@ public class Batch {
 
     func insertSync (item: EntityManagement, closure: (() -> Void)?) {
         queue.sync {
-            self.items[item.getId()] = (item.getVersion(), item)
+            self.items[item.getId()] = item
             if let closure = closure {
                 closure()
             }
         }
     }
 
-    func syncItems (closure: (Dictionary<UUID, (version: Int, item: EntityManagement)>) -> Void) {
+    func syncItems (closure: (Dictionary<UUID, EntityManagement>) -> Void) {
         queue.sync () {
             closure (self.items)
         }
@@ -40,7 +40,7 @@ public class Batch {
 
     public let id: UUID
     private let queue: DispatchQueue
-    private var items: Dictionary<UUID, (version: Int, item: EntityManagement)>
+    private var items: Dictionary<UUID, EntityManagement>
     
 }
 
