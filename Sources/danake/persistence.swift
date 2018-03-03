@@ -81,17 +81,13 @@ public enum ValidationResult {
 
 public protocol DatabaseAccessor {
     
-    func get (name: CollectionName, id: UUID) -> DatabaseAccessResult
+    func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable
     
-    func add (name: CollectionName, id: UUID, data: Data)
+    func add (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult
     
-    func update (name: CollectionName, id: UUID, data: Data)
+    func update (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult
     
-    func scan (name: CollectionName) -> DatabaseAccessListResult
-    
-    func encoder() -> JSONEncoder
-    
-    func decoder() -> JSONDecoder
+    func scan<T> (type: Entity<T>.Type, name: CollectionName) -> DatabaseAccessListResult<Entity<T>>
     
     /*
         Is the format of ** name ** a valid CollectionName in this storage medium and,
@@ -208,27 +204,26 @@ public enum RetrievalResult<T> {
 
     case ok (T?)
     
-    case invalidData
-    
-    case databaseError
-    
+    case error (String)
+
 }
 
-public enum DatabaseAccessResult {
+public enum DatabaseAccessListResult<T> {
     
-    case ok (Data?)
+    case ok ([T])
     
     case error (String)
     
 }
 
-public enum DatabaseAccessListResult {
+public enum DatabaseUpdateResult {
     
-    case ok ([Data])
+    case ok
     
     case error (String)
-    
 }
+
+
 
 public typealias CollectionName = String
 
@@ -243,6 +238,8 @@ public class PendingRequestData<T: Codable> {
 }
 
 public class PersistentCollection<D: Database, T: Codable> {
+    
+    typealias entityType = T
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
     public init (database: D, name: CollectionName) {
@@ -280,21 +277,17 @@ public class PersistentCollection<D: Database, T: Codable> {
             result = cache[id]?.item
         }
         if (result == nil) {
-            switch self.database.getAccessor().get(name: self.name, id: id) {
-            case .ok (let data):
-                if let data = data {
-                    do {
-                        result = try self.entityForData (data: data)
-                    } catch {
-                        errorResult = .invalidData
-                        self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name:"data", value: String (data: data, encoding: .utf8)), ("error", "\(error)")])
-                    }
+            let retrievalResult = self.database.getAccessor().get(type: Entity<T>.self, name: self.name, id: id)
+            switch retrievalResult {
+            case .ok (let prospectEntity):
+                if let prospectEntity = prospectEntity {
+                    result = self.entityForProspect(prospectEntity: prospectEntity)
                 } else {
-                    self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
+                    self.database.logger?.log (level: .warning, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                 }
             case .error (let errorMessage):
                 self.database.logger?.log (level: .error, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
-                errorResult = .databaseError
+                errorResult = retrievalResult
             }
         }
         if let errorResult = errorResult {
@@ -309,21 +302,18 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
     
-    internal func entityForData (data: Data) throws -> Entity<T>? {
+    internal func entityForProspect (prospectEntity: Entity<T>) -> Entity<T> {
         var result: Entity<T>? = nil
-        try result = database.getAccessor().decoder().decode(Entity<T>.self, from: data)
-        if let unwrappedResult = result {
-            unwrappedResult.initialize(collection: self as! PersistentCollection<Database, T>, schemaVersion: self.database.schemaVersion)
-            self.cacheQueue.sync {
-                if let cachedResult = self.cache[unwrappedResult.getId()]?.item {
-                    result = cachedResult
-                } else {
-                    self.cache[unwrappedResult.getId()] = WeakItem (item: unwrappedResult)
-                    result = unwrappedResult
-                }
+        self.cacheQueue.sync {
+            if let cachedResult = self.cache[prospectEntity.getId()]?.item {
+                result = cachedResult
+            } else {
+                prospectEntity.setCollection (collection: self as! PersistentCollection<Database, T>)
+                self.cache[prospectEntity.getId()] = WeakItem (item: prospectEntity)
+                result = prospectEntity
             }
         }
-        return result
+        return result!
     }
     
     /*
@@ -332,13 +322,18 @@ public class PersistentCollection<D: Database, T: Codable> {
     */
     
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.getAccessor().scan(name: name)
+        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, name: name)
         switch retrievalResult {
-        case .ok (let data):
-            return .ok (convert (data: data, criteria: criteria))
+        case .ok (var resultList):
+            if let criteria = criteria  {
+                return .ok (initialize(entities: resultList, criteria: criteria))
+            } else {
+                initialize (entities: &resultList)
+                return .ok (resultList)
+            }
         case .error (let errorMessage):
             self.database.logger?.log (level: .error, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name: "errorMessage", errorMessage)])
-            return .databaseError
+            return .error (errorMessage)
         }
     }
     
@@ -349,39 +344,33 @@ public class PersistentCollection<D: Database, T: Codable> {
     }
 
     /*
-        converts all ** data ** to Entity (returns cached Entity if present)
-        If ** criteria ** is provided, only those entities where criteria returns true are included
-     
-     
+        Replaces ** entities ** with their cached version or initializes if not in cache
     */
-    func convert (data: [Data], criteria: ((T) -> Bool)?) -> [Entity<T>] {
-        var result: [Entity<T>] = []
-        if criteria == nil {
-            result.reserveCapacity(data.count)
+    func initialize (entities: inout [Entity<T>]) {
+        var index = 0
+        for entity in entities {
+            entities[index] = entityForProspect(prospectEntity: entity)
+            index = index + 1
         }
-        for datum in data {
-            do {
-                let entity = try entityForData (data: datum)
-                if let entity = entity {
-                    if let criteria = criteria {
-                        var isIncluded = false
-                        entity.sync() { item in
-                            isIncluded = criteria (item)
-                        }
-                        if isIncluded {
-                            result.append (entity)
-                        }
-                    } else {
-                        result.append (entity)
-                    }
-                }
-            } catch {
-                self.database.logger?.log (level: .error, source: self, featureName: "convert",message: "Illegal Data", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"data", value: String (data: datum, encoding: .utf8)), ("error", "\(error)")])
+    }
+    
+    /*
+        Returns array containing cached or initilaized ** entities ** which match ** criteria **
+    */
+    func initialize (entities: [Entity<T>], criteria: ((T) -> Bool)) -> [Entity<T>] {
+        var result: [Entity<T>] = []
+        for entity in entities {
+            var matchesCriteria = true
+            entity.sync() { item in
+                matchesCriteria = criteria (item)
+            }
+            if matchesCriteria {
+                result.append (entityForProspect(prospectEntity: entity))
             }
         }
         return result
     }
-    
+
     public func new (batch: Batch, item: T) -> Entity<T> {
         let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
@@ -423,6 +412,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     
 }
 
+// Use for testing
 public class InMemoryAccessor: DatabaseAccessor {
     
     init() {
@@ -430,28 +420,63 @@ public class InMemoryAccessor: DatabaseAccessor {
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
     }
     
-    public func get(name: CollectionName, id: UUID) -> DatabaseAccessResult {
-        var result: Data? = nil
-        var returnError = false
+    public func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable {
+        var result: T? = nil
+        var errorMessage: String? = nil
         if let preFetch = preFetch {
             preFetch (id)
         }
         queue.sync() {
             if self.throwError {
-                returnError = true
+                errorMessage = "Test Error"
                 self.throwError = false
             } else if let collectionDictionary = storage[name] {
-                result = collectionDictionary[id]
+                let data = collectionDictionary[id]
+                if let data = data {
+                    do {
+                        result = try decoder.decode(type, from: data)
+                    } catch {
+                        errorMessage = "\(error)"
+                    }
+                }
             }
         }
-        if returnError {
-            return .error ("Test Error")
+        if let errorMessage = errorMessage {
+            return .error (errorMessage)
         }
         return .ok (result)
     }
     
+    public func add (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult {
+        var result = DatabaseUpdateResult.ok
+        queue.sync {
+            
+            let conversionResult = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
+                do {
+                    let data = try self.encoder.encode (entity)
+                    return .ok (data)
+                } catch {
+                    return EntityConversionResult<Data>.error("\(error)")
+                }
+            }
+            switch conversionResult {
+            case .ok (let data):
+                if self.storage[name] == nil {
+                    let collectionDictionary = Dictionary<UUID, Data>()
+                    self.storage[name] = collectionDictionary
+                }
+                self.storage[name]![entity.getId()] = data
+                result = .ok
+            case .error (let errorMessage):
+                result = .error ("\(errorMessage)")
+            }
+        }
+        return result
+    }
+    
+    // Add test data from scratch
     public func add (name: CollectionName, id: UUID, data: Data) {
-        queue.async {
+        queue.sync {
             if self.storage[name] == nil {
                 let collectionDictionary = Dictionary<UUID, Data>()
                 self.storage[name] = collectionDictionary
@@ -460,23 +485,27 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
         
-    public func update (name: CollectionName, id: UUID, data: Data) {
-        add (name: name, id: id, data: data)
+    public func update (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult {
+        return add (name: name, entity: entity)
     }
     
-    public func scan(name: CollectionName) -> DatabaseAccessListResult {
-        var resultData: [Data] = []
-        var result = DatabaseAccessListResult.ok (resultData)
+    public func scan<T, E: Entity<T>> (type: E.Type, name: CollectionName) -> DatabaseAccessListResult<E> {
+        var resultList: [E] = []
+        var result = DatabaseAccessListResult<E>.ok (resultList)
         queue.sync {
             if self.throwError {
                 result = .error ("Test Error")
                 self.throwError = false
             } else if let collectionDictionary = storage [name] {
-                resultData.reserveCapacity (collectionDictionary.count)
+                resultList.reserveCapacity (collectionDictionary.count)
                 for item in collectionDictionary.values {
-                    resultData.append (item)
+                    do {
+                        let entity = try decoder.decode (type, from: item)
+                        resultList.append (entity)
+                    } catch {}
+                    
                 }
-                result = .ok (resultData)
+                result = .ok (resultList)
             }
         }
         return result
@@ -489,14 +518,6 @@ public class InMemoryAccessor: DatabaseAccessor {
         } else {
             return .error ("Empty String is an illegal CollectionName")
         }
-    }
-    
-    public func encoder() -> JSONEncoder {
-        return encoderCache
-    }
-    
-    public func decoder() -> JSONDecoder {
-        return decoderCache
     }
     
     public func setThrowError() {
@@ -519,13 +540,13 @@ public class InMemoryAccessor: DatabaseAccessor {
         return id.uuidString
     }
     
-    private let encoderCache: JSONEncoder = {
+    public let encoder: JSONEncoder = {
         let result = JSONEncoder()
         result.dateEncodingStrategy = .secondsSince1970
         return result
     }()
     
-    private let decoderCache: JSONDecoder = {
+    public let decoder: JSONDecoder = {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
         return result

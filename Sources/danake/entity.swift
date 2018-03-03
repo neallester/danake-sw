@@ -16,7 +16,7 @@ public protocol EntityProtocol {
 
 }
 
-internal protocol EntityManagement : EntityProtocol, Encodable {
+public protocol EntityManagement : EntityProtocol, Encodable {
     
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
     func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
@@ -31,7 +31,7 @@ public enum PersistenceState : String, Codable {
     
 }
 
-internal enum EntityConversionResult<R> {
+public enum EntityConversionResult<R> {
     case ok (R)
     case error (String)
 }
@@ -67,48 +67,55 @@ public class AnyEntity : EntityProtocol {
     
 }
 
-internal class AnyEntityManagement : EntityManagement {
-
-    // Not Thread Safe
-    func encode(to encoder: Encoder) throws {
-        try item.encode (to: encoder)
-    }
+/*
+    Type erased wrapper for any Entity providing access to metadata and
+    functionality needed for persistent management
+ */
+public class AnyEntityManagement : EntityManagement, Encodable {
     
-    func getId() -> UUID {
-        return item.getId()
-    }
-    func getVersion() -> Int {
-        return item.getVersion()
-    }
-    
-    func getPersistenceState() -> PersistenceState {
-        return item.getPersistenceState()
-    }
-    
-    func getCreated() -> Date {
-        return item.getCreated()
-    }
-    
-    func getSaved() -> Date? {
-        return item.getSaved()
-    }
-    
-    func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        return item.updateStatement(converter: converter)
-    }
-
-    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        return item.removeStatement(converter: converter)
-    }
-
     init (item: EntityManagement) {
         self.item = item
     }
     
+    // Not Thread Safe
+    public func encode(to encoder: Encoder) throws {
+        try item.encode (to: encoder)
+    }
+    
+    public func getId() -> UUID {
+        return item.getId()
+    }
+    public func getVersion() -> Int {
+        return item.getVersion()
+    }
+    
+    public func getPersistenceState() -> PersistenceState {
+        return item.getPersistenceState()
+    }
+    
+    public func getCreated() -> Date {
+        return item.getCreated()
+    }
+    
+    public func getSaved() -> Date? {
+        return item.getSaved()
+    }
+    
+    public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+        return item.updateStatement(converter: converter)
+    }
+
+    public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+        return item.removeStatement(converter: converter)
+    }
+
     let item: EntityManagement
    
 }
 
+/*
+    Model object wrapper.
+*/
 public class Entity<T: Codable> : EntityManagement, Codable {
     
     init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
@@ -175,7 +182,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
         will produce a thread deadlock
     */
-    func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+    public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
             var result: EntityConversionResult<S>? = nil
             queue.sync {
@@ -186,7 +193,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             }
             return result!
         } else {
-            return .error ("\(type (of: self)): Missing Collection; id=\(id.uuidString)")
+            return .error ("\(type (of: self)).updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
         }
     }
     
@@ -196,7 +203,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
         will produce a thread deadlock
      */
-    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
+    public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
             var result: EntityConversionResult<S>? = nil
             queue.sync {
@@ -207,7 +214,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             }
             return result!
         } else {
-            return .error ("\(type (of: self)): Missing Collection; id=\(id.uuidString)")
+            return .error ("\(type (of: self)).removeStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
         }
     }
 
@@ -228,17 +235,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 // Write Access to item
     
     /*
-        TODO EventuallyConsistentBatch and ConsistentBatch both descedend from BatchImplementation and Implement Protocol Batch
-        The exsting async & sync features take EventuallyConsistentBatch
-        new sync feature which return an enum like
-             enum BatchSubmitResult {
-                case accepted
-                case rejected
-             }
-        Dirty entities which are not already in the batch are rejected from a fully
-        consistent batch
+        TODO add asyncIfUpdated, syncIfUpdated, which only add to the batch if closure makes a change
+        to the object
     */
-
+    
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertAsync(item: self) {
@@ -297,16 +297,29 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.queue = DispatchQueue (label: id.uuidString)
     }
     
-// Setters
+// Initialization
     
-    internal func initialize (collection: PersistentCollection<Database, T>, schemaVersion: Int) {
-        self.collection = collection
-        self.schemaVersion = schemaVersion
+    internal func setCollection (collection: PersistentCollection<Database, T>) {
+        queue.async {
+            self.collection = collection
+            self.schemaVersion = collection.database.schemaVersion
+        }
+    }
+    
+    internal func isInitialized (onCollection: PersistentCollection<Database, T>) -> Bool {
+        var result = false
+        queue.sync {
+            if let collection = self.collection, collection === onCollection, collection.database.schemaVersion == self.schemaVersion {
+                result = true
+            }
+        }
+        return result
     }
     
 // Attributes
     
-    // Internal access on set for the following attributes is for test purposes only
+    // TODO Make these internal variable private and provide thread safe setters and getters
+    // where needed for testing purposes
     
     public let id: UUID
     internal var version: Int
@@ -315,11 +328,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var item: T
     private let queue: DispatchQueue
     internal var persistenceState: PersistenceState
-
-    // collection and schemaVersion are set when the Entity is first created (before the entity has been made available to
-    // the rest of the framework or application) and then is not expected to be changed.
-    // Thus thread unsafe access to these attributes is acceptable
-
     internal private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
     internal var schemaVersion: Int
 

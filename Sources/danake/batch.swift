@@ -6,6 +6,8 @@
 
 import Foundation
 
+// TODO Rename to EventuallyConsistentBatch
+
 public class Batch {
     
     init() {
