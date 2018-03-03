@@ -38,7 +38,7 @@ class EntityTests: XCTestCase {
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.getId().uuidString)
         XCTAssertEqual (10, entity1.getVersion())
-        XCTAssertEqual (5, entity1.schemaVersion)
+        XCTAssertEqual (5, entity1.getSchemaVersion())
         switch entity1.getPersistenceState() {
         case .new:
             break
@@ -56,7 +56,7 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual (id2.uuidString, entity2.getId().uuidString)
         XCTAssertEqual (20, entity2.getVersion())
-        XCTAssertEqual (5, entity1.schemaVersion)
+        XCTAssertEqual (5, entity1.getSchemaVersion())
         switch entity2.getPersistenceState() {
         case .new:
             break
@@ -69,6 +69,38 @@ class EntityTests: XCTestCase {
         }
     }
 
+    func testEntitySettersGetters() {
+        // Creation with item
+        var myStruct = MyStruct()
+        myStruct.myInt = 100
+        myStruct.myString = "Test String 1"
+        let id = UUID()
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let entity = Entity (collection: collection, id: id, version: 10, item: myStruct)
+        XCTAssertEqual (5, entity.getSchemaVersion())
+        entity.setSchemaVersion (3)
+        XCTAssertEqual (3, entity.getSchemaVersion())
+        XCTAssertNil (entity.getSaved())
+        let savedDate = Date()
+        entity.setSaved(savedDate)
+        XCTAssertEqual (savedDate.timeIntervalSince1970, entity.getSaved()!.timeIntervalSince1970)
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("expected .new")
+        }
+        entity.setPersistenceState (.dirty)
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("expected .new")
+        }
+
+    }
+
     func testEntitySetCollection() {
         var myStruct = MyStruct()
         myStruct.myInt = 100
@@ -78,16 +110,16 @@ class EntityTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
         var entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
-        entity1.schemaVersion = 3
+        entity1.setSchemaVersion (3)
         let data1 = try! accessor.encoder.encode(entity1)
         entity1 = try! accessor.decoder.decode(Entity<MyStruct>.self, from: data1)
         XCTAssertFalse (entity1.isInitialized(onCollection: collection))
-        XCTAssertNil (entity1.collection)
-        XCTAssertEqual (3, entity1.schemaVersion)
+        XCTAssertNil (entity1.getCollection())
+        XCTAssertEqual (3, entity1.getSchemaVersion())
         entity1.setCollection (collection: collection)
         XCTAssertTrue (entity1.isInitialized(onCollection: collection))
-        XCTAssertTrue (entity1.collection! === collection)
-        XCTAssertEqual (5, entity1.schemaVersion)
+        XCTAssertTrue (entity1.getCollection()! === collection)
+        XCTAssertEqual (5, entity1.getSchemaVersion())
     }
     
     func testReadAccess() {
@@ -204,7 +236,7 @@ class EntityTests: XCTestCase {
         try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         var entity2 = try accessor.decoder.decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
-        XCTAssertEqual (5, entity2.schemaVersion)
+        XCTAssertEqual (5, entity2.getSchemaVersion())
         XCTAssertEqual (10, entity2.getVersion() )
         switch entity2.getPersistenceState() {
         case .new:
@@ -219,18 +251,18 @@ class EntityTests: XCTestCase {
             }
         }
         XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (entity2.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-        XCTAssertNil (entity.saved)
+        XCTAssertNil (entity.getSaved())
         // With a saved time
         let savedTime = Date()
-        entity.saved = savedTime
-        entity.persistenceState = .persistent
+        entity.setSaved (savedTime)
+        entity.setPersistenceState (.persistent)
         json = try String (data: accessor.encoder.encode(entity), encoding: .utf8)!
-        try XCTAssertEqual("{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.saved!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", json)
-        try json = "{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.saved!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}"
+        try XCTAssertEqual("{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", json)
+        try json = "{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}"
         //
         entity2 = try accessor.decoder.decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
-        XCTAssertEqual (5, entity2.schemaVersion)
+        XCTAssertEqual (5, entity2.getSchemaVersion())
         XCTAssertEqual (10, entity2.getVersion())
         switch entity2.getPersistenceState() {
         case .persistent:
@@ -245,7 +277,7 @@ class EntityTests: XCTestCase {
             }
         }
         XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (entity2.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-        XCTAssertEqual ((entity.saved!.timeIntervalSince1970 * 1000.0).rounded(), (entity2.saved!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        XCTAssertEqual ((entity.getSaved()!.timeIntervalSince1970 * 1000.0).rounded(), (entity2.getSaved()!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
 
     }
     
@@ -297,7 +329,7 @@ class EntityTests: XCTestCase {
         }
         switch result {
         case .ok (let data):
-            try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.saved!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":1,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}", String (data: data, encoding: .utf8))
+            try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":1,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}", String (data: data, encoding: .utf8))
             break
         default:
             XCTFail()

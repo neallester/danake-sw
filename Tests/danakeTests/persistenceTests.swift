@@ -95,7 +95,7 @@ class persistenceTests: XCTestCase {
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
         var batch = Batch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
-        XCTAssertTrue (collection === entity!.collection!)
+        XCTAssertTrue (collection === entity!.getCollection ()!)
         batch.syncItems() { items in
             XCTAssertEqual (1, items.count)
             let item = items[entity!.getId()]! as! Entity<MyStruct>
@@ -115,7 +115,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual(1, cache.count)
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
-        XCTAssertEqual (5, entity?.schemaVersion)
+        XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
         batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
@@ -126,7 +126,7 @@ class persistenceTests: XCTestCase {
         entity = collection.new(batch: batch) { reference in
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
-        XCTAssertTrue (collection === entity!.collection!)
+        XCTAssertTrue (collection === entity!.getCollection ()!)
         batch.syncItems() { items in
             XCTAssertEqual (1, items.count)
             let item = items[entity!.getId()]! as! Entity<MyStruct>
@@ -146,7 +146,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual(1, cache.count)
             XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
         }
-        XCTAssertEqual (5, entity?.schemaVersion)
+        XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
         batch = Batch() // Ensures entity is collected
         collection.sync() { cache in
@@ -156,9 +156,9 @@ class persistenceTests: XCTestCase {
     
     func testPersistentCollectionEntityForProspect() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        entity.schemaVersion = 3 // Verify that get updates the schema version
-        entity.persistenceState = .persistent
-        entity.saved = Date()
+        entity.setSchemaVersion (3)// Verify that get updates the schema version
+        entity.setPersistenceState (.persistent)
+        entity.setSaved (Date())
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
@@ -199,8 +199,8 @@ class persistenceTests: XCTestCase {
     func testPersistentCollectionGet() throws {
         // Data In Cache=No; Data in Accessor=No
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        entity.schemaVersion = 3 // Verify that get updates the schema version
-        entity.saved = Date()
+        entity.setSchemaVersion (3)// Verify that get updates the schema version
+        entity.setSaved (Date())
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
@@ -222,7 +222,7 @@ class persistenceTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
         XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
         XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-        XCTAssertEqual ((entity.saved!.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.saved!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        XCTAssertEqual ((entity.getSaved ()!.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.getSaved ()!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
         switch retrievedEntity.getPersistenceState() {
         case .new:
             break
@@ -246,8 +246,8 @@ class persistenceTests: XCTestCase {
         let batch = Batch()
         let entity2 = collection.new(batch: batch, item: MyStruct())
         XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
-        XCTAssertEqual (5, entity2.schemaVersion)
-        XCTAssertTrue (entity2.collection === collection)
+        XCTAssertEqual (5, entity2.getSchemaVersion())
+        XCTAssertTrue (entity2.getCollection () === collection)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
             XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
@@ -320,7 +320,7 @@ class persistenceTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
             let data1 = try accessor.encoder.encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try accessor.encoder.encode(entity2)
@@ -363,7 +363,7 @@ class persistenceTests: XCTestCase {
                 XCTAssertEqual (entity2.getId(), retrievedEntity!.getId())
                 XCTAssertEqual (entity2.getVersion(), retrievedEntity!.getVersion())
                 XCTAssertEqual ((entity2.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity!.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-                XCTAssertNil (retrievedEntity!.saved)
+                XCTAssertNil (retrievedEntity!.getSaved ())
             default:
                 XCTFail("Expected data2")
             }
@@ -401,8 +401,8 @@ class persistenceTests: XCTestCase {
         while counter < 100 {
             // Data In Cache=No; Data in Accessor=No
             let entity1 = newTestEntity(myInt: 10, myString: "A String1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
-            entity1.persistenceState = .persistent
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
+            entity1.setPersistenceState (.persistent)
             let data1 = try JSONEncoder().encode(entity1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try JSONEncoder().encode(entity2)
@@ -450,10 +450,10 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (entity1.getVersion(), retrievedEntity1.getVersion())
             XCTAssertEqual (entity2.getId().uuidString, retrievedEntity2.getId().uuidString)
             XCTAssertEqual (entity2.getVersion(), retrievedEntity2.getVersion())
-            XCTAssertEqual (5, retrievedEntity1.schemaVersion)
-            XCTAssertEqual (5, retrievedEntity2.schemaVersion)
-            XCTAssertTrue (retrievedEntity1.collection === collection)
-            XCTAssertTrue (retrievedEntity2.collection === collection)
+            XCTAssertEqual (5, retrievedEntity1.getSchemaVersion())
+            XCTAssertEqual (5, retrievedEntity2.getSchemaVersion())
+            XCTAssertTrue (retrievedEntity1.getCollection () === collection)
+            XCTAssertTrue (retrievedEntity2.getCollection () === collection)
             switch retrievedEntity1.getPersistenceState() {
             case .persistent:
                 break
@@ -783,7 +783,7 @@ class persistenceTests: XCTestCase {
         }
         // Second Entity added public add
         let entity2 = newTestEntity(myInt: 30, myString: "A String 3")
-        entity2.saved = Date()
+        entity2.setSaved (Date())
         // Need to set collection in entity2
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
@@ -838,7 +838,7 @@ class persistenceTests: XCTestCase {
         XCTAssertTrue (foundEntity2)
         // Add Entity Without collection using public add
         var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-        entity3.saved = Date()
+        entity3.setSaved (Date())
         let data3 = try accessor.encoder.encode (entity3)
         entity3 = try! accessor.decoder.decode(Entity<MyStruct>.self, from: data3)
         let anyEntity3 = AnyEntityManagement (item: entity3)
@@ -928,7 +928,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (0, entities.count)
             // entity1: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             // entity2: Entity in cache, data not in accessor
@@ -939,7 +939,7 @@ class persistenceTests: XCTestCase {
             // entity3: Entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setCollection(collection: collection)
-            entity3.saved = Date()
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
@@ -1037,8 +1037,8 @@ class persistenceTests: XCTestCase {
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             // entity1: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify schema version is updated
-            entity1.saved = Date()
+            entity1.setSchemaVersion (3)// Verify schema version is updated
+            entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             // entity2: Entity in cache, data not in accessor
@@ -1048,7 +1048,7 @@ class persistenceTests: XCTestCase {
             // entity3: Entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setCollection(collection: collection)
-            entity3.saved = Date()
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
@@ -1085,8 +1085,8 @@ class persistenceTests: XCTestCase {
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             // entity1: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify schema version is updated
-            entity1.saved = Date()
+            entity1.setSchemaVersion (3)// Verify schema version is updated
+            entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             // entity2: Entity in cache, data not in accessor
@@ -1096,7 +1096,7 @@ class persistenceTests: XCTestCase {
             // entity3: Entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setCollection(collection: collection)
-            entity3.saved = Date()
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
@@ -1131,8 +1131,8 @@ class persistenceTests: XCTestCase {
                 let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
                 // entity1: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-                entity1.schemaVersion = 3 // Verify schema version is updated
-                entity1.saved = Date()
+                entity1.setSchemaVersion (3)// Verify schema version is updated
+                entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
                 accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
                 // entity2: Entity in cache, data not in accessor
@@ -1142,7 +1142,7 @@ class persistenceTests: XCTestCase {
                 // entity3: Entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
                 entity3.setCollection(collection: collection)
-                entity3.saved = Date()
+                entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
                 accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
                 entity3 = collection.get (id: entity3.getId()).item()!
@@ -1179,8 +1179,8 @@ class persistenceTests: XCTestCase {
                 let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
                 // entity1: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-                entity1.schemaVersion = 3 // Verify schema version is updated
-                entity1.saved = Date()
+                entity1.setSchemaVersion (3)// Verify schema version is updated
+                entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
                 accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
                 // entity2: Entity in cache, data not in accessor
@@ -1190,8 +1190,8 @@ class persistenceTests: XCTestCase {
                 entity2.setCollection(collection: collection)
                 // entity3: Entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-                entity3.schemaVersion = 5
-                entity3.saved = Date()
+                entity3.setSchemaVersion (5)
+                entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
                 accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
                 entity3 = collection.get (id: entity3.getId()).item()!
@@ -1244,8 +1244,8 @@ class persistenceTests: XCTestCase {
                                 XCTAssertEqual (0, convertedEntities.count)
                                 // entity1: Data in accessor
                                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-                                entity1.schemaVersion = 3 // Verify that get updates the schema version
-                                entity1.saved = Date()
+                                entity1.setSchemaVersion (3)// Verify that get updates the schema version
+                                entity1.setSaved (Date())
                                 let data1 = try accessor.encoder.encode(entity1)
                                 accessor.add(name: self.standardCollectionName, id: entity1.getId(), data: data1)
                                 // entity2: Entity in cache, data not in accessor
@@ -1255,7 +1255,7 @@ class persistenceTests: XCTestCase {
                                 // entity3: Entity in cache, data in accessor
                                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
                                 entity3.setCollection(collection: collection)
-                                entity3.saved = Date()
+                                entity3.setSaved (Date())
                                 let data3 = try accessor.encoder.encode(entity3)
                                 accessor.add(name: self.standardCollectionName, id: entity3.getId(), data: data3)
                                 entity3 = collection.get (id: entity3.getId()).item()!
@@ -1338,29 +1338,29 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (0, retrievedEntities.count)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
-            entity1.persistenceState = .persistent
-            entity1.saved = Date()
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
+            entity1.setPersistenceState (.persistent)
+            entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-            entity2.schemaVersion = 3 // Verify that get updates the schema version
-            entity2.persistenceState = .persistent
-            entity2.saved = Date()
+            entity2.setSchemaVersion (3)// Verify that get updates the schema version
+            entity2.setPersistenceState (.persistent)
+            entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-            entity3.schemaVersion = 5
-            entity3.persistenceState = .persistent
-            entity3.saved = Date()
+            entity3.setSchemaVersion (5)
+            entity3.setPersistenceState (.persistent)
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
-            entity4.schemaVersion = 5
-            entity4.persistenceState = .persistent
-            entity4.saved = Date()
+            entity4.setSchemaVersion (5)
+            entity4.setPersistenceState (.persistent)
+            entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
             accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
             entity4 = collection.get (id: entity4.getId()).item()!
@@ -1382,7 +1382,7 @@ class persistenceTests: XCTestCase {
             var retrievedEntity4: Entity<MyStruct>? = nil
             for retrievedEntity in retrievedEntities {
                 XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-                switch retrievedEntity.persistenceState {
+                switch retrievedEntity.getPersistenceState() {
                 case .persistent:
                     break
                 default:
@@ -1460,29 +1460,29 @@ class persistenceTests: XCTestCase {
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
-            entity1.persistenceState = .persistent
-            entity1.saved = Date()
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
+            entity1.setPersistenceState (.persistent)
+            entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-            entity2.schemaVersion = 3 // Verify that get updates the schema version
-            entity2.persistenceState = .persistent
-            entity2.saved = Date()
+            entity2.setSchemaVersion (3)// Verify that get updates the schema version
+            entity2.setPersistenceState (.persistent)
+            entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-            entity3.schemaVersion = 5
-            entity3.persistenceState = .persistent
-            entity3.saved = Date()
+            entity3.setSchemaVersion (5)
+            entity3.setPersistenceState (.persistent)
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
-            entity4.schemaVersion = 5
-            entity4.persistenceState = .persistent
-            entity4.saved = Date()
+            entity4.setSchemaVersion (5)
+            entity4.setPersistenceState (.persistent)
+            entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
             accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
             entity4 = collection.get (id: entity4.getId()).item()!
@@ -1503,7 +1503,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, retrievedEntities.count)
             let retrievedEntity = retrievedEntities[0]
             XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-            switch retrievedEntity.persistenceState {
+            switch retrievedEntity.getPersistenceState() {
             case .persistent:
                 break
             default:
@@ -1533,29 +1533,29 @@ class persistenceTests: XCTestCase {
                 let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
                 // entity1, entity2: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-                entity1.schemaVersion = 3 // Verify that get updates the schema version
-                entity1.persistenceState = .persistent
-                entity1.saved = Date()
+                entity1.setSchemaVersion (3)// Verify that get updates the schema version
+                entity1.setPersistenceState (.persistent)
+                entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
                 accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
                 let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-                entity2.schemaVersion = 3 // Verify that get updates the schema version
-                entity2.persistenceState = .persistent
-                entity2.saved = Date()
+                entity2.setSchemaVersion (3)// Verify that get updates the schema version
+                entity2.setPersistenceState (.persistent)
+                entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
                 accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
                 // entity3, entity4: entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-                entity3.schemaVersion = 5
-                entity3.persistenceState = .persistent
-                entity3.saved = Date()
+                entity3.setSchemaVersion (5)
+                entity3.setPersistenceState (.persistent)
+                entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
                 accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
                 entity3 = collection.get (id: entity3.getId()).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
-                entity4.schemaVersion = 5
-                entity4.persistenceState = .persistent
-                entity4.saved = Date()
+                entity4.setSchemaVersion (5)
+                entity4.setPersistenceState (.persistent)
+                entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
                 accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
                 entity4 = collection.get (id: entity4.getId()).item()!
@@ -1576,7 +1576,7 @@ class persistenceTests: XCTestCase {
                 XCTAssertEqual (1, retrievedEntities.count)
                 let retrievedEntity = retrievedEntities[0]
                 XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-                switch retrievedEntity.persistenceState {
+                switch retrievedEntity.getPersistenceState() {
                 case .persistent:
                     break
                 default:
@@ -1601,29 +1601,29 @@ class persistenceTests: XCTestCase {
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-            entity1.schemaVersion = 3 // Verify that get updates the schema version
-            entity1.persistenceState = .persistent
-            entity1.saved = Date()
+            entity1.setSchemaVersion (3)// Verify that get updates the schema version
+            entity1.setPersistenceState (.persistent)
+            entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
             accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-            entity2.schemaVersion = 3 // Verify that get updates the schema version
-            entity2.persistenceState = .persistent
-            entity2.saved = Date()
+            entity2.setSchemaVersion (3)// Verify that get updates the schema version
+            entity2.setPersistenceState (.persistent)
+            entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
             accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-            entity3.schemaVersion = 5
-            entity3.persistenceState = .persistent
-            entity3.saved = Date()
+            entity3.setSchemaVersion (5)
+            entity3.setPersistenceState (.persistent)
+            entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
             accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
-            entity4.schemaVersion = 5
-            entity4.persistenceState = .persistent
-            entity4.saved = Date()
+            entity4.setSchemaVersion (5)
+            entity4.setPersistenceState (.persistent)
+            entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
             accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
             entity4 = collection.get (id: entity4.getId()).item()!
@@ -1665,27 +1665,27 @@ class persistenceTests: XCTestCase {
                 let dispatchGroup = DispatchGroup()
                 // entity1, entity2: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-                entity1.schemaVersion = 3 // Verify that get updates the schema version
-                entity1.persistenceState = .persistent
-                entity1.saved = Date()
+                entity1.setSchemaVersion (3)// Verify that get updates the schema version
+                entity1.setPersistenceState (.persistent)
+                entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
                 accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
                 let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-                entity2.schemaVersion = 3 // Verify that get updates the schema version
-                entity2.persistenceState = .persistent
-                entity2.saved = Date()
+                entity2.setSchemaVersion (3)// Verify that get updates the schema version
+                entity2.setPersistenceState (.persistent)
+                entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
                 accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
                 // entity3, entity4: entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-                entity3.persistenceState = .persistent
-                entity3.saved = Date()
+                entity3.setPersistenceState (.persistent)
+                entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
                 accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
                 entity3 = collection.get (id: entity3.getId()).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
-                entity4.persistenceState = .persistent
-                entity4.saved = Date()
+                entity4.setPersistenceState (.persistent)
+                entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
                 accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
                 entity4 = collection.get (id: entity4.getId()).item()!
@@ -1703,11 +1703,12 @@ class persistenceTests: XCTestCase {
                         var retrievedEntity4: Entity<MyStruct>? = nil
                         for retrievedEntity in retrievedEntities {
                             XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-                            switch retrievedEntity.persistenceState {
+                            let persistenceState = retrievedEntity.getPersistenceState()
+                            switch persistenceState {
                             case .persistent:
                                 break
                             default:
-                                XCTFail ("Expected .persistent")
+                                XCTFail ("Expected .persistent but got \(persistenceState)")
                             }
                             if retrievedEntity.getId().uuidString == entity1.getId().uuidString {
                                 XCTAssertNil (retrievedEntity1)
@@ -1753,7 +1754,7 @@ class persistenceTests: XCTestCase {
                         XCTAssertEqual (1, retrievedEntities.count)
                         let retrievedEntity = retrievedEntities[0]
                         XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-                        switch retrievedEntity.persistenceState {
+                        switch retrievedEntity.getPersistenceState() {
                         case .persistent:
                             break
                         default:
@@ -1775,7 +1776,7 @@ class persistenceTests: XCTestCase {
                         XCTAssertEqual (1, retrievedEntities.count)
                         let retrievedEntity = retrievedEntities[0]
                         XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-                        switch retrievedEntity.persistenceState {
+                        switch retrievedEntity.getPersistenceState() {
                         case .persistent:
                             break
                         default:

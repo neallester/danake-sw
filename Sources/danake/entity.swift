@@ -315,21 +315,54 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         return result
     }
+
+// Internal access for testing purposes
+    
+    internal func setSchemaVersion (_ schemaVersion: Int) {
+        queue.sync {
+            self.schemaVersion = schemaVersion
+        }
+    }
+
+    internal func getSchemaVersion () -> Int {
+        var result: Int = 0
+        queue.sync {
+            result = self.schemaVersion
+        }
+        return result
+    }
+    
+    internal func setSaved (_ saved: Date?) {
+        queue.sync {
+            self.saved = saved
+        }
+    }
+    
+    internal func setPersistenceState (_ persistenceState: PersistenceState) {
+        queue.sync {
+            self.persistenceState = persistenceState
+        }
+    }
+    
+    internal func getCollection() -> PersistentCollection<Database, T>? {
+        var result: PersistentCollection<Database, T>? = nil
+        queue.sync {
+            result = collection
+        }
+        return result
+    }
     
 // Attributes
     
-    // TODO Make these internal variable private and provide thread safe setters and getters
-    // where needed for testing purposes
-    
     public let id: UUID
-    internal var version: Int
-    internal let created: Date
-    internal var saved: Date?
+    private var version: Int
+    public let created: Date
+    private var saved: Date?
     private var item: T
     private let queue: DispatchQueue
-    internal var persistenceState: PersistenceState
-    internal private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
-    internal var schemaVersion: Int
+    private var persistenceState: PersistenceState
+    private private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
+    private var schemaVersion: Int
 
 }
 
