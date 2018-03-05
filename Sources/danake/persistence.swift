@@ -262,13 +262,15 @@ public class PersistentCollection<D: Database, T: Codable> {
         database.collectionRegistrar.deRegister(key: name)
     }
     
-    func decache (id: UUID) {
+    internal func decache (id: UUID) {
         cacheQueue.async() {
             if let cachedEntity = self.cache[id], cachedEntity.item == nil {
                 self.cache.removeValue (forKey: id)
             }
         }
     }
+
+// Entity Queries
     
     public func get (id: UUID) -> RetrievalResult<Entity<T>> {
         var result: Entity<T>? = nil
@@ -296,11 +298,63 @@ public class PersistentCollection<D: Database, T: Codable> {
         return .ok(result)
     }
 
-    func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
+    public func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
         workQueue.async {
             closure (self.get (id: id))
         }
     }
+    
+    public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
+        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, name: name)
+        switch retrievalResult {
+        case .ok (var resultList):
+            if let criteria = criteria  {
+                return .ok (initialize(entities: resultList, criteria: criteria))
+            } else {
+                initialize (entities: &resultList)
+                return .ok (resultList)
+            }
+        case .error (let errorMessage):
+            self.database.logger?.log (level: .error, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name: "errorMessage", errorMessage)])
+            return .error (errorMessage)
+        }
+    }
+    
+    public func scan (criteria: ((T) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
+        workQueue.async {
+            closure (self.scan (criteria: criteria))
+        }
+    }
+
+// Entity Creation
+    
+    public func new (batch: Batch, item: T) -> Entity<T> {
+        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
+        cacheQueue.async() {
+            self.cache[result.getId()] = WeakItem (item:result)
+        }
+        batch.insertAsync(item: result, closure: nil)
+        return result
+    }
+    
+    /*
+     Use when creation of some attribute of T requires a back reference to T
+     e.g.
+     class Parent
+     let child: EntityReference<Child>
+     class Child
+     let parent: EntityReference<Parent>
+     */
+    public func new (batch: Batch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
+        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, itemClosure: itemClosure)
+        cacheQueue.async() {
+            self.cache[result.getId()] = WeakItem (item:result)
+        }
+        batch.insertAsync(item: result, closure: nil)
+        return result
+    }
+
+// Entity Initialization
     
     internal func entityForProspect (prospectEntity: Entity<T>) -> Entity<T> {
         var result: Entity<T>? = nil
@@ -321,32 +375,10 @@ public class PersistentCollection<D: Database, T: Codable> {
         If ** criteria ** is provided, only those entities where criteria returns true are included
     */
     
-    public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, name: name)
-        switch retrievalResult {
-        case .ok (var resultList):
-            if let criteria = criteria  {
-                return .ok (initialize(entities: resultList, criteria: criteria))
-            } else {
-                initialize (entities: &resultList)
-                return .ok (resultList)
-            }
-        case .error (let errorMessage):
-            self.database.logger?.log (level: .error, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name: "errorMessage", errorMessage)])
-            return .error (errorMessage)
-        }
-    }
-    
-    func scan (criteria: ((T) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
-        workQueue.async {
-            closure (self.scan (criteria: criteria))
-        }
-    }
-
     /*
         Replaces ** entities ** with their cached version or initializes if not in cache
     */
-    func initialize (entities: inout [Entity<T>]) {
+    public func initialize (entities: inout [Entity<T>]) {
         var index = 0
         for entity in entities {
             entities[index] = entityForProspect(prospectEntity: entity)
@@ -357,7 +389,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     /*
         Returns array containing cached or initilaized ** entities ** which match ** criteria **
     */
-    func initialize (entities: [Entity<T>], criteria: ((T) -> Bool)) -> [Entity<T>] {
+    public func initialize (entities: [Entity<T>], criteria: ((T) -> Bool)) -> [Entity<T>] {
         var result: [Entity<T>] = []
         for entity in entities {
             var matchesCriteria = true
@@ -371,38 +403,16 @@ public class PersistentCollection<D: Database, T: Codable> {
         return result
     }
 
-    public func new (batch: Batch, item: T) -> Entity<T> {
-        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
-        cacheQueue.async() {
-            self.cache[result.getId()] = WeakItem (item:result)
-        }
-        batch.insertAsync(item: result, closure: nil)
-        return result
-    }
-    
-/*
-     Use when creation of some attribute of T requires a back reference to T
-     e.g.
-        class Parent
-            let child: EntityReference<Child>
-        class Child
-            let parent: EntityReference<Parent>
- */
-    public func new (batch: Batch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
-        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, itemClosure: itemClosure)
-        cacheQueue.async() {
-            self.cache[result.getId()] = WeakItem (item:result)
-        }
-        batch.insertAsync(item: result, closure: nil)
-        return result
-    }
 
+    
     func sync (closure: (Dictionary<UUID, WeakItem<T>>) -> Void) {
         cacheQueue.sync () {
             closure (cache)
         }
     }
 
+// Attributes
+    
     internal let database: Database
     public let name: CollectionName
     private var cache: Dictionary<UUID, WeakItem<T>>
