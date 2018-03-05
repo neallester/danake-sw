@@ -7,6 +7,8 @@
 import Foundation
 
 // TODO Rename to EventuallyConsistentBatch
+// TODO Items are removed from batch as they process successfully
+// TODO If batch is not empty, it dispatches itself in the future with a delay 
 
 public class Batch {
     
