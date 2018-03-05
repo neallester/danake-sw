@@ -236,11 +236,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // Write Access to item
     
-    /*
-        TODO add asyncIfUpdated, syncIfUpdated, which only add to the batch if closure makes a change
-        to the object
-    */
-    
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertAsync(item: self) {
