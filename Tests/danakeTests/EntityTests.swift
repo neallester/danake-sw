@@ -158,7 +158,7 @@ class EntityTests: XCTestCase {
     }
 
     func testWriteAccess() {
-        var entity = newTestEntity(myInt: 0, myString: "")
+        let entity = newTestEntity(myInt: 0, myString: "0")
         var batch = Batch()
         var itemInt = 0
         var itemString = ""
@@ -168,9 +168,36 @@ class EntityTests: XCTestCase {
         default:
             XCTFail("Expected .new")
         }
+        // sync: persistentState = .new
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 10
-            item.myString = "Test Completed"
+            item.myString = "10"
+        }
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        XCTAssertEqual(10, itemInt)
+        XCTAssertEqual("10", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // sync: persistentState = .dirty
+        entity.setPersistenceState(.dirty)
+        batch = Batch()
+        entity.sync(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 20
+            item.myString = "20"
         }
         entity.sync() { (item: MyStruct) in
             itemInt = item.myInt
@@ -180,10 +207,35 @@ class EntityTests: XCTestCase {
         case .dirty:
             break
         default:
-            XCTFail("Expected .new")
+            XCTFail("Expected .dirty")
         }
-        XCTAssertEqual(10, itemInt)
-        XCTAssertEqual("Test Completed", itemString)
+        XCTAssertEqual(20, itemInt)
+        XCTAssertEqual("20", itemString)
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // sync: persistentState = .persistent
+        entity.setPersistenceState(.dirty)
+        batch = Batch()
+        entity.sync(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        XCTAssertEqual(30, itemInt)
+        XCTAssertEqual("30", itemString)
         
         batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, items.count)
@@ -191,14 +243,93 @@ class EntityTests: XCTestCase {
             let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
-        entity = newTestEntity(myInt: 0, myString: "")
+        // sync: persistentState = .abandoned
+        entity.setPersistenceState(.abandoned)
         batch = Batch()
-        itemInt = 0
-        itemString = ""
-        let waitFor = expectation(description: "testSyncAsync")
+        entity.sync(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 40
+            item.myString = "40"
+        }
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        XCTAssertEqual(40, itemInt)
+        XCTAssertEqual("40", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // sync: persistentState = .pendingRemoval
+        entity.setPersistenceState(.pendingRemoval)
+        batch = Batch()
+        entity.sync(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 50
+            item.myString = "50"
+        }
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        XCTAssertEqual(50, itemInt)
+        XCTAssertEqual("50", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // async: persistentState = .new
+        entity.setPersistenceState(.new)
+        var waitFor = expectation(description: ".new")
+        entity.async(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 10
+            item.myString = "10"
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        XCTAssertEqual(10, itemInt)
+        XCTAssertEqual("10", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // async: persistentState = .dirty
+        waitFor = expectation(description: ".dirty")
+        entity.setPersistenceState(.dirty)
+        batch = Batch()
         entity.async(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
-            item.myString = "Test 2 Completed"
+            item.myString = "20"
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10, handler: nil)
@@ -210,10 +341,97 @@ class EntityTests: XCTestCase {
         case .dirty:
             break
         default:
-            XCTFail("Expected .new")
+            XCTFail("Expected .dirty")
         }
         XCTAssertEqual(20, itemInt)
-        XCTAssertEqual("Test 2 Completed", itemString)
+        XCTAssertEqual("20", itemString)
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // async: persistentState = .persistent
+        waitFor = expectation(description: ".persistetnt")
+        entity.setPersistenceState(.dirty)
+        batch = Batch()
+        entity.async(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 30
+            item.myString = "30"
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        XCTAssertEqual(30, itemInt)
+        XCTAssertEqual("30", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // async: persistentState = .abandoned
+        waitFor = expectation(description: ".abandoned")
+        entity.setPersistenceState(.abandoned)
+        batch = Batch()
+        entity.async(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 40
+            item.myString = "40"
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail("Expected .new")
+        }
+        XCTAssertEqual(40, itemInt)
+        XCTAssertEqual("40", itemString)
+        
+        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, items.count)
+            XCTAssertEqual(0, entity.getVersion())
+            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            XCTAssertTrue (entity === retrievedEntity)
+        }
+        // async: persistentState = .pendingRemoval
+        waitFor = expectation(description: ".pendingRemoval")
+        entity.setPersistenceState(.pendingRemoval)
+        batch = Batch()
+        entity.async(batch: batch) { (item: inout MyStruct) in
+            item.myInt = 50
+            item.myString = "50"
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        entity.sync() { (item: MyStruct) in
+            itemInt = item.myInt
+            itemString = item.myString
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        XCTAssertEqual(50, itemInt)
+        XCTAssertEqual("50", itemString)
+        
         batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, items.count)
             XCTAssertEqual(0, entity.getVersion())

@@ -28,6 +28,8 @@ public enum PersistenceState : String, Codable {
     case new
     case dirty
     case persistent
+    case pendingRemoval
+    case abandoned // "Removed" before being persisted
     
 }
 
@@ -242,7 +244,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertAsync(item: self) {
-                self.persistenceState = .dirty
+                self.updateStateForModification()
                 closure (&self.item)
             }
         }
@@ -251,9 +253,25 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.sync {
             batch.insertSync (item: self) {
-                self.persistenceState = .dirty
+                self.updateStateForModification()
                 closure (&self.item)
             }
+        }
+    }
+    
+    // To be called whenever current object is modified
+    private func updateStateForModification() {
+        switch persistenceState {
+        case .persistent:
+            persistenceState = .dirty
+        case .abandoned:
+            persistenceState = .new
+        case .pendingRemoval:
+            persistenceState = .dirty
+        case .new:
+            break
+        case .dirty:
+            break
         }
     }
     
