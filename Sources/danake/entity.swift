@@ -286,14 +286,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         switch action {
         case .updateItem(let closure):
             switch self.persistenceState {
-            case .persistent:
+            case .persistent, .pendingRemoval:
                 persistenceState = .dirty
                 closure(&item)
             case .abandoned:
                 persistenceState = .new
-                closure(&item)
-            case .pendingRemoval:
-                persistenceState = .dirty
                 closure(&item)
             case .saving:
                 hasPendingActions = true
