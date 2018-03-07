@@ -895,7 +895,6 @@ class persistenceTests: XCTestCase {
             XCTFail(".ok")
         }
         // Public add with error
-        accessor.setThrowError()
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
         entity3.setSaved (Date())
         // Need to set collection in entity2
@@ -903,6 +902,7 @@ class persistenceTests: XCTestCase {
         let wrapper3 = EntityPersistenceWrapper (collectionName: collection.name, item: entity3)
         switch accessor.addAction(wrapper: wrapper3) {
         case .ok (let closure):
+            accessor.setThrowError()
             switch closure() {
             case .error (let errorMessage):
                 XCTAssertEqual ("Test Error", errorMessage)
@@ -1013,7 +1013,6 @@ class persistenceTests: XCTestCase {
         foundEntity1 = false
         foundEntity2 = false
         prefetchUuid = nil
-        accessor.setThrowError()
         accessor.setPreFetch() { uuid in
             if uuid.uuidString == entity2.getId().uuidString {
                 prefetchUuid = uuid.uuidString
@@ -1021,6 +1020,7 @@ class persistenceTests: XCTestCase {
         }
         switch accessor.removeAction(wrapper: wrapper2) {
         case .ok (let closure):
+            accessor.setThrowError()
             switch closure() {
             case .error(let errorMessage):
                 XCTAssertEqual ("Test Error", errorMessage)
@@ -1077,6 +1077,46 @@ class persistenceTests: XCTestCase {
         XCTAssertNil (prefetchUuid)
         XCTAssertTrue (foundEntity1)
         XCTAssertFalse (foundEntity2)
+        // Test throw error for addAction, updateAction, and removeAction
+        accessor.setThrowError()
+        switch accessor.addAction(wrapper: wrapper2) {
+        case .error (let errorMessage):
+            XCTAssertEqual ("Test Error", errorMessage)
+        default:
+            XCTFail ("Expected .error")
+        }
+        switch accessor.addAction(wrapper: wrapper2) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        accessor.setThrowError()
+        switch accessor.updateAction(wrapper: wrapper2) {
+        case .error (let errorMessage):
+            XCTAssertEqual ("Test Error", errorMessage)
+        default:
+            XCTFail ("Expected .error")
+        }
+        switch accessor.updateAction(wrapper: wrapper2) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        accessor.setThrowError()
+        switch accessor.removeAction(wrapper: wrapper2) {
+        case .error (let errorMessage):
+            XCTAssertEqual ("Test Error", errorMessage)
+        default:
+            XCTFail ("Expected .error")
+        }
+        switch accessor.removeAction(wrapper: wrapper2) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
 
     }
     

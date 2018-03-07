@@ -497,6 +497,16 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
 
     public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        var errorResult: DatabaseActionResult? = nil
+        queue.sync {
+            if throwError {
+                throwError = false
+                errorResult = .error ("Test Error")
+            }
+        }
+        if let errorResult = errorResult {
+            return errorResult
+        }
         do {
             let data = try self.encoder.encode (wrapper)
             let result = { () -> DatabaseUpdateResult in
@@ -513,6 +523,16 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
     
     public func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        var errorResult: DatabaseActionResult? = nil
+        queue.sync {
+            if throwError {
+                throwError = false
+                errorResult = .error ("Test Error")
+            }
+        }
+        if let errorResult = errorResult {
+            return errorResult
+        }
         let result = { () -> DatabaseUpdateResult in
             return self.remove(name: wrapper.collectionName, id: wrapper.getId())
         }
