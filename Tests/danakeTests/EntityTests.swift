@@ -524,125 +524,186 @@ class EntityTests: XCTestCase {
         let anyEntityJson = String (data: anyEntityData, encoding: .utf8)
         XCTAssertEqual (entityJson, anyEntityJson)
     }
-
-    func testUpdateStatement() {
-        let entity = newTestEntity(myInt: 10, myString: "A String")
-        var anyEntity: AnyEntityManagement? = nil
-        XCTAssertEqual (0, entity.getVersion())
+    
+    func testHandleActionUpdateItem () {
+        let entity = newTestEntity(myInt: 10, myString: "10")
+        var action = PersistenceAction<MyStruct>.updateItem()  { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        // persistenceState = .new
+        entity.handleAction(action)
+        XCTAssertFalse (entity.getHasPendingActions())
         switch entity.getPersistenceState() {
         case .new:
             break
         default:
-            XCTFail("Expected .new")
+            XCTFail ("Expected .new")
         }
-        var result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
-            do {
-                anyEntity = entity
-                let accessor = InMemoryAccessor()
-                let result = try accessor.encoder.encode (entity)
-                return .ok(result)
-            } catch {
-                return .error ("\(error)")
-            }
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
         }
-        switch result {
-        case .ok (let data):
-            try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":1,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}", String (data: data, encoding: .utf8))
+        // persistenceState = .dirty
+        entity.setPersistenceState(.dirty)
+        action = PersistenceAction<MyStruct>.updateItem()  { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        entity.handleAction(action)
+        XCTAssertFalse (entity.getHasPendingActions())
+        switch entity.getPersistenceState() {
+        case .dirty:
             break
         default:
-            XCTFail()
+            XCTFail ("Expected .dirty")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (30, item.myInt)
+            XCTAssertEqual ("30", item.myString)
+        }
+        // persistenceState = .pendingRemoval
+        entity.setPersistenceState(.pendingRemoval)
+        action = PersistenceAction<MyStruct>.updateItem()  { item in
+            item.myInt = 40
+            item.myString = "40"
+        }
+        entity.handleAction(action)
+        XCTAssertFalse (entity.getHasPendingActions())
         switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (40, item.myInt)
+            XCTAssertEqual ("40", item.myString)
+        }
+        // persistenceState = .abandoned
+        entity.setPersistenceState(.abandoned)
+        action = PersistenceAction<MyStruct>.updateItem()  { item in
+            item.myInt = 50
+            item.myString = "50"
+        }
+        entity.handleAction(action)
+        XCTAssertFalse (entity.getHasPendingActions())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (50, item.myInt)
+            XCTAssertEqual ("50", item.myString)
+        }
+        // persistenceState = .saving
+        entity.setPersistenceState(.saving)
+        action = PersistenceAction<MyStruct>.updateItem()  { item in
+            item.myInt = 60
+            item.myString = "60"
+        }
+        entity.handleAction(action)
+        XCTAssertTrue (entity.getHasPendingActions())
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (60, item.myInt)
+            XCTAssertEqual ("60", item.myString)
+        }
+
+    }
+    
+    func testPersistenceStatePair() {
+        let pair = PersistenceStatePair (success: .persistent, failure: .dirty)
+        switch pair.success {
         case .persistent:
             break
         default:
             XCTFail("Expected .persistent")
         }
-        XCTAssertEqual (entity.getId(), anyEntity!.getId())
-        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
-        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
-        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
-        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
-        let accessor = InMemoryAccessor()
-        let _ = accessor.add (name: "MyCollection", entity: anyEntity!)
-        let accessorResult = accessor.get (type: Entity<MyStruct>.self, name: "MyCollection", id: entity.getId())
-        // retrievedEntity is not initialized so collection is nil
-        switch accessorResult {
-        case .ok(let retrievedEntity):
-            result = retrievedEntity!.removeStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
-                do {
-                    anyEntity = entity
-                    let accessor = InMemoryAccessor()
-                    let result = try accessor.encoder.encode (entity)
-                    return .ok(result)
-                } catch {
-                    return .error ("\(error)")
-                }
-            }
-            switch result {
-            case .error (let errorMessage):
-                XCTAssertEqual ("Entity<MyStruct>.removeStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(retrievedEntity!.getId().uuidString)", errorMessage)
-            default:
-                XCTFail()
-            }
-        default:
-            XCTFail ("Expected result")
-        }
-    }
-    
-    func testRemoveStatement() {
-        let entity = newTestEntity(myInt: 10, myString: "A String")
-        var anyEntity: AnyEntityManagement? = nil
-        XCTAssertEqual (0, entity.getVersion())
-        switch entity.getPersistenceState() {
-        case .new:
+        switch pair.failure {
+        case .dirty:
             break
         default:
-            XCTFail("Expected .new")
+            XCTFail("Expected .dirty")
         }
-        var result = entity.removeStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<String> in
-            anyEntity = entity
-            return .ok("remove:collection=\(name);id=\(entity.getId())")
-        }
-        switch result {
-        case .ok (let statement):
-            XCTAssertEqual ("remove:collection=myCollection;id=\(entity.getId().uuidString)", statement)
-        default:
-            XCTFail()
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail("Expected .new")
-        }
-        XCTAssertEqual (entity.getId(), anyEntity!.getId())
-        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
-        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
-        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
-        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
-        let accessor = InMemoryAccessor()
-        let _ = accessor.add (name: "MyCollection", entity: anyEntity!)
-        let accessorResult = accessor.get (type: Entity<MyStruct>.self, name: "MyCollection", id: entity.getId())
-        // retrievedEntity is not initialized so collection is nil
-        switch accessorResult {
-        case .ok(let retrievedEntity):
-            result = retrievedEntity!.removeStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<String> in
-                anyEntity = entity
-                return .ok("remove:collection=\(name);id=\(entity.getId())")
-            }
-            switch result {
-            case .error (let errorMessage):
-                XCTAssertEqual ("Entity<MyStruct>.removeStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(retrievedEntity!.getId().uuidString)", errorMessage)
-            default:
-                XCTFail()
-            }
-        default:
-            XCTFail ("Expected result")
-        }
+
     }
+
+//    func testUpdateStatement() throws {
+//        let entity = newTestEntity(myInt: 10, myString: "A String")
+//        var anyEntity: AnyEntityManagement? = nil
+//        XCTAssertEqual (0, entity.getVersion())
+//        entity .setPersistenceState(.persistent)
+//        entity.setSaved(Date())
+//        switch entity.getPersistenceState() {
+//        case .persistent:
+//            break
+//        default:
+//            XCTFail("Expected .new")
+//        }
+//        var result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityEncodingResult<Data> in
+//            do {
+//                anyEntity = entity
+//                let accessor = InMemoryAccessor()
+//                let result = try accessor.encoder.encode (entity)
+//                return .ok(result)
+//            } catch {
+//                return .error ("\(error)")
+//            }
+//        }
+//        switch result {
+//        case .ok (let data):
+//            let expectedJSON = try "{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}"
+//            XCTAssertEqual (expectedJSON, String (data: data, encoding: .utf8))
+//            break
+//        default:
+//            XCTFail()
+//        }
+//        XCTAssertEqual (0, entity.getVersion())
+//        switch entity.getPersistenceState() {
+//        case .persistent:
+//            break
+//        default:
+//            XCTFail("Expected .persistent")
+//        }
+//        XCTAssertEqual (entity.getId(), anyEntity!.getId())
+//        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
+//        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
+//        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
+//        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
+//        let accessor = InMemoryAccessor()
+//        let _ = accessor.add (name: "MyCollection", entity: anyEntity!)
+//        let accessorResult = accessor.get (type: Entity<MyStruct>.self, name: "MyCollection", id: entity.getId())
+//        // retrievedEntity is not initialized so collection is nil
+//        switch accessorResult {
+//        case .ok(let retrievedEntity):
+//            result = retrievedEntity!.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityEncodingResult<Data> in
+//                do {
+//                    anyEntity = entity
+//                    let accessor = InMemoryAccessor()
+//                    let result = try accessor.encoder.encode (entity)
+//                    return .ok(result)
+//                } catch {
+//                    return .error ("\(error)")
+//                }
+//            }
+//            switch result {
+//            case .error (let errorMessage):
+//                XCTAssertEqual ("Entity<MyStruct>.updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(retrievedEntity!.getId().uuidString)", errorMessage)
+//            default:
+//                XCTFail()
+//            }
+//        default:
+//            XCTFail ("Expected result")
+//        }
+//    }
     
     // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
     static func jsonEncodedDate (date: Date) throws -> String? {

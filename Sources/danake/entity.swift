@@ -17,23 +17,45 @@ public protocol EntityProtocol {
 }
 
 public protocol EntityManagement : EntityProtocol, Encodable {
-    
     func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
     func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
+}
+
+struct PersistenceStatePair : Codable {
+    
+    init (success: PersistenceState, failure: PersistenceState) {
+        self.success = success
+        self.failure = failure
+    }
+    
+    let success: PersistenceState
+    let failure: PersistenceState
     
 }
 
 public enum PersistenceState : String, Codable {
     
-    case new
-    case dirty
-    case persistent
-    case pendingRemoval
-    case abandoned // "Removed" before being persisted
+    case new                // Not yet in persistent media
+    case dirty              // Application version differs from persistent media
+    case persistent         // Application contents are the same as in persistent media
+    case pendingRemoval     // Application has requested this entity be removed from persistent media
+    case abandoned          // The entity was "removed" before being persisted (will be ignored when Batch is committed)
+    case saving             // Entity is currently being saved to persistent media
+
+}
+
+public enum PersistenceAction<T: Codable> {
+
+    case updateItem ((inout T) -> ())
     
 }
 
 public enum EntityConversionResult<R> {
+    case ok (R)
+    case error (String)
+}
+
+public enum EntityEncodingResult<R> {
     case ok (R)
     case error (String)
 }
@@ -106,7 +128,7 @@ public class AnyEntityManagement : EntityManagement, Encodable {
     public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         return item.updateStatement(converter: converter)
     }
-
+    
     public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         return item.removeStatement(converter: converter)
     }
@@ -119,6 +141,7 @@ public class AnyEntityManagement : EntityManagement, Encodable {
     Model object wrapper.
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
+    
     
     init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
         self.collection = collection
@@ -181,8 +204,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     /*
         Update Entity metadata to reflect being saved to the persistent media and return the media specific update statement to make it so
      
-        Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
-        will produce a thread deadlock
+        ** Not Rhead Safe
     */
     public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
@@ -198,12 +220,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             return .error ("\(type (of: self)).updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
         }
     }
-    
+
     /*
-        Update Entity metadata to reflect being removed from the persistent media and return the media specific update statement to make it so
+     Update Entity metadata to reflect being removed from the persistent media and return the media specific update statement to make it so
      
-        Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
-        will produce a thread deadlock
+     Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
+     will produce a thread deadlock
      */
     public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
         if let collection = collection {
@@ -219,7 +241,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             return .error ("\(type (of: self)).removeStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
         }
     }
-
     // Read Only Access to item
     
     public func async (closure: @escaping (T) -> Void) {
@@ -227,6 +248,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             closure (self.item)
         }
     }
+
 
     public func sync (closure: (T) -> Void) {
         queue.sync () {
@@ -239,8 +261,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertAsync(item: self) {
-                self.updateStateForModification()
-                closure (&self.item)
+                self.handleImplementation(.updateItem (closure))
             }
         }
     }
@@ -248,27 +269,74 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.sync {
             batch.insertSync (item: self) {
-                self.updateStateForModification()
-                closure (&self.item)
+                self.handleImplementation(.updateItem (closure))
             }
         }
     }
     
-    // To be called whenever current object is modified
-    private func updateStateForModification() {
-        switch persistenceState {
-        case .persistent:
-            persistenceState = .dirty
-        case .abandoned:
-            persistenceState = .new
-        case .pendingRemoval:
-            persistenceState = .dirty
-        case .new:
-            break
-        case .dirty:
-            break
+// Persistence Action Handling
+    
+    internal func handleAction (_ action: PersistenceAction<T>) {
+        queue.async {
+            self.handleImplementation(action)
         }
     }
+    
+    private func handleImplementation (_ action: PersistenceAction<T>) {
+        switch action {
+        case .updateItem(let closure):
+            switch self.persistenceState {
+            case .persistent:
+                persistenceState = .dirty
+                closure(&item)
+            case .abandoned:
+                persistenceState = .new
+                closure(&item)
+            case .pendingRemoval:
+                persistenceState = .dirty
+                closure(&item)
+            case .saving:
+                hasPendingActions = true
+                closure(&item)
+            case .new, .dirty:
+                closure(&item)
+            }
+        }
+    }
+
+    
+    // ************************* TODO Add test cases for .saving & .rmoving async & sync
+    
+// Removal
+    
+    /*
+        Remove ** self ** from persistent media.
+     
+        Application developers may safely dereference an Entity after calling ** remove(). **
+        Modifying an Entity on which ** remove() ** has been called will reanimate it.
+
+        It is the application's responsibility to ensure that no other items contain references
+        to the removed Entity; removing an Entity to which there are references will produce
+        errors (i.e. RetrievalResult.error) when those references are accessed.
+    */
+//    public func remove (batch: Batch) {
+//        queue.async {
+//            batch.insertAsync(item: self) {
+//                switch self.persistenceState {
+//                case .persistent:
+//                    self.persistenceState = .pendingRemoval
+//                case .new:
+//                    self.persistenceState = .abandoned
+//                case .dirty:
+//                    self.persistenceState = .pendingRemoval
+//                case .abandoned:
+//                    break
+//                case .pendingRemoval:
+//                    break
+//                }
+//            }
+//        }
+//    }
     
 // Codable
     
@@ -365,6 +433,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
+    internal func getHasPendingActions() -> Bool {
+        var result = false
+        queue.sync {
+            result = hasPendingActions
+        }
+        return result
+    }
+    
 // Attributes
     
     public let id: UUID
@@ -376,6 +452,9 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var persistenceState: PersistenceState
     private private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
     private var schemaVersion: Int
+    private var hasPendingActions = false
+    private var onDatabaseUpdateStates: PersistenceStatePair? = nil
+    
 
 }
 
