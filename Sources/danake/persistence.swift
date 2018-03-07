@@ -112,7 +112,7 @@ public protocol DatabaseAccessor {
     
     func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     
-    //    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+//    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
 
 }
 
@@ -438,10 +438,13 @@ public class PersistentCollection<D: Database, T: Codable> {
 // Use for testing
 public class InMemoryAccessor: DatabaseAccessor {
     
+    
     init() {
         id = UUID()
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
     }
+
+// Implement protocol DatabaseAccessor
     
     public func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable {
         var result: T? = nil
@@ -470,44 +473,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
         return .ok (result)
     }
-    
-    public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        do {
-            let data = try self.encoder.encode (wrapper)
-            let result = { () -> DatabaseUpdateResult in
-                return self.add (name: wrapper.collectionName, id: wrapper.getId(), data: data)
-            }
-            return .ok (result)
-        } catch {
-            return DatabaseActionResult.error("\(error)")
-        }
-    }
 
-    internal func add (name: CollectionName, id: UUID, data: Data) -> DatabaseUpdateResult {
-        var result = DatabaseUpdateResult.ok
-        queue.sync {
-            if let preFetch = preFetch {
-                preFetch (id)
-                
-            }
-            if throwError {
-                throwError = false
-                result = .error ("Test Error")
-            } else {
-                if self.storage[name] == nil {
-                    let collectionDictionary = Dictionary<UUID, Data>()
-                    self.storage[name] = collectionDictionary
-                }
-                self.storage[name]![id] = data
-            }
-        }
-        return result
-    }
-
-    public func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        return addAction (wrapper: wrapper)
-    }
-    
     public func scan<T, E: Entity<T>> (type: E.Type, name: CollectionName) -> DatabaseAccessListResult<E> {
         var resultList: [E] = []
         var result = DatabaseAccessListResult<E>.ok (resultList)
@@ -530,6 +496,21 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
 
+    public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        do {
+            let data = try self.encoder.encode (wrapper)
+            let result = { () -> DatabaseUpdateResult in
+                return self.add (name: wrapper.collectionName, id: wrapper.getId(), data: data)
+            }
+            return .ok (result)
+        } catch {
+            return DatabaseActionResult.error("\(error)")
+        }
+    }
+
+    public func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        return addAction (wrapper: wrapper)
+    }
     
     public func isValidCollectionName(name: CollectionName) -> ValidationResult {
         if name.count > 0 {
@@ -538,16 +519,37 @@ public class InMemoryAccessor: DatabaseAccessor {
             return .error ("Empty String is an illegal CollectionName")
         }
     }
+
+    public func hashValue() -> String {
+        return id.uuidString
+    }
     
+// Access to internals (may be used within tests)
+    
+    public func add (name: CollectionName, id: UUID, data: Data) -> DatabaseUpdateResult {
+        var result = DatabaseUpdateResult.ok
+        queue.sync {
+            if let preFetch = preFetch {
+                preFetch (id)
+                
+            }
+            if throwError {
+                throwError = false
+                result = .error ("Test Error")
+            } else {
+                if self.storage[name] == nil {
+                    let collectionDictionary = Dictionary<UUID, Data>()
+                    self.storage[name] = collectionDictionary
+                }
+                self.storage[name]![id] = data
+            }
+        }
+        return result
+    }
+
     public func setThrowError() {
         queue.async {
             self.throwError = true
-        }
-    }
-    
-    func sync (closure: (Dictionary<CollectionName, Dictionary<UUID, Data>>) -> Void) {
-        queue.sync () {
-            closure (storage)
         }
     }
     
@@ -555,8 +557,10 @@ public class InMemoryAccessor: DatabaseAccessor {
         self.preFetch = preFetch
     }
     
-    public func hashValue() -> String {
-        return id.uuidString
+    func sync (closure: (Dictionary<CollectionName, Dictionary<UUID, Data>>) -> Void) {
+        queue.sync () {
+            closure (storage)
+        }
     }
     
     public let encoder: JSONEncoder = {
