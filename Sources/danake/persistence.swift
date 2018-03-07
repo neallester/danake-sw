@@ -112,7 +112,7 @@ public protocol DatabaseAccessor {
     
     func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     
-//    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
 
 }
 
@@ -512,6 +512,13 @@ public class InMemoryAccessor: DatabaseAccessor {
         return addAction (wrapper: wrapper)
     }
     
+    public func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        let result = { () -> DatabaseUpdateResult in
+            return self.remove(name: wrapper.collectionName, id: wrapper.getId())
+        }
+        return .ok (result)
+    }
+
     public func isValidCollectionName(name: CollectionName) -> ValidationResult {
         if name.count > 0 {
             return .ok
@@ -545,6 +552,23 @@ public class InMemoryAccessor: DatabaseAccessor {
             }
         }
         return result
+    }
+    
+    public func remove (name: CollectionName, id: UUID) -> DatabaseUpdateResult {
+        var result = DatabaseUpdateResult.ok
+        queue.sync {
+            if let preFetch = preFetch {
+                preFetch (id)
+            }
+            if throwError {
+                throwError = false
+                result = .error ("Test Error")
+            } else {
+                self.storage[name]?[id] = nil
+            }
+        }
+        return result
+
     }
 
     public func setThrowError() {

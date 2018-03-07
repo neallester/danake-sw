@@ -997,7 +997,7 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail ("Expected .error")
         }
-        // Test preFetch
+        // Test get preFetch
         prefetchUuid = nil
         accessor.setPreFetch() { uuid in
             prefetchUuid = uuid.uuidString
@@ -1009,6 +1009,75 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
+        // Test Remove with error and prefetch
+        foundEntity1 = false
+        foundEntity2 = false
+        prefetchUuid = nil
+        accessor.setThrowError()
+        accessor.setPreFetch() { uuid in
+            if uuid.uuidString == entity2.getId().uuidString {
+                prefetchUuid = uuid.uuidString
+            }
+        }
+        switch accessor.removeAction(wrapper: wrapper2) {
+        case .ok (let closure):
+            switch closure() {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Test Error", errorMessage)
+                switch accessor.scan(type: Entity<MyStruct>.self, name: standardCollectionName) {
+                case .ok (let retrievedEntities):
+                    XCTAssertEqual (2, retrievedEntities.count)
+                    for retrievedEntity in retrievedEntities {
+                        if (retrievedEntity.getId().uuidString == entity.getId().uuidString) {
+                            foundEntity1 = true
+                        } else if (retrievedEntity.getId().uuidString == entity2.getId().uuidString) {
+                            foundEntity2 = true
+                        }
+                    }
+                default:
+                    XCTFail("Expected .ok")
+                }
+            default:
+                XCTFail ("Expected .error")
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+        XCTAssertEqual (entity2.getId().uuidString, prefetchUuid)
+        XCTAssertTrue (foundEntity1)
+        XCTAssertTrue (foundEntity2)
+        // Test Remove
+        foundEntity1 = false
+        foundEntity2 = false
+        prefetchUuid = nil
+        accessor.setPreFetch(preFetch: nil)
+        switch accessor.removeAction(wrapper: wrapper2) {
+        case .ok (let closure):
+            switch closure() {
+            case .ok:
+                switch accessor.scan(type: Entity<MyStruct>.self, name: standardCollectionName) {
+                case .ok (let retrievedEntities):
+                    XCTAssertEqual (1, retrievedEntities.count)
+                    for retrievedEntity in retrievedEntities {
+                        if (retrievedEntity.getId().uuidString == entity.getId().uuidString) {
+                            foundEntity1 = true
+                        } else if (retrievedEntity.getId().uuidString == entity2.getId().uuidString) {
+                            foundEntity2 = true
+                        }
+                    }
+                default:
+                    XCTFail("Expected .ok")
+                }
+            default:
+                XCTFail ("Expected .ok")
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+        XCTAssertNil (prefetchUuid)
+        XCTAssertTrue (foundEntity1)
+        XCTAssertFalse (foundEntity2)
+
     }
     
     class RegistrarTestItem {
