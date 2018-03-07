@@ -79,13 +79,14 @@ public enum ValidationResult {
     }
 }
 
+public enum DatabaseActionResult {
+    case ok (() -> DatabaseUpdateResult)
+    case error (String)
+}
+
 public protocol DatabaseAccessor {
     
     func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable
-    
-    func add (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult
-    
-    func update (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult
     
     func scan<T> (type: Entity<T>.Type, name: CollectionName) -> DatabaseAccessListResult<Entity<T>>
     
@@ -100,7 +101,19 @@ public protocol DatabaseAccessor {
         Ideally this should be stored in and retrieved from the storage medium
     */
     func hashValue() -> String
+
+    /*
+        The ** DatabaseActionResult ** functions should return fast: The actual database
+        access should occur when the returned closure is fired
+     
+    */
     
+    func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+    func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+    //    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+
 }
 
 struct WeakItem<T: Codable> {
@@ -435,6 +448,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         var errorMessage: String? = nil
         if let preFetch = preFetch {
             preFetch (id)
+            
         }
         queue.sync() {
             if self.throwError {
@@ -457,46 +471,41 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func add (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult {
+    public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        do {
+            let data = try self.encoder.encode (wrapper)
+            let result = { () -> DatabaseUpdateResult in
+                return self.add (name: wrapper.collectionName, id: wrapper.getId(), data: data)
+            }
+            return .ok (result)
+        } catch {
+            return DatabaseActionResult.error("\(error)")
+        }
+    }
+
+    internal func add (name: CollectionName, id: UUID, data: Data) -> DatabaseUpdateResult {
         var result = DatabaseUpdateResult.ok
         queue.sync {
-            
-            let conversionResult = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityConversionResult<Data> in
-                do {
-                    let data = try self.encoder.encode (entity)
-                    return .ok (data)
-                } catch {
-                    return EntityConversionResult<Data>.error("\(error)")
-                }
+            if let preFetch = preFetch {
+                preFetch (id)
+                
             }
-            switch conversionResult {
-            case .ok (let data):
+            if throwError {
+                throwError = false
+                result = .error ("Test Error")
+            } else {
                 if self.storage[name] == nil {
                     let collectionDictionary = Dictionary<UUID, Data>()
                     self.storage[name] = collectionDictionary
                 }
-                self.storage[name]![entity.getId()] = data
-                result = .ok
-            case .error (let errorMessage):
-                result = .error ("\(errorMessage)")
+                self.storage[name]![id] = data
             }
         }
         return result
     }
-    
-    // Add test data from scratch
-    public func add (name: CollectionName, id: UUID, data: Data) {
-        queue.sync {
-            if self.storage[name] == nil {
-                let collectionDictionary = Dictionary<UUID, Data>()
-                self.storage[name] = collectionDictionary
-            }
-            self.storage[name]![id] = data
-        }
-    }
-        
-    public func update (name: CollectionName, entity: EntityManagement) -> DatabaseUpdateResult {
-        return add (name: name, entity: entity)
+
+    public func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        return addAction (wrapper: wrapper)
     }
     
     public func scan<T, E: Entity<T>> (type: E.Type, name: CollectionName) -> DatabaseAccessListResult<E> {

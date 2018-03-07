@@ -509,20 +509,17 @@ class EntityTests: XCTestCase {
         XCTAssertEqual (entity.getSaved(), anyEntity.getSaved())
     }
 
-    func testAnyEntityManagement() throws {
+    func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        let anyEntity: AnyEntityManagement = AnyEntityManagement (item: entity)
-        XCTAssertEqual (entity.getId(), anyEntity.getId())
-        XCTAssertEqual (entity.getVersion(), anyEntity.getVersion())
-        XCTAssertEqual (entity.getPersistenceState(), anyEntity.getPersistenceState())
-        XCTAssertEqual (entity.getCreated(), anyEntity.getCreated())
-        XCTAssertEqual (entity.getSaved(), anyEntity.getSaved())
+        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.getCollection()!.name, item: entity)
+        XCTAssertEqual (entity.getId(), wrapper.getId())
+        XCTAssertEqual (entity.getCollection()!.name, wrapper.collectionName)
         let encoder = JSONEncoder()
         let entityData = try encoder.encode(entity)
-        let anyEntityData = try encoder.encode (anyEntity)
+        let wrapperData = try encoder.encode (wrapper)
         let entityJson = String (data: entityData, encoding: .utf8)
-        let anyEntityJson = String (data: anyEntityData, encoding: .utf8)
-        XCTAssertEqual (entityJson, anyEntityJson)
+        let wrapperJson = String (data: wrapperData, encoding: .utf8)
+        XCTAssertEqual (entityJson, wrapperJson)
     }
     
     func testHandleActionUpdateItem () {
@@ -533,7 +530,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .new
         entity.handleAction(action)
-        XCTAssertFalse (entity.getHasPendingActions())
+        XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
         case .new:
             break
@@ -551,7 +548,7 @@ class EntityTests: XCTestCase {
             item.myString = "30"
         }
         entity.handleAction(action)
-        XCTAssertFalse (entity.getHasPendingActions())
+        XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
         case .dirty:
             break
@@ -569,7 +566,7 @@ class EntityTests: XCTestCase {
             item.myString = "40"
         }
         entity.handleAction(action)
-        XCTAssertFalse (entity.getHasPendingActions())
+        XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
         case .dirty:
             break
@@ -587,7 +584,7 @@ class EntityTests: XCTestCase {
             item.myString = "50"
         }
         entity.handleAction(action)
-        XCTAssertFalse (entity.getHasPendingActions())
+        XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
         case .new:
             break
@@ -605,7 +602,12 @@ class EntityTests: XCTestCase {
             item.myString = "60"
         }
         entity.handleAction(action)
-        XCTAssertTrue (entity.getHasPendingActions())
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
         switch entity.getPersistenceState() {
         case .saving:
             break

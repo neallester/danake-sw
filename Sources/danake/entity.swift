@@ -16,10 +16,7 @@ public protocol EntityProtocol {
 
 }
 
-public protocol EntityManagement : EntityProtocol, Encodable {
-    func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
-    func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S>
-}
+public protocol EntityManagement : EntityProtocol, Encodable {}
 
 struct PersistenceStatePair : Codable {
     
@@ -44,15 +41,15 @@ public enum PersistenceState : String, Codable {
 
 }
 
+public enum PendingAction {
+    case update
+    case remove
+}
+
 public enum PersistenceAction<T: Codable> {
 
     case updateItem ((inout T) -> ())
     
-}
-
-public enum EntityConversionResult<R> {
-    case ok (R)
-    case error (String)
 }
 
 public enum EntityEncodingResult<R> {
@@ -92,16 +89,16 @@ public class AnyEntity : EntityProtocol {
 }
 
 /*
-    Type erased wrapper for any Entity providing access to metadata and
+    Type erased wrapper for Entity providing access to metadata and
     functionality needed for persistent management
  */
-public class AnyEntityManagement : EntityManagement, Encodable {
+public class EntityPersistenceWrapper : Encodable {
     
-    init (item: EntityManagement) {
+    init (collectionName: CollectionName, item: EntityManagement) {
+        self.collectionName = collectionName
         self.item = item
     }
     
-    // Not Thread Safe
     public func encode(to encoder: Encoder) throws {
         try item.encode (to: encoder)
     }
@@ -109,31 +106,10 @@ public class AnyEntityManagement : EntityManagement, Encodable {
     public func getId() -> UUID {
         return item.getId()
     }
-    public func getVersion() -> Int {
-        return item.getVersion()
-    }
-    
-    public func getPersistenceState() -> PersistenceState {
-        return item.getPersistenceState()
-    }
-    
-    public func getCreated() -> Date {
-        return item.getCreated()
-    }
-    
-    public func getSaved() -> Date? {
-        return item.getSaved()
-    }
-    
-    public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        return item.updateStatement(converter: converter)
-    }
-    
-    public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        return item.removeStatement(converter: converter)
-    }
 
-    let item: EntityManagement
+    public let collectionName: CollectionName
+    private let item: EntityManagement
+    
    
 }
 
@@ -201,46 +177,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
 
-    /*
-        Update Entity metadata to reflect being saved to the persistent media and return the media specific update statement to make it so
-     
-        ** Not Rhead Safe
-    */
-    public func updateStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        if let collection = collection {
-            var result: EntityConversionResult<S>? = nil
-            queue.sync {
-                version = version + 1
-                persistenceState = .persistent
-                saved = Date()
-                result = converter (collection.name, AnyEntityManagement (item: self))
-            }
-            return result!
-        } else {
-            return .error ("\(type (of: self)).updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
-        }
-    }
+    // TODO Keep for log 
+    //             return .error ("\(type (of: self)).updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
 
-    /*
-     Update Entity metadata to reflect being removed from the persistent media and return the media specific update statement to make it so
-     
-     Calling other thread safe features of the AnyEntityManagement protocol (e.g. AnyEntityManagement.getVersion()) within ** converter **
-     will produce a thread deadlock
-     */
-    public func removeStatement<S> (converter: (CollectionName, AnyEntityManagement) -> EntityConversionResult<S>) -> EntityConversionResult<S> {
-        if let collection = collection {
-            var result: EntityConversionResult<S>? = nil
-            queue.sync {
-                version = version + 1
-                persistenceState = .new
-                saved = Date()
-                result = converter (collection.name, AnyEntityManagement (item: self))
-            }
-            return result!
-        } else {
-            return .error ("\(type (of: self)).removeStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
-        }
-    }
+
     // Read Only Access to item
     
     public func async (closure: @escaping (T) -> Void) {
@@ -293,7 +233,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 persistenceState = .new
                 closure(&item)
             case .saving:
-                hasPendingActions = true
+                pendingAction = .update
                 closure(&item)
             case .new, .dirty:
                 closure(&item)
@@ -430,10 +370,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
-    internal func getHasPendingActions() -> Bool {
-        var result = false
+    internal func getPendingAction() -> PendingAction? {
+        var result: PendingAction? = nil
         queue.sync {
-            result = hasPendingActions
+            result = pendingAction
         }
         return result
     }
@@ -449,7 +389,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var persistenceState: PersistenceState
     private private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
     private var schemaVersion: Int
-    private var hasPendingActions = false
+    private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
     
 

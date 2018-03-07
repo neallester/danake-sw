@@ -215,7 +215,7 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual ("WARNING|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.getId())", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
-        accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
+        let _ = accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
         result = collection.get(id: entity.getId())
         let retrievedEntity = result.item()!
         XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
@@ -278,7 +278,7 @@ class persistenceTests: XCTestCase {
         let json = "{}"
         let invalidData = json.data(using: .utf8)!
         let invalidDataUuid = UUID()
-        accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+        let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
         let invalidEntity = collection.get(id: invalidDataUuid)
         switch invalidEntity {
         case .error (let errorMessage):
@@ -299,7 +299,7 @@ class persistenceTests: XCTestCase {
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
         let data3 = try JSONEncoder().encode(entity)
-        accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+        let _ = accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
         accessor.setThrowError()
         switch collection.get(id: entity3.getId()) {
         case .error (let errorMessage):
@@ -325,8 +325,8 @@ class persistenceTests: XCTestCase {
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try accessor.encoder.encode(entity2)
             let dispatchGroup = DispatchGroup()
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
-            accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            let _ = accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            let _ = accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
@@ -433,8 +433,8 @@ class persistenceTests: XCTestCase {
             // Data In Cache=No; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.2")
             waitFor2 = expectation(description: "wait2.2")
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
-            accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            let _ = accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            let _ = accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
             collection.get(id: entity1.getId()) { item in
                 result1 = item
                 waitFor1.fulfill()
@@ -560,8 +560,8 @@ class persistenceTests: XCTestCase {
             let invalidData2 = json2.data(using: .utf8)!
             let invalidDataUuid1 = UUID()
             let invalidDataUuid2 = UUID()
-            accessor.add(name: standardCollectionName, id: invalidDataUuid1, data: invalidData1)
-            accessor.add(name: standardCollectionName, id: invalidDataUuid2, data: invalidData2)
+            let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid1, data: invalidData1)
+            let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid2, data: invalidData2)
             collection.get(id: invalidDataUuid1) { item in
                 result1 = item
                 waitFor1.fulfill()
@@ -593,8 +593,8 @@ class persistenceTests: XCTestCase {
             let data5 = try JSONEncoder().encode(entity1)
             let entity6 = newTestEntity(myInt: 60, myString: "A String6")
             let data6 = try JSONEncoder().encode(entity2)
-            accessor.add(name: standardCollectionName, id: entity5.getId(), data: data5)
-            accessor.add(name: standardCollectionName, id: entity6.getId(), data: data6)
+            let _ = accessor.add(name: standardCollectionName, id: entity5.getId(), data: data5)
+            let _ = accessor.add(name: standardCollectionName, id: entity6.getId(), data: data6)
             accessor.setThrowError()
             waitFor1 = expectation(description: "wait1.6")
             waitFor2 = expectation(description: "wait2.6")
@@ -630,7 +630,7 @@ class persistenceTests: XCTestCase {
             counter = counter + 1
         }
     }
-
+    
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let uuid = UUID()
@@ -649,7 +649,12 @@ class persistenceTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try accessor.encoder.encode(entity)
         // Add using internal add
-        accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
+        switch accessor.add(name: standardCollectionName, id: entity.getId(), data: data) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
         var retrievedEntity1a: Entity<MyStruct>? = nil
         switch accessor.get(type: Entity<MyStruct>.self, name: standardCollectionName, id: entity.getId()) {
         case .ok (let retrievedEntity):
@@ -695,13 +700,19 @@ class persistenceTests: XCTestCase {
             item.myInt = 20
             item.myString = "A String 2"
         }
+        entity.setSaved(Date())
         // Update
-        let updateResult = accessor.update(name: standardCollectionName, entity: entity)
-        switch updateResult {
-        case .ok:
-            break
+        let wrapper = EntityPersistenceWrapper (collectionName: entity.getCollection()!.name, item: entity)
+        switch accessor.updateAction(wrapper: wrapper) {
+        case .ok (let updateClosure):
+            switch updateClosure() {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
         default:
-            XCTFail ("Expected .ok")
+            XCTFail("Expected .ok")
         }
         var retrievedEntity1b: Entity<MyStruct>? = nil
         switch accessor.get(type: Entity<MyStruct>.self, name: standardCollectionName, id: entity.getId()) {
@@ -782,19 +793,30 @@ class persistenceTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         // Second Entity added public add
+        // Also test preFetch
         let entity2 = newTestEntity(myInt: 30, myString: "A String 3")
         entity2.setSaved (Date())
         // Need to set collection in entity2
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
         entity2.setCollection(collection: collection)
-        let anyEntity2 = AnyEntityManagement (item: entity2)
-        var addResult = accessor.add(name: standardCollectionName, entity: anyEntity2)
-        switch addResult {
-        case .ok:
-            break
+        var prefetchUuid: String? = nil
+        accessor.setPreFetch() { uuid in
+            if uuid.uuidString == entity2.getId().uuidString {
+                prefetchUuid = uuid.uuidString
+            }
+        }
+        let wrapper2 = EntityPersistenceWrapper (collectionName: collection.name, item: entity2)
+        switch accessor.addAction(wrapper: wrapper2) {
+        case .ok (let closure):
+            switch closure() {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
         default:
-            XCTFail ("Expected .ok")
+            XCTFail("Expected .ok")
         }
         var foundEntity1 = false
         var foundEntity2 = false
@@ -836,19 +858,6 @@ class persistenceTests: XCTestCase {
         }
         XCTAssertTrue (foundEntity1)
         XCTAssertTrue (foundEntity2)
-        // Add Entity Without collection using public add
-        var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
-        entity3.setSaved (Date())
-        let data3 = try accessor.encoder.encode (entity3)
-        entity3 = try! accessor.decoder.decode(Entity<MyStruct>.self, from: data3)
-        let anyEntity3 = AnyEntityManagement (item: entity3)
-        addResult = accessor.add(name: standardCollectionName, entity: anyEntity3)
-        switch addResult {
-        case .error (let errorMessage):
-            XCTAssertEqual ("Entity<MyStruct>.updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(entity3.getId().uuidString)", errorMessage)
-        default:
-            XCTFail ("Expected .error")
-        }
         switch accessor.scan(type: Entity<MyStruct>.self, name: standardCollectionName) {
         case .ok (let retrievedEntities):
             XCTAssertEqual (2, retrievedEntities.count)
@@ -885,6 +894,101 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail(".ok")
         }
+        // Public add with error
+        accessor.setThrowError()
+        let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
+        entity3.setSaved (Date())
+        // Need to set collection in entity2
+        entity3.setCollection(collection: collection)
+        let wrapper3 = EntityPersistenceWrapper (collectionName: collection.name, item: entity3)
+        switch accessor.addAction(wrapper: wrapper3) {
+        case .ok (let closure):
+            switch closure() {
+            case .error (let errorMessage):
+                XCTAssertEqual ("Test Error", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+        default:
+            XCTFail("Expected .ok")
+        }
+        foundEntity1 = false
+        foundEntity2 = false
+        switch accessor.scan(type: Entity<MyStruct>.self, name: standardCollectionName) {
+        case .ok (let retrievedEntities):
+            XCTAssertEqual (2, retrievedEntities.count)
+            for retrievedEntity in retrievedEntities {
+                if (retrievedEntity.getId().uuidString == entity.getId().uuidString) {
+                    foundEntity1 = true
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1a)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1b)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1c)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1d)
+                    XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
+                    XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity.getCreated()), EntityTests.jsonEncodedDate (date: retrievedEntity.getCreated()))
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity.getSaved()!), EntityTests.jsonEncodedDate (date: retrievedEntity.getSaved()!))
+                    XCTAssertEqual (entity.getPersistenceState().rawValue, retrievedEntity.getPersistenceState().rawValue)
+                    retrievedEntity.sync() { retrievedStruct in
+                        XCTAssertEqual (20, retrievedStruct.myInt)
+                        XCTAssertEqual ("A String 2", retrievedStruct.myString)
+                    }
+                } else if (retrievedEntity.getId().uuidString == entity2.getId().uuidString) {
+                    foundEntity2 = true
+                    XCTAssertEqual (entity2.getId().uuidString, retrievedEntity.getId().uuidString)
+                    XCTAssertEqual (entity2.getVersion(), retrievedEntity.getVersion())
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity2.getCreated()), EntityTests.jsonEncodedDate (date: retrievedEntity.getCreated()))
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity2.getSaved()!), EntityTests.jsonEncodedDate (date: retrievedEntity.getSaved()!))
+                    XCTAssertEqual (entity2.getPersistenceState().rawValue, retrievedEntity.getPersistenceState().rawValue)
+                    retrievedEntity.sync() { retrievedStruct in
+                        XCTAssertEqual (30, retrievedStruct.myInt)
+                        XCTAssertEqual ("A String 3", retrievedStruct.myString)
+                    }
+                }
+            }
+            
+        default:
+            XCTFail(".ok")
+        }
+        XCTAssertTrue (foundEntity1)
+        XCTAssertTrue (foundEntity2)
+        switch accessor.scan(type: Entity<MyStruct>.self, name: standardCollectionName) {
+        case .ok (let retrievedEntities):
+            XCTAssertEqual (2, retrievedEntities.count)
+            for retrievedEntity in retrievedEntities {
+                if (retrievedEntity.getId().uuidString == entity.getId().uuidString) {
+                    foundEntity1 = true
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1a)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1b)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1c)
+                    XCTAssertTrue (retrievedEntity !== retrievedEntity1d)
+                    XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
+                    XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity.getCreated()), EntityTests.jsonEncodedDate (date: retrievedEntity.getCreated()))
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity.getSaved()!), EntityTests.jsonEncodedDate (date: retrievedEntity.getSaved()!))
+                    XCTAssertEqual (entity.getPersistenceState().rawValue, retrievedEntity.getPersistenceState().rawValue)
+                    retrievedEntity.sync() { retrievedStruct in
+                        XCTAssertEqual (20, retrievedStruct.myInt)
+                        XCTAssertEqual ("A String 2", retrievedStruct.myString)
+                    }
+                } else if (retrievedEntity.getId().uuidString == entity2.getId().uuidString) {
+                    foundEntity2 = true
+                    XCTAssertEqual (entity2.getId().uuidString, retrievedEntity.getId().uuidString)
+                    XCTAssertEqual (entity2.getVersion(), retrievedEntity.getVersion())
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity2.getCreated()), EntityTests.jsonEncodedDate (date: retrievedEntity.getCreated()))
+                    try XCTAssertEqual (EntityTests.jsonEncodedDate (date: entity2.getSaved()!), EntityTests.jsonEncodedDate (date: retrievedEntity.getSaved()!))
+                    XCTAssertEqual (entity2.getPersistenceState().rawValue, retrievedEntity.getPersistenceState().rawValue)
+                    retrievedEntity.sync() { retrievedStruct in
+                        XCTAssertEqual (30, retrievedStruct.myInt)
+                        XCTAssertEqual ("A String 3", retrievedStruct.myString)
+                    }
+                }
+            }
+            
+        default:
+            XCTFail(".ok")
+        }
+
         // Scan with throw error
         accessor.setThrowError()
         switch accessor.scan (type: Entity<MyStruct>.self, name: standardCollectionName) {
@@ -894,7 +998,7 @@ class persistenceTests: XCTestCase {
             XCTFail ("Expected .error")
         }
         // Test preFetch
-        var prefetchUuid: String? = nil
+        prefetchUuid = nil
         accessor.setPreFetch() { uuid in
             prefetchUuid = uuid.uuidString
         }
@@ -930,7 +1034,12 @@ class persistenceTests: XCTestCase {
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
             entity1.setSchemaVersion (3)// Verify that get updates the schema version
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity2: Entity in cache, data not in accessor
             let batch = Batch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -941,7 +1050,12 @@ class persistenceTests: XCTestCase {
             entity3.setCollection(collection: collection)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             // entity4: Entity not in cache, data not in accessor
             let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1040,7 +1154,12 @@ class persistenceTests: XCTestCase {
             entity1.setSchemaVersion (3)// Verify schema version is updated
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity2: Entity in cache, data not in accessor
             let batch = Batch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -1050,7 +1169,12 @@ class persistenceTests: XCTestCase {
             entity3.setCollection(collection: collection)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             // entity4: Entity not in cache, data not in accessor
             let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1088,7 +1212,12 @@ class persistenceTests: XCTestCase {
             entity1.setSchemaVersion (3)// Verify schema version is updated
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity2: Entity in cache, data not in accessor
             let batch = Batch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -1098,7 +1227,12 @@ class persistenceTests: XCTestCase {
             entity3.setCollection(collection: collection)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             // entity4: Entity not in cache, data not in accessor
             let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1134,7 +1268,12 @@ class persistenceTests: XCTestCase {
                 entity1.setSchemaVersion (3)// Verify schema version is updated
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 // entity2: Entity in cache, data not in accessor
                 let batch = Batch()
                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -1144,7 +1283,12 @@ class persistenceTests: XCTestCase {
                 entity3.setCollection(collection: collection)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity3 = collection.get (id: entity3.getId()).item()!
                 // entity4: Entity not in cache, data not in accessor
                 let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1182,7 +1326,12 @@ class persistenceTests: XCTestCase {
                 entity1.setSchemaVersion (3)// Verify schema version is updated
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 // entity2: Entity in cache, data not in accessor
                 let batch = Batch()
                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -1193,7 +1342,12 @@ class persistenceTests: XCTestCase {
                 entity3.setSchemaVersion (5)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity3 = collection.get (id: entity3.getId()).item()!
                 // entity4: Entity not in cache, data not in accessor
                 let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1247,7 +1401,12 @@ class persistenceTests: XCTestCase {
                                 entity1.setSchemaVersion (3)// Verify that get updates the schema version
                                 entity1.setSaved (Date())
                                 let data1 = try accessor.encoder.encode(entity1)
-                                accessor.add(name: self.standardCollectionName, id: entity1.getId(), data: data1)
+                                switch accessor.add(name: self.standardCollectionName, id: entity1.getId(), data: data1) {
+                                case .ok:
+                                    break
+                                default:
+                                    XCTFail ("Expected .ok")
+                                }
                                 // entity2: Entity in cache, data not in accessor
                                 let batch = Batch()
                                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
@@ -1257,7 +1416,12 @@ class persistenceTests: XCTestCase {
                                 entity3.setCollection(collection: collection)
                                 entity3.setSaved (Date())
                                 let data3 = try accessor.encoder.encode(entity3)
-                                accessor.add(name: self.standardCollectionName, id: entity3.getId(), data: data3)
+                                switch accessor.add(name: self.standardCollectionName, id: entity3.getId(), data: data3) {
+                                case .ok:
+                                    break
+                                default:
+                                    XCTFail ("Expected .ok")
+                                }
                                 entity3 = collection.get (id: entity3.getId()).item()!
                                 // entity4: Entity not in cache, data not in accessor
                                 let entity4 = newTestEntity(myInt: 40, myString: "A String 4")
@@ -1342,33 +1506,58 @@ class persistenceTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
             entity2.setSchemaVersion (3)// Verify that get updates the schema version
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setSchemaVersion (5)
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setSchemaVersion (5)
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
+            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity4 = collection.get (id: entity4.getId()).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
                 XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
@@ -1464,33 +1653,58 @@ class persistenceTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
             entity2.setSchemaVersion (3)// Verify that get updates the schema version
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setSchemaVersion (5)
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setSchemaVersion (5)
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
+            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity4 = collection.get (id: entity4.getId()).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
                 XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
@@ -1537,33 +1751,58 @@ class persistenceTests: XCTestCase {
                 entity1.setPersistenceState (.persistent)
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
                 entity2.setSchemaVersion (3)// Verify that get updates the schema version
                 entity2.setPersistenceState (.persistent)
                 entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
-                accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+                switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 // entity3, entity4: entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
                 entity3.setSchemaVersion (5)
                 entity3.setPersistenceState (.persistent)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity3 = collection.get (id: entity3.getId()).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.setSchemaVersion (5)
                 entity4.setPersistenceState (.persistent)
                 entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
-                accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
+                switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity4 = collection.get (id: entity4.getId()).item()!
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
                 let invalidDataUuid = UUID()
-                accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+                switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 collection.sync() { cache in
                     XCTAssertEqual (2, cache.count)
                     XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
@@ -1605,33 +1844,58 @@ class persistenceTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
             entity2.setSchemaVersion (3)// Verify that get updates the schema version
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             // entity3, entity4: entity in cache, data in accessor
             var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
             entity3.setSchemaVersion (5)
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity3 = collection.get (id: entity3.getId()).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setSchemaVersion (5)
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
+            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             entity4 = collection.get (id: entity4.getId()).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            case .ok:
+                break
+            default:
+                XCTFail ("Expected .ok")
+            }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
                 XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
@@ -1669,31 +1933,56 @@ class persistenceTests: XCTestCase {
                 entity1.setPersistenceState (.persistent)
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
+                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
                 entity2.setSchemaVersion (3)// Verify that get updates the schema version
                 entity2.setPersistenceState (.persistent)
                 entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
-                accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+                switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 // entity3, entity4: entity in cache, data in accessor
                 var entity3 = newTestEntity(myInt: 30, myString: "A String 3")
                 entity3.setPersistenceState (.persistent)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity3 = collection.get (id: entity3.getId()).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.setPersistenceState (.persistent)
                 entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
-                accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4)
+                switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 entity4 = collection.get (id: entity4.getId()).item()!
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
                 let invalidDataUuid = UUID()
-                accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+                switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 let test1 = {
                     collection.scan(criteria: nil) { retrievalResult in
                         let retrievedEntities = retrievalResult.item()!
@@ -1890,6 +2179,22 @@ class persistenceTests: XCTestCase {
         validationResult = ValidationResult.error("Error Description")
         XCTAssertFalse (validationResult.isOk())
         XCTAssertEqual ("Error Description", validationResult.description())       
+    }
+    
+    func testPersistencePair() {
+        let pair = PersistenceStatePair (success: PersistenceState.persistent, failure: PersistenceState.dirty)
+        switch pair.success {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch pair.failure {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
     }
 
 }
