@@ -49,6 +49,7 @@ public enum PendingAction {
 public enum PersistenceAction<T: Codable> {
 
     case updateItem ((inout T) -> ())
+    case remove
     
 }
 
@@ -99,6 +100,7 @@ public class EntityPersistenceWrapper : Encodable {
         self.item = item
     }
     
+    // Not Thread Safe
     public func encode(to encoder: Encoder) throws {
         try item.encode (to: encoder)
     }
@@ -197,10 +199,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
 
 // Write Access to item
+
+// Convention is Entity.queue -> Batch.queue
     
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
-            batch.insertAsync(item: self) {
+            batch.insertSync(item: self) {
                 self.handleImplementation(.updateItem (closure))
             }
         }
@@ -210,6 +214,26 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         queue.sync {
             batch.insertSync (item: self) {
                 self.handleImplementation(.updateItem (closure))
+            }
+        }
+    }
+    
+// Removal
+    
+    /*
+         Remove ** self ** from persistent media.
+     
+         Application developers may safely dereference an Entity after calling ** remove(). **
+         Modifying an Entity on which ** remove() ** has been called will reanimate it.
+     
+        It is the application's responsibility to ensure that no other Items (in memory or persistent storage)
+        contain persistent references to the removed Entity; removing an Entity to which there are references
+        will produce errors (i.e. RetrievalResult.error) when those references are accessed.
+     */
+    public func remove (batch: Batch) {
+        queue.async {
+            batch.insertSync(item: self) {
+                self.handleImplementation(.remove)
             }
         }
     }
@@ -238,43 +262,20 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             case .new, .dirty:
                 closure(&item)
             }
+        case .remove:
+            switch self.persistenceState {
+            case .persistent, .dirty:
+                self.persistenceState = .pendingRemoval
+            case .new:
+                self.persistenceState = .abandoned
+            case .saving:
+                self.pendingAction = .remove
+            case .pendingRemoval, .abandoned:
+                break
+            }
         }
     }
 
-    
-    // ************************* TODO Add test cases for .saving & .rmoving async & sync
-    
-// Removal
-    
-    /*
-        Remove ** self ** from persistent media.
-     
-        Application developers may safely dereference an Entity after calling ** remove(). **
-        Modifying an Entity on which ** remove() ** has been called will reanimate it.
-
-        It is the application's responsibility to ensure that no other items contain references
-        to the removed Entity; removing an Entity to which there are references will produce
-        errors (i.e. RetrievalResult.error) when those references are accessed.
-    */
-//    public func remove (batch: Batch) {
-//        queue.async {
-//            batch.insertAsync(item: self) {
-//                switch self.persistenceState {
-//                case .persistent:
-//                    self.persistenceState = .pendingRemoval
-//                case .new:
-//                    self.persistenceState = .abandoned
-//                case .dirty:
-//                    self.persistenceState = .pendingRemoval
-//                case .abandoned:
-//                    break
-//                case .pendingRemoval:
-//                    break
-//                }
-//            }
-//        }
-//    }
-    
 // Codable
     
     enum CodingKeys: String, CodingKey {
@@ -391,7 +392,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
-    
 
 }
 

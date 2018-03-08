@@ -638,75 +638,188 @@ class EntityTests: XCTestCase {
 
     }
 
-//    func testUpdateStatement() throws {
-//        let entity = newTestEntity(myInt: 10, myString: "A String")
-//        var anyEntity: AnyEntityManagement? = nil
-//        XCTAssertEqual (0, entity.getVersion())
-//        entity .setPersistenceState(.persistent)
-//        entity.setSaved(Date())
-//        switch entity.getPersistenceState() {
-//        case .persistent:
-//            break
-//        default:
-//            XCTFail("Expected .new")
-//        }
-//        var result = entity.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityEncodingResult<Data> in
-//            do {
-//                anyEntity = entity
-//                let accessor = InMemoryAccessor()
-//                let result = try accessor.encoder.encode (entity)
-//                return .ok(result)
-//            } catch {
-//                return .error ("\(error)")
-//            }
-//        }
-//        switch result {
-//        case .ok (let data):
-//            let expectedJSON = try "{\"schemaVersion\":5,\"id\":\"\(entity.getId())\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":10,\"myString\":\"A String\"},\"persistenceState\":\"persistent\"}"
-//            XCTAssertEqual (expectedJSON, String (data: data, encoding: .utf8))
-//            break
-//        default:
-//            XCTFail()
-//        }
-//        XCTAssertEqual (0, entity.getVersion())
-//        switch entity.getPersistenceState() {
-//        case .persistent:
-//            break
-//        default:
-//            XCTFail("Expected .persistent")
-//        }
-//        XCTAssertEqual (entity.getId(), anyEntity!.getId())
-//        XCTAssertEqual (entity.getVersion(), anyEntity!.getVersion())
-//        XCTAssertEqual (entity.getPersistenceState(), anyEntity!.getPersistenceState())
-//        XCTAssertEqual (entity.getCreated(), anyEntity!.getCreated())
-//        XCTAssertEqual (entity.getSaved(), anyEntity!.getSaved())
-//        let accessor = InMemoryAccessor()
-//        let _ = accessor.add (name: "MyCollection", entity: anyEntity!)
-//        let accessorResult = accessor.get (type: Entity<MyStruct>.self, name: "MyCollection", id: entity.getId())
-//        // retrievedEntity is not initialized so collection is nil
-//        switch accessorResult {
-//        case .ok(let retrievedEntity):
-//            result = retrievedEntity!.updateStatement() { (name: CollectionName, entity: AnyEntityManagement) -> EntityEncodingResult<Data> in
-//                do {
-//                    anyEntity = entity
-//                    let accessor = InMemoryAccessor()
-//                    let result = try accessor.encoder.encode (entity)
-//                    return .ok(result)
-//                } catch {
-//                    return .error ("\(error)")
-//                }
-//            }
-//            switch result {
-//            case .error (let errorMessage):
-//                XCTAssertEqual ("Entity<MyStruct>.updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(retrievedEntity!.getId().uuidString)", errorMessage)
-//            default:
-//                XCTFail()
-//            }
-//        default:
-//            XCTFail ("Expected result")
-//        }
-//    }
-    
+    func testHandleActionRemove () {
+        let entity = newTestEntity(myInt: 10, myString: "10")
+        let action = PersistenceAction<MyStruct>.remove
+        // persistenceState = .new
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .abandoned:
+            break
+        default:
+            XCTFail ("Expected .abandoned")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .dirty
+        entity.setPersistenceState(.dirty)
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .pendingRemoval:
+            break
+        default:
+            XCTFail ("Expected .pendingRemoval")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .pendingRemoval
+        entity.setPersistenceState(.pendingRemoval)
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .pendingRemoval:
+            break
+        default:
+            XCTFail ("Expected .pendingRemoval")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .abandoned
+        entity.setPersistenceState(.abandoned)
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .abandoned:
+            break
+        default:
+            XCTFail ("Expected .abandoned")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .saving
+        entity.setPersistenceState(.saving)
+        entity.handleAction(action)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+    }
+
+    func testRemove () {
+        let entity = newTestEntity(myInt: 10, myString: "10")
+        var batch = Batch()
+        // persistenceState = .new
+        entity.remove(batch: batch)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .abandoned:
+            break
+        default:
+            XCTFail ("Expected .abandoned")
+        }
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .dirty
+        batch = Batch()
+        entity.setPersistenceState(.dirty)
+        entity.remove(batch: batch)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .pendingRemoval:
+            break
+        default:
+            XCTFail ("Expected .pendingRemoval")
+        }
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .pendingRemoval
+        entity.setPersistenceState(.pendingRemoval)
+        batch = Batch()
+        entity.remove(batch: batch)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .pendingRemoval:
+            break
+        default:
+            XCTFail ("Expected .pendingRemoval")
+        }
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .abandoned
+        entity.setPersistenceState(.abandoned)
+        batch = Batch()
+        entity.remove(batch: batch)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .abandoned:
+            break
+        default:
+            XCTFail ("Expected .abandoned")
+        }
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .saving
+        entity.setPersistenceState(.saving)
+        batch = Batch()
+        entity.remove(batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        batch.syncItems() { items in
+            XCTAssertEqual (1, items.count)
+            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+    }
+
     // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
     static func jsonEncodedDate (date: Date) throws -> String? {
         let accessor = InMemoryAccessor()
