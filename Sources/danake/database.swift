@@ -112,6 +112,9 @@ class Registrar<K: Hashable, V: AnyObject> {
 
 public enum RetrievalResult<T> {
     
+    case ok (T?)
+    case error (String)
+    
     func item() -> T? {
         switch self {
         case .ok(let item):
@@ -130,16 +133,11 @@ public enum RetrievalResult<T> {
         }
     }
     
-    case ok (T?)
-    
-    case error (String)
-    
 }
 
 public enum DatabaseAccessListResult<T> {
     
     case ok ([T])
-    
     case error (String)
     
 }
@@ -147,9 +145,7 @@ public enum DatabaseAccessListResult<T> {
 public enum DatabaseUpdateResult {
     
     case ok
-    
     case error (String)
-    
     case unrecoverableError (String)
     
 }
@@ -204,7 +200,6 @@ public class Database {
 public protocol DatabaseAccessor {
     
     func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable
-    
     func scan<T> (type: Entity<T>.Type, name: CollectionName) -> DatabaseAccessListResult<Entity<T>>
     
     /*
@@ -220,15 +215,12 @@ public protocol DatabaseAccessor {
     func hashValue() -> String
     
     /*
-     The ** DatabaseActionResult ** functions should return fast: The actual database
+     The following ** DatabaseActionResult ** functions should return fast: The actual database
      access should occur when the returned closure is fired
      
      */
-    
     func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
-    
     func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
-    
     func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     
 }
