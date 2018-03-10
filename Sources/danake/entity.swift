@@ -317,29 +317,29 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 collection.database.workQueue.async {
                     let result = action()
                     self.queue.async {
+                        switch result {
+                        case .ok:
+                            self.persistenceState = successState
+                        case .error, .unrecoverableError:
+                            self.persistenceState = failureState
+                            self.version = self.version - 1
+                        }
                         if let pendingAction = self.pendingAction {
+                            self.pendingAction = nil
                             switch pendingAction {
                             case .update:
-                                self.persistenceState = .dirty
+                                self.handleAction(PersistenceAction.updateItem() { item in })
                             case .remove:
-                                self.persistenceState = .pendingRemoval
+                                self.handleAction(PersistenceAction.remove)
                             }
                             switch result {
                             case .ok:
                                 self.handleAction(.commit (completionHandler))
                             case .error, .unrecoverableError:
-                                self.version = self.version - 1
                                 self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                             }
                             
                         } else {
-                            switch result {
-                            case .ok:
-                                self.persistenceState = successState
-                            case .error, .unrecoverableError:
-                                self.persistenceState = failureState
-                                self.version = self.version - 1
-                            }
                             self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                         }
                     }
