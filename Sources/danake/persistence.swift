@@ -232,8 +232,11 @@ public enum DatabaseAccessListResult<T> {
 public enum DatabaseUpdateResult {
     
     case ok
-    
+
     case error (String)
+    
+    case unrecoverableError (String)
+
 }
 
 
@@ -499,6 +502,9 @@ public class InMemoryAccessor: DatabaseAccessor {
     public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
+            if let preFetch = preFetch {
+                preFetch (wrapper.getId())
+            }
             if throwError {
                 throwError = false
                 errorResult = .error ("Test Error")
@@ -525,6 +531,9 @@ public class InMemoryAccessor: DatabaseAccessor {
     public func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
+            if let preFetch = preFetch {
+                preFetch (wrapper.getId())
+            }
             if throwError {
                 throwError = false
                 errorResult = .error ("Test Error")
@@ -590,12 +599,35 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
 
     }
+    
+    public func has (name: CollectionName, id: UUID) -> Bool {
+        var result = false
+        queue.sync {
+            result = self.storage[name]?[id] != nil
+        }
+        return result
+    }
+    
+    public func getData (name: CollectionName, id: UUID) -> Data? {
+        var result: Data? = nil
+        queue.sync() {
+            result = storage[name]?[id]
+        }
+        return result
+    }
 
     public func setThrowError() {
         queue.async {
             self.throwError = true
         }
     }
+    
+    public func setThrowError(throwError: Bool) {
+        queue.async {
+            self.throwError = throwError
+        }
+    }
+
     
     func setPreFetch (preFetch: ((UUID) -> Void)?) {
         self.preFetch = preFetch
@@ -620,7 +652,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     }()
     
     private var preFetch: ((UUID) -> Void)? = nil
-    private var throwError = false
+    internal var throwError = false
     private var storage = Dictionary<CollectionName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue

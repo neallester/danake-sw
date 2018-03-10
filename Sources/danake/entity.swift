@@ -16,7 +16,11 @@ public protocol EntityProtocol {
 
 }
 
-public protocol EntityManagement : EntityProtocol, Encodable {}
+internal protocol EntityManagement : EntityProtocol, Encodable {
+    
+    func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
+    
+}
 
 struct PersistenceStatePair : Codable {
     
@@ -50,6 +54,7 @@ public enum PersistenceAction<T: Codable> {
 
     case updateItem ((inout T) -> ())
     case remove
+    case commit ((DatabaseUpdateResult) -> ())
     
 }
 
@@ -108,7 +113,7 @@ public class EntityPersistenceWrapper : Encodable {
     public func getId() -> UUID {
         return item.getId()
     }
-
+    
     public let collectionName: CollectionName
     private let item: EntityManagement
     
@@ -121,7 +126,7 @@ public class EntityPersistenceWrapper : Encodable {
 public class Entity<T: Codable> : EntityManagement, Codable {
     
     
-    init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
+    internal init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
         self.collection = collection
         self.id = id
         self.version = version
@@ -132,7 +137,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         created = Date()
     }
 
-    convenience init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
+    internal convenience init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
         let selfReference = EntityReferenceData (collection: collection, id: id, version: version)
         let item = itemClosure(selfReference)
         self.init (collection: collection, id: id, version: version, item: item)
@@ -144,7 +149,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         collection?.decache (id: id)
     }
 
-// EntityManagement
+// Metadata
     
     public func getId() -> UUID {
         return self.id
@@ -178,10 +183,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         return result
     }
-
-    // TODO Keep for log 
-    //             return .error ("\(type (of: self)).updateStatement: Missing Collection: Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)")
-
+    
+    // EntityManagement
+    
+    func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
+        queue.async {
+            self.handleAction (PersistenceAction.commit (completionHandler))
+        }
+    }
 
     // Read Only Access to item
     
@@ -197,6 +206,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             closure (self.item)
         }
     }
+    
+// Type Erased Access
+// TODO Add and test
+//    public lazy var asAnyEntity: AnyEntity = {
+//        return AnyEntity(item: self)
+//    }()
 
 // Write Access to item
 
@@ -205,7 +220,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertSync(item: self) {
-                self.handleImplementation(.updateItem (closure))
+                self.handleAction(.updateItem (closure))
             }
         }
     }
@@ -213,7 +228,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
         queue.sync {
             batch.insertSync (item: self) {
-                self.handleImplementation(.updateItem (closure))
+                self.handleAction(.updateItem (closure))
             }
         }
     }
@@ -233,20 +248,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func remove (batch: Batch) {
         queue.async {
             batch.insertSync(item: self) {
-                self.handleImplementation(.remove)
+                self.handleAction(.remove)
             }
         }
     }
     
 // Persistence Action Handling
     
+    // Not Thread Safe, caller must be within ** queue ***
     internal func handleAction (_ action: PersistenceAction<T>) {
-        queue.async {
-            self.handleImplementation(action)
-        }
-    }
-    
-    private func handleImplementation (_ action: PersistenceAction<T>) {
         switch action {
         case .updateItem(let closure):
             switch self.persistenceState {
@@ -272,6 +282,88 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 self.pendingAction = .remove
             case .pendingRemoval, .abandoned:
                 break
+            }
+        case .commit(let completionHandler):
+            switch self.persistenceState {
+            case .persistent, .abandoned, .saving:
+                callCommitCompletionHandler (completionHandler: completionHandler, result: .ok)
+            case .new:
+                commit (successState: .persistent, failureState: .new, completionHandler: completionHandler) { accessor in
+                    accessor.addAction
+                }
+            case .dirty:
+                commit (successState: .persistent, failureState: .dirty, completionHandler: completionHandler) { accessor in
+                    accessor.updateAction
+                }
+            case .pendingRemoval:
+                commit (successState: .persistent, failureState: .pendingRemoval, completionHandler: completionHandler) { accessor in
+                    accessor.removeAction
+                }
+            }
+        }
+    }
+    
+    // Not thread safe: to be called on self.queue
+    private func commit (successState: PersistenceState, failureState: PersistenceState, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
+        if let collection = collection {
+            persistenceState = successState
+            version = version + 1
+            let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
+            let actionSource = databaseActionSource (collection.database.accessor)
+            let actionResult = actionSource (wrapper)
+            switch actionResult {
+            case .ok (let action):
+                persistenceState = .saving
+                collection.database.workQueue.async {
+                    let result = action()
+                    self.queue.async {
+                        if let pendingAction = self.pendingAction {
+                            switch pendingAction {
+                            case .update:
+                                self.persistenceState = .dirty
+                            case .remove:
+                                self.persistenceState = .pendingRemoval
+                            }
+                            switch result {
+                            case .ok:
+                                self.handleAction(.commit (completionHandler))
+                            case .error, .unrecoverableError:
+                                self.version = self.version - 1
+                                self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                            }
+                            
+                        } else {
+                            switch result {
+                            case .ok:
+                                self.persistenceState = successState
+                            case .error, .unrecoverableError:
+                                self.persistenceState = failureState
+                                self.version = self.version - 1
+                            }
+                            self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                        }
+                    }
+                }
+            case .error (let errorMessage):
+                self.version = self.version - 1
+                persistenceState = failureState
+                self.callCommitCompletionHandler (completionHandler: completionHandler, result: .unrecoverableError(errorMessage))
+            }
+            
+        } else {
+            persistenceState = failureState
+            self.callCommitCompletionHandler (completionHandler: completionHandler, result:.unrecoverableError ("\(type (of: self)).commit|missing_collection|Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)"))
+        }
+    }
+    
+    private func callCommitCompletionHandler (completionHandler: @escaping (DatabaseUpdateResult) -> (), result: DatabaseUpdateResult) {
+        if let collection = collection {
+            collection.database.workQueue.async {
+                completionHandler (result)
+            }
+        } else {
+            queue.async {
+                completionHandler (result)
             }
         }
     }
@@ -379,6 +471,18 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
+    internal func asData (encoder: JSONEncoder) -> Data? {
+        var result: Data? = nil
+        queue.sync {
+            do {
+                try result = encoder.encode (self)
+            } catch {
+                print ("Trouble encoding: \(error)")
+            }
+        }
+        return result
+    }
+    
 // Attributes
     
     public let id: UUID
@@ -386,7 +490,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public let created: Date
     private var saved: Date?
     private var item: T
-    private let queue: DispatchQueue
+    fileprivate let queue: DispatchQueue
     private var persistenceState: PersistenceState
     private private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
     private var schemaVersion: Int

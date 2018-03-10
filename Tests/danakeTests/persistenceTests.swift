@@ -648,6 +648,8 @@ class persistenceTests: XCTestCase {
         }
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let data = try accessor.encoder.encode(entity)
+        XCTAssertFalse (accessor.has(name: entity.getCollection()!.name, id: entity.getId()))
+        XCTAssertNil (accessor.getData(name: entity.getCollection()!.name, id: entity.getId()))
         // Add using internal add
         switch accessor.add(name: standardCollectionName, id: entity.getId(), data: data) {
         case .ok:
@@ -655,6 +657,8 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail ("Expected .ok")
         }
+        XCTAssertTrue (accessor.has(name: entity.getCollection()!.name, id: entity.getId()))
+        XCTAssertEqual (accessor.getData (name: entity.getCollection()!.name, id: entity.getId()), entity.asData(encoder: accessor.encoder))
         var retrievedEntity1a: Entity<MyStruct>? = nil
         switch accessor.get(type: Entity<MyStruct>.self, name: standardCollectionName, id: entity.getId()) {
         case .ok (let retrievedEntity):
@@ -732,6 +736,7 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail("Expected data")
         }
+        XCTAssertEqual (accessor.getData (name: entity.getCollection()!.name, id: entity.getId()), entity.asData(encoder: accessor.encoder))
         switch accessor.get(type: Entity<MyStruct>.self, name: standardCollectionName, id: uuid) {
         case .ok (let retrievedData):
             XCTAssertNil (retrievedData)
@@ -1043,6 +1048,7 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail ("Expected .ok")
         }
+        XCTAssertTrue (accessor.has(name: entity.getCollection()!.name, id: entity2.getId()))
         XCTAssertEqual (entity2.getId().uuidString, prefetchUuid)
         XCTAssertTrue (foundEntity1)
         XCTAssertTrue (foundEntity2)
@@ -1074,6 +1080,7 @@ class persistenceTests: XCTestCase {
         default:
             XCTFail ("Expected .ok")
         }
+        XCTAssertFalse (accessor.has(name: entity.getCollection()!.name, id: entity2.getId()))
         XCTAssertNil (prefetchUuid)
         XCTAssertTrue (foundEntity1)
         XCTAssertFalse (foundEntity2)
