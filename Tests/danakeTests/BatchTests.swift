@@ -10,23 +10,6 @@ import XCTest
 
 class BatchTests: XCTestCase {
     
-    class MyClass : Codable {
-        
-        var myInt = 0
-        var myString = ""
-        
-    }
-    
-    func newTestClassEntity (myInt: Int, myString: String) -> Entity<MyClass> {
-        let myClass = MyClass()
-        myClass.myInt = myInt
-        myClass.myString = myString
-        let id = UUID()
-        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        return Entity (collection: PersistentCollection<Database, MyClass>(database: database, name: "myCollection"), id: id, version: 0, item: myClass)
-        
-    }
-
 
     func testInsertAsyncNoClosure() {
         // No Closure

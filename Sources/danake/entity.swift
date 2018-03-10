@@ -22,18 +22,6 @@ internal protocol EntityManagement : EntityProtocol, Encodable {
     
 }
 
-struct PersistenceStatePair : Codable {
-    
-    init (success: PersistenceState, failure: PersistenceState) {
-        self.success = success
-        self.failure = failure
-    }
-    
-    let success: PersistenceState
-    let failure: PersistenceState
-    
-}
-
 public enum PersistenceState : String, Codable {
     
     case new                // Not yet in persistent media
@@ -61,6 +49,18 @@ public enum PersistenceAction<T: Codable> {
 public enum EntityEncodingResult<R> {
     case ok (R)
     case error (String)
+}
+
+struct PersistenceStatePair : Codable {
+    
+    init (success: PersistenceState, failure: PersistenceState) {
+        self.success = success
+        self.failure = failure
+    }
+    
+    let success: PersistenceState
+    let failure: PersistenceState
+    
 }
 
 // type erased access to the metadata for any Entity
@@ -120,11 +120,25 @@ public class EntityPersistenceWrapper : Encodable {
    
 }
 
+// Data for a reference to an Entity
+public struct EntityReferenceData<T: Codable> {
+    
+    public init (collection: PersistentCollection<Database, T>, id: UUID, version: Int) {
+        self.collection = collection
+        self.id = id
+        self.version = version
+    }
+    
+    let collection: PersistentCollection<Database, T>
+    let id: UUID
+    let version: Int
+    
+}
+
 /*
-    Model object wrapper.
+    **** Class Entity is the primary model object wrapper. ****
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
-    
     
     internal init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
         self.collection = collection
@@ -497,18 +511,4 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
 
-}
-
-public struct EntityReferenceData<T: Codable> {
-    
-    public init (collection: PersistentCollection<Database, T>, id: UUID, version: Int) {
-        self.collection = collection
-        self.id = id
-        self.version = version
-    }
-
-    let collection: PersistentCollection<Database, T>
-    let id: UUID
-    let version: Int
-    
 }

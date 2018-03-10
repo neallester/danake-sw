@@ -9,26 +9,9 @@
 import XCTest
 @testable import danake
 
-struct MyStruct : Codable {
-    
-    var myInt = 0
-    var myString = ""
-    
-}
-
-func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
-    var myStruct = MyStruct()
-    myStruct.myInt = myInt
-    myStruct.myString = myString
-    let id = UUID()
-    let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
-    return Entity (collection: collection, id: id, version: 0, item: myStruct)
-}
-
 class EntityTests: XCTestCase {
     
-    func testEntityCreation() {
+    func testCreation() {
         // Creation with item
         var myStruct = MyStruct()
         myStruct.myInt = 100
@@ -70,7 +53,7 @@ class EntityTests: XCTestCase {
         }
     }
 
-    func testEntitySettersGetters() {
+    func testSettersGetters() {
         // Creation with item
         var myStruct = MyStruct()
         myStruct.myInt = 100
@@ -102,7 +85,7 @@ class EntityTests: XCTestCase {
 
     }
 
-    func testEntitySetCollection() {
+    func testSetCollection() {
         var myStruct = MyStruct()
         myStruct.myInt = 100
         myStruct.myString = "Test String 1"
@@ -451,8 +434,8 @@ class EntityTests: XCTestCase {
             XCTFail("Expected .new")
         }
         var json = try String (data: accessor.encoder.encode(entity), encoding: .utf8)!
-        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":0}", json)
-        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
+        try XCTAssertEqual("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":0}", json)
+        try json = "{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         var entity2 = try accessor.decoder.decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
         XCTAssertEqual (5, entity2.getSchemaVersion())
@@ -476,8 +459,8 @@ class EntityTests: XCTestCase {
         entity.setSaved (savedTime)
         entity.setPersistenceState (.persistent)
         json = try String (data: accessor.encoder.encode(entity), encoding: .utf8)!
-        try XCTAssertEqual("{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", json)
-        try json = "{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(EntityTests.jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(EntityTests.jsonEncodedDate(date: entity.created)!),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}"
+        try XCTAssertEqual("{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(jsonEncodedDate(date: entity.created)!),\"version\":0,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", json)
+        try json = "{\"schemaVersion\":5,\"id\":\"\(entity.id.uuidString)\",\"saved\":\(jsonEncodedDate(date: entity.getSaved()!)!),\"created\":\(jsonEncodedDate(date: entity.created)!),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}"
         //
         entity2 = try accessor.decoder.decode(Entity<MyStruct>.self, from: json.data (using: .utf8)!)
         XCTAssertEqual (entity.id.uuidString, entity2.id.uuidString)
@@ -622,23 +605,6 @@ class EntityTests: XCTestCase {
 
     }
     
-    func testPersistenceStatePair() {
-        let pair = PersistenceStatePair (success: .persistent, failure: .dirty)
-        switch pair.success {
-        case .persistent:
-            break
-        default:
-            XCTFail("Expected .persistent")
-        }
-        switch pair.failure {
-        case .dirty:
-            break
-        default:
-            XCTFail("Expected .dirty")
-        }
-
-    }
-
     func testHandleActionRemove () {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let action = PersistenceAction<MyStruct>.remove
@@ -827,605 +793,23 @@ class EntityTests: XCTestCase {
         try! XCTAssertEqual (encoder.encode (entity), entity.asData(encoder: encoder))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state
-    func testCommitNew() {
-        let accessor = InMemoryAccessor()
-        let logger = InMemoryLogger()
-        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
-        let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
-        var group = DispatchGroup()
-        let semaphore = DispatchSemaphore (value: 1)
-        var preFetchCount = 0
-        // .new building addAction throws error
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        accessor.setThrowError()
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
-            default:
-                XCTFail ("Expected .unrecoverableError")
-            }
-            switch entity.getPersistenceState() {
-            case .new:
-                break
-            default:
-                XCTFail ("Expected .new")
-            }
-            XCTAssertEqual (0, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (10, item.myInt)
-                XCTAssertEqual ("10", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: id))
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        semaphore.signal()
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        // .new InMemoryAccessor throws error
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        var prefetch: (UUID) -> () = { id in
-            if preFetchCount == 1 {
-
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                        accessor.throwError = true
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            }
-            preFetchCount = preFetchCount + 1
-
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
-            default:
-                XCTFail ("Expected .error")
-            }
-            switch entity.getPersistenceState() {
-            case .new:
-                break
-            default:
-                XCTFail ("Expected .new")
-            }
-            XCTAssertEqual (0, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (10, item.myInt)
-                XCTAssertEqual ("10", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: id))
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .saving:
-            break
-        default:
-            XCTFail ("Expected .saving")
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        semaphore.signal()
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        // .new Success
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        preFetchCount = 0
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        group = DispatchGroup()
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        prefetch = { id in
-            if preFetchCount == 1 {
-                
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    break
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            }
-            preFetchCount = preFetchCount + 1
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .ok:
-                break
-            default:
-                XCTFail ("Expected .ok")
-            }
-            switch entity.getPersistenceState() {
-            case .persistent:
-                break
-            default:
-                XCTFail ("Expected .persistent")
-            }
-            XCTAssertEqual (1, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (10, item.myInt)
-                XCTAssertEqual ("10", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: id))
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .saving:
-            break
-        default:
-            XCTFail ("Expected .saving")
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        semaphore.signal()
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        // TODO Move to a different test?
-        // .persistent
-        switch entity.getPersistenceState() {
+    func testPersistenceStatePair() {
+        let pair = PersistenceStatePair (success: .persistent, failure: .dirty)
+        switch pair.success {
         case .persistent:
             break
         default:
-            XCTFail ("Expected .persitent")
+            XCTFail("Expected .persistent")
         }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        group = DispatchGroup()
-        prefetch = { id in
-            XCTFail ("No Prefetch")
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .ok:
-                break
-            default:
-                XCTFail ("Expected .ok")
-            }
-            switch entity.getPersistenceState() {
-            case .persistent:
-                break
-            default:
-                XCTFail ("Expected .persistent")
-            }
-            XCTAssertEqual (1, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (10, item.myInt)
-                XCTAssertEqual ("10", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: id))
-            group.leave()
-        }
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
+        switch pair.failure {
+        case .dirty:
             break
         default:
-            XCTFail ("Expected Success")
+            XCTFail("Expected .dirty")
         }
-    }
-
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update
-    func testCommitNewPendingUpdate() throws {
-        let accessor = InMemoryAccessor()
-        let logger = InMemoryLogger()
-        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
-        let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
-        let group = DispatchGroup()
-        let semaphore = DispatchSemaphore (value: 1)
-        var preFetchCount = 0
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        let prefetch: (UUID) -> () = { id in
-            if preFetchCount == 1 {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    break
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            }
-            preFetchCount = preFetchCount + 1
-            
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .ok:
-                break
-            default:
-                XCTFail ("Expected .ok")
-            }
-            switch entity.getPersistenceState() {
-            case .persistent:
-                break
-            default:
-                XCTFail ("Expected .persistent")
-            }
-            XCTAssertEqual (2, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (20, item.myInt)
-                XCTAssertEqual ("20", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .saving:
-            break
-        default:
-            XCTFail ("Expected .saving")
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
-        entity.async (batch: batch) { item in
-            item.myInt = 20
-            item.myString = "20"
-        }
-        switch entity.getPendingAction()! {
-        case .update:
-            break
-        default:
-            XCTFail ("Expected .update")
-        }
-        semaphore.signal()
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and errors
-    func testCommitNewPendingUpdateWithErrors() throws {
-        let accessor = InMemoryAccessor()
-        let logger = InMemoryLogger()
-        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
-        let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
-        let group = DispatchGroup()
-        let semaphore = DispatchSemaphore (value: 1)
-        // error occurs while building the updateAction closure
-        var preFetchCount = 0
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        var prefetch: (UUID) -> () = { id in
-            if preFetchCount == 1 {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    accessor.throwError = true
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            }
-            preFetchCount = preFetchCount + 1
-            
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
-            default:
-                XCTFail ("Expected .error")
-            }
-            switch entity.getPersistenceState() {
-            case .new:
-                break
-            default:
-                XCTFail ("Expected .new")
-            }
-            XCTAssertEqual (0, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (20, item.myInt)
-                XCTAssertEqual ("20", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: id))
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .saving:
-            break
-        default:
-            XCTFail ("Expected .saving")
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
-        entity.async (batch: batch) { item in
-            item.myInt = 20
-            item.myString = "20"
-        }
-        switch entity.getPendingAction()! {
-        case .update:
-            break
-        default:
-            XCTFail ("Expected .update")
-        }
-        semaphore.signal()
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        XCTAssertFalse (accessor.has(name: collectionName, id: id))
-        // Error occurs when firing updateAction (during the database update)
-        preFetchCount = 0
-        switch entity.getPersistenceState() {
-        case .new:
-            break
-        default:
-            XCTFail ("Expected .new")
-        }
-        XCTAssertEqual (0, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        prefetch = { id in
-            if preFetchCount == 1 {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    break
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            } else if preFetchCount == 3 {
-                accessor.throwError = true
-            }
-            preFetchCount = preFetchCount + 1
-            
-        }
-        accessor.setPreFetch(preFetch: prefetch)
-        group.enter()
-        entity.commit() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
-            default:
-                XCTFail ("Expected .error")
-            }
-            switch entity.getPersistenceState() {
-            case .dirty:
-                break
-            default:
-                XCTFail ("Expected .dirty")
-            }
-            XCTAssertEqual (1, entity.getVersion())
-            entity.sync() { item in
-                XCTAssertEqual (30, item.myInt)
-                XCTAssertEqual ("30", item.myString)
-            }
-            XCTAssertNil (entity.getPendingAction())
-            group.leave()
-        }
-        switch entity.getPersistenceState() {
-        case .saving:
-            break
-        default:
-            XCTFail ("Expected .saving")
-        }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
-        entity.async (batch: batch) { item in
-            item.myInt = 30
-            item.myString = "30"
-        }
-        switch entity.getPendingAction()! {
-        case .update:
-            break
-        default:
-            XCTFail ("Expected .update")
-        }
-        semaphore.signal()
-        
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
-    }
 
-    // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
-    static func jsonEncodedDate (date: Date) throws -> String? {
-        let accessor = InMemoryAccessor()
-        struct DateContainer : Encodable {
-            init (_ d: Date) {
-                self.d = d
-            }
-            let d: Date
-        }
-        let container = DateContainer.init(date)
-        let encoded = try accessor.encoder.encode (container)
-        let protoResult = String (data: encoded, encoding: .utf8)
-        var result: String? = nil
-        if let protoResult = protoResult {
-            result = String (protoResult[protoResult.index (protoResult.startIndex, offsetBy: 5)...])
-            result = String (result!.prefix(result!.count - 1))
-        }
-        return result
-    }
 }
 
