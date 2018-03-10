@@ -310,7 +310,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     accessor.updateAction
                 }
             case .pendingRemoval:
-                commit (successState: .persistent, failureState: .pendingRemoval, completionHandler: completionHandler) { accessor in
+                commit (successState: .new, failureState: .pendingRemoval, completionHandler: completionHandler) { accessor in
                     accessor.removeAction
                 }
             }
