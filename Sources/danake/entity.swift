@@ -349,6 +349,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                             switch result {
                             case .ok:
                                 self.handleAction(.commit (completionHandler))
+                                // see https://github.com/neallester/danake-sw/issues/3
                             case .error, .unrecoverableError:
                                 self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                             }
