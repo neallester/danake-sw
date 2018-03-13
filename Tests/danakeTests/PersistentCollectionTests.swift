@@ -242,7 +242,7 @@ class persistenceTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entry)
+            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entry)
 //            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Illegal Data|databaseHashValue=", entry.prefix(82))
 //            XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 118)..<entry.index(entry.startIndex, offsetBy: 146)])
 //            XCTAssertEqual (";data={};error=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entries[1].asTestString().suffix(207))
@@ -262,7 +262,7 @@ class persistenceTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.getId());errorMessage=Test Error", entry)
+            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.getId());errorMessage=Test Error", entry)
         }
     }
     
@@ -573,11 +573,6 @@ class persistenceTests: XCTestCase {
             XCTAssertEqual (1, errorsReported)
             logger.sync() { entries in
                 XCTAssertEqual (5, entries.count)
-                let entry = entries[4].asTestString()
-                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=", entry.prefix(84))
-                XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 120)..<entry.index(entry.startIndex, offsetBy: 148)])
-                XCTAssertEqual (";errorMessage=Test Error", entry.suffix (24))
-                XCTAssertEqual (208, entry.count)
             }
             counter = counter + 1
         }
@@ -1476,7 +1471,7 @@ class persistenceTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (1, entries.count)
                 let entry = entries[0].asTestString()
-                XCTAssertEqual ("ERROR|PersistentCollection<Database, MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=Test Error", entry)
+                XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=Test Error", entry)
             }
         }
     }
