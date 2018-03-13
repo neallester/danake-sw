@@ -506,4 +506,14 @@ class InMemoryAccessorTests: XCTestCase {
         
     }
 
+    func testSetThrowError() {
+        let accessor = InMemoryAccessor()
+        XCTAssertFalse (accessor.isThrowError())
+        accessor.setThrowError()
+        XCTAssertTrue (accessor.isThrowError())
+        accessor.setThrowError (false)
+        XCTAssertFalse (accessor.isThrowError())
+        accessor.setThrowError (true)
+        XCTAssertTrue (accessor.isThrowError())
+    }
 }

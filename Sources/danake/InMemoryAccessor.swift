@@ -191,10 +191,18 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
-    public func setThrowError(throwError: Bool) {
+    public func setThrowError(_ throwError: Bool) {
         queue.async {
             self.throwError = throwError
         }
+    }
+    
+    public func isThrowError() -> Bool {
+        var result = false
+        queue.sync {
+            result = throwError
+        }
+        return result
     }
     
     
