@@ -8,7 +8,7 @@
 import XCTest
 @testable import danake
 
-class persistenceTests: XCTestCase {
+class PersistentCollectionTests: XCTestCase {
     
     func testCreation() {
         let accessor = InMemoryAccessor()
