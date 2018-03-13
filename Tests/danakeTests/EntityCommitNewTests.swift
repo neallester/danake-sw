@@ -471,7 +471,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -560,7 +560,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
@@ -679,7 +678,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
@@ -908,7 +906,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1007,7 +1005,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
@@ -1136,7 +1133,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("50", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 60
             item.myString = "60"
@@ -1372,7 +1368,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1468,7 +1464,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1594,7 +1589,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1817,7 +1811,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1906,7 +1900,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2027,7 +2020,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2247,7 +2239,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2343,7 +2335,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2471,7 +2462,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2701,7 +2691,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        var batch = Batch()
+        let batch = Batch()
         entity.sync (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2800,7 +2790,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.sync(batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
@@ -2931,7 +2920,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = Batch()
         entity.sync (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
