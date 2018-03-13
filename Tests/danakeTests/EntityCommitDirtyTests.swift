@@ -38,7 +38,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         let savedData = accessor.getData(name: collectionName, id: entity.getId())!
-        // .dirty building addAction throws error
+        // .dirty building updateAction throws error
         let batch = Batch()
         entity.sync(batch: batch) { item in
             item.myInt = 20
