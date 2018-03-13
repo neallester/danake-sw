@@ -8,7 +8,7 @@
 import XCTest
 @testable import danake
 
-class entityCommitNewTests: XCTestCase {
+class EntityCommitNewTests: XCTestCase {
 
     // Test implementation of Entity.commit() from the PersistenceState.new state
     func testCommitNew() {

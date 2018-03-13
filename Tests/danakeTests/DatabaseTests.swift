@@ -17,7 +17,7 @@ class RegistrarTestItem {
     let stringValue: String
 }
 
-class databaseTests: XCTestCase {
+class DatabaseTests: XCTestCase {
 
     func testDatabaseCreation() {
         XCTAssertEqual (0, Database.registrar.count())

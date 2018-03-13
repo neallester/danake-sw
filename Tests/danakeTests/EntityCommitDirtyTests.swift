@@ -8,7 +8,7 @@
 import XCTest
 @testable import danake
 
-class entityCommitDirtyTests: XCTestCase {
+class EntityCommitDirtyTests: XCTestCase {
 
     // Test implementation of Entity.commit() from the PersistenceState.dirty state
     func testCommitDirty() {

@@ -1,5 +1,5 @@
 //
-//  loggingTests.swift
+//  LoggingTests.swift
 //  danakeTests
 //
 //  Created by Neal Lester on 2/9/18.
@@ -9,7 +9,7 @@ import XCTest
 @testable import danake
 
 
-class loggingTests: XCTestCase {
+class LoggingTests: XCTestCase {
 
     func testLogLevel() {
         XCTAssertEqual ("none", LogLevel.none.rawValue)
@@ -51,9 +51,9 @@ class loggingTests: XCTestCase {
     }
     
     func testStandardFormat() {
-        XCTAssertEqual ("BUSINESS|loggingTests.testStandardFormat|Message 1", LogEntryFormatter.standardFormat(level: .business, source: self, featureName: "testStandardFormat", message: "Message 1", data: nil))
-        XCTAssertEqual ("BUSINESS|loggingTests.testStandardFormat|Message 1", LogEntryFormatter.standardFormat(level: .business, source: self, featureName: "testStandardFormat", message: "Message 1", data: []))
-        XCTAssertEqual ("DEBUG|loggingTests.testStandardFormat|Message 2|name1=1", LogEntryFormatter.standardFormat(level: .debug, source: self, featureName: "testStandardFormat", message: "Message 2", data: [(name: "name1", value:1)]))
+        XCTAssertEqual ("BUSINESS|LoggingTests.testStandardFormat|Message 1", LogEntryFormatter.standardFormat(level: .business, source: self, featureName: "testStandardFormat", message: "Message 1", data: nil))
+        XCTAssertEqual ("BUSINESS|LoggingTests.testStandardFormat|Message 1", LogEntryFormatter.standardFormat(level: .business, source: self, featureName: "testStandardFormat", message: "Message 1", data: []))
+        XCTAssertEqual ("DEBUG|LoggingTests.testStandardFormat|Message 2|name1=1", LogEntryFormatter.standardFormat(level: .debug, source: self, featureName: "testStandardFormat", message: "Message 2", data: [(name: "name1", value:1)]))
     }
     
     func testLogEntry() {
@@ -62,14 +62,14 @@ class loggingTests: XCTestCase {
         XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
         XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
         XCTAssertEqual(LogLevel.debug, entry.level)
-        XCTAssertEqual ("loggingTests", entry.source)
+        XCTAssertEqual ("LoggingTests", entry.source)
         XCTAssertEqual ("testLogEntry", entry.featureName)
         XCTAssertEqual ("Message 1", entry.message)
         XCTAssertEqual (1, entry.data!.count)
         XCTAssertEqual ("name1", entry.data![0].name)
         let entryValue1 = entry.data![0].value as! Int
         XCTAssertEqual (1, entryValue1)
-        XCTAssertEqual ("DEBUG|loggingTests.testLogEntry|Message 1|name1=1", entry.asTestString())
+        XCTAssertEqual ("DEBUG|LoggingTests.testLogEntry|Message 1|name1=1", entry.asTestString())
     }
     
     func testInMemoryLogger() {
@@ -85,14 +85,14 @@ class loggingTests: XCTestCase {
             XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
             XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
             XCTAssertEqual(LogLevel.debug, entry.level)
-            XCTAssertEqual ("loggingTests", entry.source)
+            XCTAssertEqual ("LoggingTests", entry.source)
             XCTAssertEqual ("testInMemoryLogger", entry.featureName)
             XCTAssertEqual ("Message 1", entry.message)
             XCTAssertEqual (1, entry.data!.count)
             XCTAssertEqual ("name1", entry.data![0].name)
             let entryValue1 = entry.data![0].value as! Int
             XCTAssertEqual (1, entryValue1)
-            XCTAssertEqual ("DEBUG|loggingTests.testInMemoryLogger|Message 1|name1=1", entry.asTestString())
+            XCTAssertEqual ("DEBUG|LoggingTests.testInMemoryLogger|Message 1|name1=1", entry.asTestString())
         }
         logger = InMemoryLogger (level: .business)
         logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 2", data: [(name: "name1", value:1)])
@@ -107,14 +107,14 @@ class loggingTests: XCTestCase {
             XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
             XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
             XCTAssertEqual(LogLevel.business, entry.level)
-            XCTAssertEqual ("loggingTests", entry.source)
+            XCTAssertEqual ("LoggingTests", entry.source)
             XCTAssertEqual ("testInMemoryLogger", entry.featureName)
             XCTAssertEqual ("Message 3", entry.message)
             XCTAssertEqual (1, entry.data!.count)
             XCTAssertEqual ("name1", entry.data![0].name)
             let entryValue1 = entry.data![0].value as! Int
             XCTAssertEqual (1, entryValue1)
-            XCTAssertEqual ("BUSINESS|loggingTests.testInMemoryLogger|Message 3|name1=1", entry.asTestString())
+            XCTAssertEqual ("BUSINESS|LoggingTests.testInMemoryLogger|Message 3|name1=1", entry.asTestString())
         }
         logger = InMemoryLogger (level: .none)
         logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 4", data: [(name: "name1", value:1)])
