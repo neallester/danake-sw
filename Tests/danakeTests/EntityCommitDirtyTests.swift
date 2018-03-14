@@ -137,7 +137,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -213,7 +213,7 @@ class EntityCommitDirtyTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -274,7 +274,7 @@ class EntityCommitDirtyTests: XCTestCase {
         prefetch = { id in
             XCTFail ("No Prefetch")
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -358,7 +358,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         let batch = Batch()
         entity.async (batch: batch) { item in
             item.myInt = 20
@@ -506,7 +506,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
     
         group.enter()
         entity.commit() { result in
@@ -596,7 +596,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -709,7 +709,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -846,7 +846,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -986,7 +986,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1085,7 +1085,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1196,7 +1196,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1343,7 +1343,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1480,7 +1480,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1576,7 +1576,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1684,7 +1684,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1828,7 +1828,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1955,7 +1955,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2044,7 +2044,7 @@ class EntityCommitDirtyTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2147,7 +2147,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2281,7 +2281,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2410,7 +2410,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2506,7 +2506,7 @@ class EntityCommitDirtyTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2616,7 +2616,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2752,7 +2752,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2885,7 +2885,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2979,7 +2979,7 @@ class EntityCommitDirtyTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -3088,7 +3088,7 @@ class EntityCommitDirtyTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {

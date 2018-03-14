@@ -435,7 +435,7 @@ class InMemoryAccessorTests: XCTestCase {
         foundEntity1 = false
         foundEntity2 = false
         prefetchUuid = nil
-        accessor.setPreFetch(preFetch: nil)
+        accessor.setPreFetch (nil)
         switch accessor.removeAction(wrapper: wrapper2) {
         case .ok (let closure):
             switch closure() {

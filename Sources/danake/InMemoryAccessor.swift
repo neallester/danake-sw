@@ -206,7 +206,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
     
     
-    func setPreFetch (preFetch: ((UUID) -> Void)?) {
+    func setPreFetch (_ preFetch: ((UUID) -> Void)?) {
         self.preFetch = preFetch
     }
     

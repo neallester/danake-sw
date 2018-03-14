@@ -134,7 +134,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -210,7 +210,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -309,7 +309,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
             break
@@ -450,7 +450,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         
         group.enter()
         entity.commit() { result in
@@ -541,7 +541,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -647,7 +647,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -769,7 +769,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -900,7 +900,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1000,7 +1000,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1066,7 +1066,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
         // Error occurs when firing the pending updateAction closure
         XCTAssertFalse (accessor.isThrowError())
-        accessor.setPreFetch(preFetch: nil)
+        accessor.setPreFetch (nil)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1117,7 +1117,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1259,7 +1259,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1389,7 +1389,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1486,7 +1486,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             
         }
         preFetchCount = 0
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1599,7 +1599,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1723,7 +1723,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1842,7 +1842,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1927,7 +1927,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2034,7 +2034,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2148,7 +2148,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2274,7 +2274,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2366,7 +2366,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2481,7 +2481,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2602,7 +2602,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2733,7 +2733,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2828,7 +2828,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             }
             preFetchCount = preFetchCount + 1
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
@@ -2891,7 +2891,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
         // Error occurs when firing the pending removeAction closure
-        accessor.setPreFetch(preFetch: nil)
+        accessor.setPreFetch (nil)
         entity.sync(batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
@@ -2946,7 +2946,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
-        accessor.setPreFetch(preFetch: prefetch)
+        accessor.setPreFetch (prefetch)
         group.enter()
         entity.commit() { result in
             switch result {
