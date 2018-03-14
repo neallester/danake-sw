@@ -200,7 +200,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     // EntityManagement
     
-    func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
+    internal func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
         queue.async {
             self.handleAction (PersistenceAction.commit (completionHandler))
         }
