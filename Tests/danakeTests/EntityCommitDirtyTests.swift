@@ -1838,10 +1838,10 @@ class EntityCommitDirtyTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (3, entity.getVersion())
             entity.sync() { item in
@@ -2291,10 +2291,10 @@ class EntityCommitDirtyTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (3, entity.getVersion())
             entity.sync() { item in
@@ -2762,10 +2762,10 @@ class EntityCommitDirtyTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (3, entity.getVersion())
             entity.sync() { item in

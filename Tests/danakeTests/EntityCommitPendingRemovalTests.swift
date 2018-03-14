@@ -220,10 +220,10 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (2, entity.getVersion())
             entity.sync() { item in

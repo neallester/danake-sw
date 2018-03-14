@@ -609,7 +609,10 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        preFetchCount = 0
+        entity.async(batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
         switch entity.getPersistenceState() {
         case .new:
             break
@@ -628,6 +631,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -689,7 +693,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-        
+
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1064,7 +1068,10 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        preFetchCount = 0
+        entity.async(batch: batch) { item in
+            item.myInt = 50
+            item.myString = "50"
+        }
         switch entity.getPersistenceState() {
         case .new:
             break
@@ -1083,6 +1090,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -1154,7 +1162,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-        
+
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1520,7 +1528,10 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        preFetchCount = 0
+        entity.async(batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
         switch entity.getPersistenceState() {
         case .new:
             break
@@ -1539,6 +1550,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -1607,7 +1619,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-        
+
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1683,10 +1695,10 @@ class EntityCommitNewTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (2, entity.getVersion())
             entity.sync() { item in
@@ -2104,10 +2116,10 @@ class EntityCommitNewTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (2, entity.getVersion())
             entity.sync() { item in
@@ -2553,10 +2565,10 @@ class EntityCommitNewTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             switch entity.getPersistenceState() {
-            case .new:
+            case .abandoned:
                 break
             default:
-                XCTFail ("Expected .new")
+                XCTFail ("Expected .abandoned")
             }
             XCTAssertEqual (2, entity.getVersion())
             entity.sync() { item in
