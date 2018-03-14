@@ -143,7 +143,7 @@ class EntityTests: XCTestCase {
 
     func testWriteAccess() {
         let entity = newTestEntity(myInt: 0, myString: "0")
-        var batch = Batch()
+        var batch = EventuallyConsistentBatch()
         var itemInt = 0
         var itemString = ""
         switch entity.getPersistenceState() {
@@ -178,7 +178,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .dirty
         entity.setPersistenceState(.dirty)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
@@ -203,7 +203,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .persistent
         entity.setPersistenceState(.dirty)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
@@ -229,7 +229,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .abandoned
         entity.setPersistenceState(.abandoned)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
@@ -255,7 +255,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .pendingRemoval
         entity.setPersistenceState(.pendingRemoval)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
@@ -310,7 +310,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .dirty
         waitFor = expectation(description: ".dirty")
         entity.setPersistenceState(.dirty)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.async(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
@@ -338,7 +338,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .persistent
         waitFor = expectation(description: ".persistetnt")
         entity.setPersistenceState(.dirty)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.async(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
@@ -367,7 +367,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .abandoned
         waitFor = expectation(description: ".abandoned")
         entity.setPersistenceState(.abandoned)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.async(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
@@ -396,7 +396,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .pendingRemoval
         waitFor = expectation(description: ".pendingRemoval")
         entity.setPersistenceState(.pendingRemoval)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.async(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
@@ -686,7 +686,7 @@ class EntityTests: XCTestCase {
 
     func testRemove () {
         let entity = newTestEntity(myInt: 10, myString: "10")
-        var batch = Batch()
+        var batch = EventuallyConsistentBatch()
         // persistenceState = .new
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
@@ -705,7 +705,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .dirty
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.setPersistenceState(.dirty)
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
@@ -725,7 +725,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .pendingRemoval
         entity.setPersistenceState(.pendingRemoval)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
@@ -744,7 +744,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .abandoned
         entity.setPersistenceState(.abandoned)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
         switch entity.getPersistenceState() {
@@ -763,7 +763,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .saving
         entity.setPersistenceState(.saving)
-        batch = Batch()
+        batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         switch entity.getPendingAction()! {
         case .remove:

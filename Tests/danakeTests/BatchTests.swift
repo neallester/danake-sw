@@ -13,7 +13,7 @@ class BatchTests: XCTestCase {
 
     func testInsertAsyncNoClosure() {
         // No Closure
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         let entity = newTestEntity(myInt: 10, myString: "Test Completed")
         batch.insertAsync(item: entity, closure: nil)
         batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
@@ -55,7 +55,7 @@ class BatchTests: XCTestCase {
     }
 
     func testInsertAsyncWithClosure() {
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         let entity = newTestClassEntity(myInt: 10, myString: "Test Started")
         var myClass: MyClass? = nil
         entity.sync () { item in

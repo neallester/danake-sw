@@ -49,7 +49,7 @@ class PersistentCollectionTests: XCTestCase {
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
-        var batch = Batch()
+        var batch = EventuallyConsistentBatch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.getCollection ()!)
         batch.syncItems() { items in
@@ -73,7 +73,7 @@ class PersistentCollectionTests: XCTestCase {
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
-        batch = Batch() // Ensures entity is collected
+        batch = EventuallyConsistentBatch() // Ensures entity is collected
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
@@ -104,7 +104,7 @@ class PersistentCollectionTests: XCTestCase {
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
-        batch = Batch() // Ensures entity is collected
+        batch = EventuallyConsistentBatch() // Ensures entity is collected
         collection.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
@@ -195,7 +195,7 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=No
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         let entity2 = collection.new(batch: batch, item: MyStruct())
         XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
         XCTAssertEqual (5, entity2.getSchemaVersion())
@@ -441,7 +441,7 @@ class PersistentCollectionTests: XCTestCase {
             // Data In Cache=Yes; Data in Accessor=No
             waitFor1 = expectation(description: "wait1.3")
             waitFor2 = expectation(description: "wait2.3")
-            let batch = Batch()
+            let batch = EventuallyConsistentBatch()
             let entity3 = collection.new(batch: batch, item: MyStruct())
             let entity4 = collection.new(batch: batch, item: MyStruct())
             collection.get(id: entity3.getId()) { item in
@@ -600,7 +600,7 @@ class PersistentCollectionTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             // entity2: Entity in cache, data not in accessor
-            let batch = Batch()
+            let batch = EventuallyConsistentBatch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
             let entity2 = collection.new(batch: batch, item: myStruct)
             entity2.setCollection(collection: collection)
@@ -720,7 +720,7 @@ class PersistentCollectionTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             // entity2: Entity in cache, data not in accessor
-            let batch = Batch()
+            let batch = EventuallyConsistentBatch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
             let entity2 = collection.new(batch: batch, item: myStruct)
             // entity3: Entity in cache, data in accessor
@@ -778,7 +778,7 @@ class PersistentCollectionTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
             // entity2: Entity in cache, data not in accessor
-            let batch = Batch()
+            let batch = EventuallyConsistentBatch()
             let myStruct = MyStruct (myInt: 20, myString: "A String 2")
             let entity2 = collection.new(batch: batch, item: myStruct)
             // entity3: Entity in cache, data in accessor
@@ -834,7 +834,7 @@ class PersistentCollectionTests: XCTestCase {
                     XCTFail ("Expected .ok")
                 }
                 // entity2: Entity in cache, data not in accessor
-                let batch = Batch()
+                let batch = EventuallyConsistentBatch()
                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
                 let entity2 = collection.new(batch: batch, item: myStruct)
                 // entity3: Entity in cache, data in accessor
@@ -892,7 +892,7 @@ class PersistentCollectionTests: XCTestCase {
                     XCTFail ("Expected .ok")
                 }
                 // entity2: Entity in cache, data not in accessor
-                let batch = Batch()
+                let batch = EventuallyConsistentBatch()
                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
                 let entity2 = collection.new(batch: batch, item: myStruct)
                 entity2.setCollection(collection: collection)
@@ -967,7 +967,7 @@ class PersistentCollectionTests: XCTestCase {
                                     XCTFail ("Expected .ok")
                                 }
                                 // entity2: Entity in cache, data not in accessor
-                                let batch = Batch()
+                                let batch = EventuallyConsistentBatch()
                                 let myStruct = MyStruct (myInt: 20, myString: "A String 2")
                                 let entity2 = collection.new(batch: batch, item: myStruct)
                                 // entity3: Entity in cache, data in accessor

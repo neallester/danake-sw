@@ -366,7 +366,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -471,7 +471,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -795,7 +795,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -910,7 +910,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1264,7 +1264,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1376,7 +1376,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1721,7 +1721,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1823,7 +1823,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2142,7 +2142,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2251,7 +2251,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -2591,7 +2591,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.sync (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2703,7 +2703,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.sync (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"

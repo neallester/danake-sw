@@ -38,7 +38,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         let savedData = accessor.getData(name: collectionName, id: entity.getId())!
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         // .remove building removeAction throws error
         switch entity.getPersistenceState() {
@@ -294,7 +294,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         let prefetch: (UUID) -> () = { id in
             if preFetchCount == 1 {
@@ -417,7 +417,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         //
         // error occurs while firing the initial removeAction closure
         var preFetchCount = 0
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -736,7 +736,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -872,7 +872,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         XCTAssertEqual (1, entity.getVersion())
         entity.sync() { item in
@@ -1232,7 +1232,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -1355,7 +1355,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -1688,7 +1688,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertEqual (1, entity.getVersion())
         entity.sync() { item in
@@ -1808,7 +1808,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertEqual (1, entity.getVersion())
         entity.sync() { item in
@@ -2115,7 +2115,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -2239,7 +2239,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertEqual (1, entity.getVersion())
         entity.sync() { item in
@@ -2569,7 +2569,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -2699,7 +2699,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
         switch entity.getPersistenceState() {
         case .pendingRemoval:

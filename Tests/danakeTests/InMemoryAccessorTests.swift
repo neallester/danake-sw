@@ -78,7 +78,7 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { item in
             item.myInt = 20
             item.myString = "A String 2"

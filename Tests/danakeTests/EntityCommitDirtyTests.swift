@@ -39,7 +39,7 @@ class EntityCommitDirtyTests: XCTestCase {
         }
         let savedData = accessor.getData(name: collectionName, id: entity.getId())!
         // .dirty building updateAction throws error
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.sync(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -359,7 +359,7 @@ class EntityCommitDirtyTests: XCTestCase {
             
         }
         accessor.setPreFetch (prefetch)
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -470,7 +470,7 @@ class EntityCommitDirtyTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -810,7 +810,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -949,7 +949,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1307,7 +1307,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1443,7 +1443,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1792,7 +1792,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -1918,7 +1918,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2245,7 +2245,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2378,7 +2378,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2721,7 +2721,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
@@ -2853,7 +2853,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        let batch = Batch()
+        let batch = EventuallyConsistentBatch()
         entity.async (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"

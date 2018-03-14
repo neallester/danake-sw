@@ -231,7 +231,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // Convention is Entity.queue -> Batch.queue
     
-    public func async (batch: Batch, closure: @escaping (inout T) -> Void) {
+    public func async (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.async () {
             batch.insertSync(item: self) {
                 self.handleAction(.updateItem (closure))
@@ -239,7 +239,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
-    public func sync (batch: Batch, closure: @escaping (inout T) -> Void) {
+    public func sync (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.sync {
             batch.insertSync (item: self) {
                 self.handleAction(.updateItem (closure))
@@ -259,7 +259,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         contain persistent references to the removed Entity; removing an Entity to which there are references
         will produce errors (i.e. RetrievalResult.error) when those references are accessed.
      */
-    public func remove (batch: Batch) {
+    public func remove (batch: EventuallyConsistentBatch) {
         queue.async {
             batch.insertSync(item: self) {
                 self.handleAction(.remove)
