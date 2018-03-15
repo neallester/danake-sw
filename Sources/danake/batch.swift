@@ -28,24 +28,26 @@ public class BatchDefaults {
  
     ** retryInterval: ** How long the framework waits until retrying a batch which experienced recoverable errors
                          during processing.
-    ** batchTimeout: **  How long the framework waits for a batch to complete processing. The timeout for individual
-                         save operations on Entities is set to 80% of ** batchTimeout **. Note that the database bindings
-                         used by an implementation of DatabaseAccessor may have their own timeouts which will govern
-                         if they are shorter than those used in the batch.
+    ** timeout: **       The timeout for individual commit operations on Entities. The timeout for the entire batch
+                         is 2x ** timeout **. That is, if all individual commit operations on Entities within the batch
+                         do not complete within 2x timeout the batch will timeout. This could occur if access to
+                         Entity.queue is blocked or if Entity serialization causes an endless loop. Note that the
+                         database bindings used by an implementation of DatabaseAccessor may have their own timeouts
+                         which will govern if they are shorter than those used in the batch.
 */
 public class EventuallyConsistentBatch {
     
     convenience init() {
-        self.init (retryInterval: BatchDefaults.retryInterval, batchTimeout: BatchDefaults.timeout, logger: nil)
+        self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: nil)
     }
     
     convenience init(logger: Logger) {
-        self.init (retryInterval: BatchDefaults.retryInterval, batchTimeout: BatchDefaults.timeout, logger: logger)
+        self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: logger)
     }
     
-    init(retryInterval: DispatchTimeInterval, batchTimeout: DispatchTimeInterval, logger: Logger?) {
+    init(retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, logger: Logger?) {
         self.retryInterval = retryInterval
-        self.batchTimeout = batchTimeout
+        self.timeout = timeout
         delegate = BatchDelegate(logger: logger)
         self.logger = logger
         queue = DispatchQueue (label: "EventuallyConsistentBatch \(delegate.id.uuidString)")
@@ -66,7 +68,7 @@ public class EventuallyConsistentBatch {
     }
     
     private func commit (delegate: BatchDelegate, completionHandler: (() -> ())?) {
-        delegate.commit (retryInterval: retryInterval, batchTimeout: batchTimeout, completionHandler: completionHandler)
+        delegate.commit (retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
     }
 
     internal func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
@@ -97,7 +99,7 @@ public class EventuallyConsistentBatch {
     private var delegate: BatchDelegate
     private let logger: Logger?
     public let retryInterval: DispatchTimeInterval
-    public let batchTimeout: DispatchTimeInterval
+    public let timeout: DispatchTimeInterval
     
 }
 
@@ -110,13 +112,13 @@ fileprivate class BatchDelegate {
         queue = DispatchQueue (label: "BatchDelegate \(id.uuidString)")
     }
     
-    fileprivate func commit (retryInterval: DispatchTimeInterval, batchTimeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
+    fileprivate func commit (retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
         DispatchQueue.main.asyncAfter (deadline: DispatchTime.now()) {
-            self.commitImplementation(retryInterval: retryInterval, batchTimeout: batchTimeout, completionHandler: completionHandler)
+            self.commitImplementation(retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
         }
     }
     
-    private func commitImplementation (retryInterval: DispatchTimeInterval, batchTimeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
+    private func commitImplementation (retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
         let group = DispatchGroup()
         queue.sync {
             for key in items.keys {
@@ -148,11 +150,16 @@ fileprivate class BatchDelegate {
                 }
             }
         }
-        switch group.wait(timeout: DispatchTime.now() + batchTimeout) {
+        switch group.wait(timeout: DispatchTime.now() + timeout) {
         case .success:
             break
         default:
-            self.logger?.log(level: .warning, source: self, featureName: "commitImplementation", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString)])
+            queue.async {
+                for entity in self.items.values {
+                    self.logger?.log(level: .warning, source: self, featureName: "commitImplementation", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+                }
+                
+            }
         }
         var isEmpty = false
         queue.sync {
@@ -160,7 +167,7 @@ fileprivate class BatchDelegate {
         }
         if !isEmpty {
             DispatchQueue.main.asyncAfter (deadline: DispatchTime.now() + retryInterval) {
-                self.commitImplementation(retryInterval: retryInterval, batchTimeout: batchTimeout, completionHandler: completionHandler)
+                self.commitImplementation(retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
             }
         } else if let completionHandler = completionHandler {
             completionHandler()
