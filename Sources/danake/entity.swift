@@ -42,7 +42,7 @@ public enum PersistenceAction<T: Codable> {
 
     case updateItem ((inout T) -> ())
     case remove
-    case commit ((DatabaseUpdateResult) -> ())
+    case commit (DispatchTimeInterval, (DatabaseUpdateResult) -> ())
     
 }
 
@@ -201,8 +201,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // EntityManagement
     
     internal func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
+        commit (timeout: DispatchTimeInterval.seconds(60), completionHandler: completionHandler)
+    }
+    
+    internal func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
         queue.async {
-            self.handleAction (PersistenceAction.commit (completionHandler))
+            self.handleAction (PersistenceAction.commit (timeout, completionHandler))
         }
     }
 
@@ -297,20 +301,20 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             case .pendingRemoval, .abandoned:
                 break
             }
-        case .commit(let completionHandler):
+        case .commit(let timeout, let completionHandler):
             switch self.persistenceState {
             case .persistent, .abandoned, .saving:
                 callCommitCompletionHandler (completionHandler: completionHandler, result: .ok)
             case .new:
-                commit (successState: .persistent, failureState: .new, completionHandler: completionHandler) { accessor in
+                commit (successState: .persistent, failureState: .new, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.addAction
                 }
             case .dirty:
-                commit (successState: .persistent, failureState: .dirty, completionHandler: completionHandler) { accessor in
+                commit (successState: .persistent, failureState: .dirty, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.updateAction
                 }
             case .pendingRemoval:
-                commit (successState: .abandoned, failureState: .pendingRemoval, completionHandler: completionHandler) { accessor in
+                commit (successState: .abandoned, failureState: .pendingRemoval, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.removeAction
                 }
             }
@@ -318,7 +322,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
     
     // Not thread safe: to be called on self.queue
-    private func commit (successState: PersistenceState, failureState: PersistenceState, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
+    private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
         if let collection = collection {
             persistenceState = successState
             version = version + 1
@@ -328,35 +332,53 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             switch actionResult {
             case .ok (let action):
                 persistenceState = .saving
+                var result: DatabaseUpdateResult? = nil
                 collection.database.workQueue.async {
-                    let result = action()
-                    self.queue.async {
-                        switch result {
-                        case .ok:
-                            self.persistenceState = successState
-                        case .error, .unrecoverableError:
-                            self.persistenceState = failureState
-                            self.version = self.version - 1
+                    let group = DispatchGroup()
+                    group.enter()
+                    collection.database.workQueue.async {
+                        let tempResult = action()
+                        self.queue.sync {
+                            result = tempResult
                         }
-                        if let pendingAction = self.pendingAction {
-                            self.pendingAction = nil
-                            switch pendingAction {
-                            case .update:
-                                self.handleAction(PersistenceAction.updateItem() { item in })
-                            case .remove:
-                                self.handleAction(PersistenceAction.remove)
+                        group.leave()
+                    }
+                    collection.database.workQueue.async {
+                        let _ = group.wait(timeout: DispatchTime.now() + timeout)
+                        self.queue.async {
+                            if result == nil {
+                                result = .error ("Entity.commit():timedOut:\(timeout)")
                             }
-                            switch result {
-                            case .ok:
-                                self.handleAction(.commit (completionHandler))
-                                // see https://github.com/neallester/danake-sw/issues/3
-                            case .error, .unrecoverableError:
-                                self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                            if let result = result {
+                                switch result {
+                                case .ok:
+                                    self.persistenceState = successState
+                                case .error, .unrecoverableError:
+                                    self.persistenceState = failureState
+                                    self.version = self.version - 1
+                                }
+                                if let pendingAction = self.pendingAction {
+                                    self.pendingAction = nil
+                                    switch pendingAction {
+                                    case .update:
+                                        self.handleAction(PersistenceAction.updateItem() { item in })
+                                    case .remove:
+                                        self.handleAction(PersistenceAction.remove)
+                                    }
+                                    switch result {
+                                    case .ok:
+                                        self.handleAction(.commit (timeout, completionHandler))
+                                    // see https://github.com/neallester/danake-sw/issues/3
+                                    case .error, .unrecoverableError:
+                                        self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                                    }
+                                    
+                                } else {
+                                    self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                                }
                             }
-                            
-                        } else {
-                            self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                         }
+
                     }
                 }
             case .error (let errorMessage):
