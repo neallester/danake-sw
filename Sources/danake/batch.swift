@@ -124,7 +124,7 @@ fileprivate class BatchDelegate {
             for key in items.keys {
                 group.enter()
                 if let entity = items[key] {
-                    entity.commit() { result in
+                    entity.commit (timeout: timeout) { result in
                         var logLevel: LogLevel? = nil
                         var errorMessage: String = ""
                         switch result {
@@ -150,6 +150,7 @@ fileprivate class BatchDelegate {
                 }
             }
         }
+        // ******************************** TODO This should be 2 X timeout
         switch group.wait(timeout: DispatchTime.now() + timeout) {
         case .success:
             break

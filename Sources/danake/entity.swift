@@ -19,6 +19,7 @@ public protocol EntityProtocol {
 internal protocol EntityManagement : EntityProtocol, Encodable {
     
     func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
+    func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
     
 }
 
