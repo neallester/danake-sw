@@ -167,7 +167,7 @@ fileprivate class BatchDelegate {
             isEmpty = items.isEmpty
         }
         if !isEmpty {
-            DispatchQueue.main.asyncAfter (deadline: DispatchTime.now() + retryInterval) {
+            queue.asyncAfter (deadline: DispatchTime.now() + retryInterval) {
                 self.commitImplementation(retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
             }
         } else if let completionHandler = completionHandler {
