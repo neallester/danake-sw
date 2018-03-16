@@ -68,3 +68,35 @@ func msRounded (date: Date) -> Double {
     return (date.timeIntervalSince1970 * 1000).rounded()
 }
 
+/*
+    This Entity descendant implements the ** timeoutTestingHook() ** function with a semaphore which blocks commit processing
+    before the wait which implements the commit timeout in Entity. This enables tests to ensure that all of their test setup
+    has comleted before Entity commit processing times out and continues.
+*/
+class TimeoutHookEntity<T: Codable> : Entity<T> {
+    
+    internal init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T, semaphoreValue: Int) {
+        self.timeoutSemaphore = DispatchSemaphore (value: semaphoreValue)
+        super.init (collection: collection, id: id, version: version, item: item)
+    }
+    
+    required init(from decoder: Decoder) throws {
+        timeoutSemaphore = DispatchSemaphore(value: 1)
+        try super.init (from: decoder)
+    }
+    
+    internal let timeoutSemaphore: DispatchSemaphore
+    
+    override
+    func timeoutTestingHook() {
+        print ("Entity.timeoutSemaphfore.wait()")
+        switch timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            print ("Entity.timeoutSemaphfore.success")
+            timeoutSemaphore.signal()
+        default:
+            print ("****************************************** timeoutTestingHook.timeoutSemaphore .timedOut")
+        }
+    }
+}
+

@@ -40,7 +40,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let savedData = accessor.getData(name: collectionName, id: entity.getId())!
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        // .remove building removeAction throws error
+        // .pendingRemoval building removeAction throws error
         switch entity.getPersistenceState() {
         case .pendingRemoval:
             break
@@ -102,7 +102,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        // .dirty firing removeAction throws error
+        // .pendingRemoval firing removeAction throws error
         switch entity.getPersistenceState() {
         case .pendingRemoval:
             break
@@ -177,6 +177,77 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+        // .pendingRemoval firing removeAction timesout
+        switch entity.getPersistenceState() {
+        case .pendingRemoval:
+            break
+        default:
+            XCTFail ("Expected .pendingRemoval")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        preFetchCount = 0
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .pendingRemoval:
+                break
+            default:
+                XCTFail ("Expected .pendingRemoval")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (10, item.myInt)
+                XCTAssertEqual ("10", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
         // .pendingRemoval Success
         switch entity.getPersistenceState() {
         case .pendingRemoval:
@@ -192,12 +263,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         group = DispatchGroup()
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {

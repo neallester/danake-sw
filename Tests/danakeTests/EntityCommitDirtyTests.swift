@@ -180,6 +180,89 @@ class EntityCommitDirtyTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        // .dirty firing updateAction times out
+        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        preFetchCount = 0
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (20, item.myInt)
+                XCTAssertEqual ("20", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
         // .dirty Success
         switch entity.getPersistenceState() {
         case .dirty:
@@ -195,12 +278,6 @@ class EntityCommitDirtyTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         group = DispatchGroup()
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {

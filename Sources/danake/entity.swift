@@ -276,6 +276,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     // Not Thread Safe, caller must be within ** queue ***
     internal func handleAction (_ action: PersistenceAction<T>) {
+        print ("Entity.handleAction: \(action)")
         switch action {
         case .updateItem(let closure):
             switch self.persistenceState {
@@ -325,6 +326,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // Not thread safe: to be called on self.queue
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
         if let collection = collection {
+            print ("Entity.commit.start")
             persistenceState = successState
             version = version + 1
             let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
@@ -345,12 +347,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                         group.leave()
                     }
                     collection.database.workQueue.async {
+                        self.timeoutTestingHook()
+                        print ("Entity waiting on group")
                         let _ = group.wait(timeout: DispatchTime.now() + timeout)
                         self.queue.async {
                             if result == nil {
                                 result = .error ("Entity.commit():timedOut:\(timeout)")
                             }
                             if let result = result {
+                                print ("commit.result: \(result)")
                                 switch result {
                                 case .ok:
                                     self.persistenceState = successState
@@ -520,6 +525,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         return result
     }
+    
+    internal func timeoutTestingHook() {}
     
 // Attributes
     

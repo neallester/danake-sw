@@ -84,8 +84,6 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        
-        
         // .new firing updateAction throws error
         switch entity.getPersistenceState() {
         case .new:
@@ -218,13 +216,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        XCTAssertEqual (1, entity.getVersion())
-        entity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
-        XCTAssertNil (entity.getPendingAction())
-
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -244,6 +235,12 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // .new Success
         switch entity.getPersistenceState() {
@@ -260,12 +257,6 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         group = DispatchGroup()
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -800,6 +791,251 @@ class EntityCommitNewTests: XCTestCase {
         }
     }
     
+    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and timeouts
+    func testCommitNewPendingUpdateWithTimeouts() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .new:
+                break
+            default:
+                XCTFail ("Expected .new")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (20, item.myInt)
+                XCTAssertEqual ("20", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.async (batch: batch) { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // There is no timeout protection for building the updateActionClosure
+        // timeout occurs when firing the pending updateAction closure
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (30, item.myInt)
+                XCTAssertEqual ("30", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.async (batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
+    }
+    
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates
     func testCommitNew2PendingUpdates() throws {
         let accessor = InMemoryAccessor()
@@ -824,12 +1060,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         let prefetch: (UUID) -> () = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -844,6 +1074,12 @@ class EntityCommitNewTests: XCTestCase {
             
         }
         accessor.setPreFetch (prefetch)
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         group.enter()
         entity.commit() { result in
             switch result {
@@ -1267,6 +1503,260 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (50, item.myInt)
             XCTAssertEqual ("50", item.myString)
         }
+    }
+
+    // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and timeouts
+    func testCommitNew2PendingUpdatesWithTimeouts() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait (timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .new:
+                break
+            default:
+                XCTFail ("Expected .new")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (30, item.myInt)
+                XCTAssertEqual ("30", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.async (batch: batch) { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.async (batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // building the pending updateAction is not protected by a timeout
+        // timeout occurs when firing the pending updateAction closure
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (30, item.myInt)
+            XCTAssertEqual ("30", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (50, item.myInt)
+                XCTAssertEqual ("50", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (30, item.myInt)
+            XCTAssertEqual ("30", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.async (batch: batch) { item in
+            item.myInt = 40
+            item.myString = "40"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.async (batch: batch) { item in
+            item.myInt = 50
+            item.myString = "50"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (30, item.myInt)
+            XCTAssertEqual ("30", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update
@@ -1726,6 +2216,254 @@ class EntityCommitNewTests: XCTestCase {
         }
     }
 
+    // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and timeouts
+    func testCommitNewPendingRemoveUpdateWithTimeouts() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .new:
+                break
+            default:
+                XCTFail ("Expected .new")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (20, item.myInt)
+                XCTAssertEqual ("20", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.async (batch: batch) { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // There is no timeout protection for building the updateActionClosure
+        // Timeout occurs when firing the pending updateAction closure
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (30, item.myInt)
+                XCTAssertEqual ("30", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.async (batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.timeoutSemaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
+    }
+
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove
     func testCommitNewPendingRemove() throws {
         let accessor = InMemoryAccessor()
@@ -2145,6 +2883,242 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
+    }
+
+    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and timeouts
+    func testCommitNewPendingRemoveWithTimeout() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .abandoned:
+                break
+            default:
+                XCTFail ("Expected .abandoned")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (10, item.myInt)
+                XCTAssertEqual ("10", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // There is no timeout protection for building removeAction closure
+        // Timeout occurs when firing the pending removeAction closure
+        entity.sync(batch: batch) { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .pendingRemoval:
+                break
+            default:
+                XCTFail ("Expected .pendingRemoval")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (10, item.myInt)
+                XCTAssertEqual ("10", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.timeoutSemaphore.signal()
+
+
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending removes
@@ -2596,6 +3570,251 @@ class EntityCommitNewTests: XCTestCase {
         }
     }
 
+    // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and timeouts
+    func testCommitNew2PendingRemovesWithTimeouts() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .abandoned:
+                break
+            default:
+                XCTFail ("Expected .abandoned")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (10, item.myInt)
+                XCTAssertEqual ("10", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // There is no timeout protection for building the removeAction closure
+        // Error occurs when firing the pending removeAction closure
+        preFetchCount = 0
+        entity.sync(batch: batch) { item in
+            item.myInt = 10
+            item.myString = "10"
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .pendingRemoval:
+                break
+            default:
+                XCTFail ("Expected .pendingRemoval")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (10, item.myInt)
+                XCTAssertEqual ("10", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+    }
+    
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending update followed by a pending remove
     func testCommitNewPendingUpdateRemove() throws {
         let accessor = InMemoryAccessor()
@@ -3057,5 +4276,263 @@ class EntityCommitNewTests: XCTestCase {
         }
     }
 
+
+    
+    
+    
+    
+    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update followed by a pending remove and timeouts
+    func testCommitNewPendingUpdateRemoveWithTimeouts() throws {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let id = UUID()
+        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let group = DispatchGroup()
+        let semaphore = DispatchSemaphore (value: 1)
+        // building the initial updateAction closure occurs in the same block as the
+        // state change to .saving so it is not possible for a pending update to post
+        // if an error occurs when building the initial updateActionClosure
+        //
+        // timeout occurs while firing the initial updateAction closure
+        var preFetchCount = 0
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.throwError = true
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        group.enter()
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .abandoned:
+                break
+            default:
+                XCTFail ("Expected .abandoned")
+            }
+            XCTAssertEqual (0, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (20, item.myInt)
+                XCTAssertEqual ("20", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        let batch = EventuallyConsistentBatch()
+        entity.sync (batch: batch) { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        XCTAssertFalse (accessor.has(name: collectionName, id: id))
+        // There is no timeout protection when building the pending removeAction closure
+        // Error occurs when firing the pending removeAction closure
+        entity.sync(batch: batch) { item in
+            item.myInt = 20
+            item.myString = "20"
+        }
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        XCTAssertEqual (0, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            } else if preFetchCount == 3 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                accessor.throwError = true
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        group.enter()
+        entity.commit(timeout: .nanoseconds(1)) { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch entity.getPersistenceState() {
+            case .pendingRemoval:
+                break
+            default:
+                XCTFail ("Expected .pendingRemoval")
+            }
+            XCTAssertEqual (1, entity.getVersion())
+            entity.sync() { item in
+                XCTAssertEqual (30, item.myInt)
+                XCTAssertEqual ("30", item.myString)
+            }
+            XCTAssertNil (entity.getPendingAction())
+            group.leave()
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        XCTAssertEqual (1, entity.getVersion())
+        entity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.sync (batch: batch) { item in
+            item.myInt = 30
+            item.myString = "30"
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        entity.remove (batch: batch)
+        switch entity.getPendingAction()! {
+        case .remove:
+            break
+        default:
+            XCTFail ("Expected .remove")
+        }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        entity.timeoutSemaphore.signal()
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        semaphore.signal()
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
+        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
+        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
+        XCTAssertEqual (1, retrievedEntity.getVersion())
+        XCTAssertNil (retrievedEntity.getPendingAction())
+        switch retrievedEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        retrievedEntity.sync() { item in
+            XCTAssertEqual (20, item.myInt)
+            XCTAssertEqual ("20", item.myString)
+        }
+        entity.timeoutSemaphore.signal()
+    }
+
+    
     
 }
