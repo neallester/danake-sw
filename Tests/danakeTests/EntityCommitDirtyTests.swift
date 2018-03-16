@@ -4570,10 +4570,6 @@ class EntityCommitDirtyTests: XCTestCase {
         }
     }
 
-    
-    
-    
-    
     // Test implementation of Entity.commit() from the PersistenceState.dirty state with a pending update followed by a pending remove and timeouts
     func testCommitDirtyPendingUpdateRemoveWithTimeoutss() throws {
         let accessor = InMemoryAccessor()
