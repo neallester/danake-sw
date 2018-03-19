@@ -89,10 +89,8 @@ class TimeoutHookEntity<T: Codable> : Entity<T> {
     
     override
     func timeoutTestingHook() {
-        print ("Entity.timeoutSemaphfore.wait()")
         switch timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
-            print ("Entity.timeoutSemaphfore.success")
             timeoutSemaphore.signal()
         default:
             print ("****************************************** timeoutTestingHook.timeoutSemaphore .timedOut")
