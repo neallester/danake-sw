@@ -82,6 +82,13 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
     
+    /*
+        Returns all Entities from this collection in the persistent media
+        New objects which have not yet been persisted are not included in the results
+     
+        If ** criteria ** is provided, only those Entities whose item matches the criteria
+        will be included in the results
+    */
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
         let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, name: name)
         switch retrievalResult {
@@ -98,6 +105,13 @@ public class PersistentCollection<D: Database, T: Codable> {
         }
     }
     
+    /*
+     Asynchronous access to all Entities from this collection in the persistent media
+     New objects which have not yet been persisted are not included in the results
+     
+     If ** criteria ** is provided, only those Entities whose item matches the criteria
+     will be included in the results
+     */
     public func scan (criteria: ((T) -> Bool)?, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
         workQueue.async {
             closure (self.scan (criteria: criteria))
@@ -149,11 +163,6 @@ public class PersistentCollection<D: Database, T: Codable> {
     }
     
     /*
-        Returns all entities in collection
-        If ** criteria ** is provided, only those entities where criteria returns true are included
-    */
-    
-    /*
         Replaces ** entities ** with their cached version or initializes if not in cache
     */
     public func initialize (entities: inout [Entity<T>]) {
@@ -182,8 +191,9 @@ public class PersistentCollection<D: Database, T: Codable> {
     }
 
 
+    // For testing
     
-    func sync (closure: (Dictionary<UUID, WeakItem<T>>) -> Void) {
+    internal func sync (closure: (Dictionary<UUID, WeakItem<T>>) -> Void) {
         cacheQueue.sync () {
             closure (cache)
         }
