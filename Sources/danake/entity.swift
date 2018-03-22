@@ -238,7 +238,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public func async (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.async () {
-            batch.insertSync(item: self) {
+            batch.insertSync(entity: self) {
                 self.handleAction(.updateItem (closure))
             }
         }
@@ -246,7 +246,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public func sync (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.sync {
-            batch.insertSync (item: self) {
+            batch.insertSync (entity: self) {
                 self.handleAction(.updateItem (closure))
             }
         }
@@ -266,7 +266,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
      */
     public func remove (batch: EventuallyConsistentBatch) {
         queue.async {
-            batch.insertSync(item: self) {
+            batch.insertSync(entity: self) {
                 self.handleAction(.remove)
             }
         }

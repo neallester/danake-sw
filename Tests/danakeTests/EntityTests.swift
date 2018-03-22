@@ -170,10 +170,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("10", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .dirty
@@ -195,10 +195,10 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual(20, itemInt)
         XCTAssertEqual("20", itemString)
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .persistent
@@ -221,10 +221,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(30, itemInt)
         XCTAssertEqual("30", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .abandoned
@@ -247,10 +247,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(40, itemInt)
         XCTAssertEqual("40", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .pendingRemoval
@@ -273,10 +273,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(50, itemInt)
         XCTAssertEqual("50", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .new
@@ -301,10 +301,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("10", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .dirty
@@ -329,10 +329,10 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual(20, itemInt)
         XCTAssertEqual("20", itemString)
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .persistent
@@ -358,10 +358,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(30, itemInt)
         XCTAssertEqual("30", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .abandoned
@@ -387,10 +387,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(40, itemInt)
         XCTAssertEqual("40", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .pendingRemoval
@@ -416,10 +416,10 @@ class EntityTests: XCTestCase {
         XCTAssertEqual(50, itemInt)
         XCTAssertEqual("50", itemString)
         
-        batch.syncItems() { (items: Dictionary<UUID, EntityManagement>) in
-            XCTAssertEqual(1, items.count)
+        batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
+            XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = items[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
     }
@@ -696,9 +696,9 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -715,9 +715,9 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -734,9 +734,9 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -753,9 +753,9 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -777,9 +777,9 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .saving")
         }
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entity === items[entity.getId()] as! Entity<MyStruct>)
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)

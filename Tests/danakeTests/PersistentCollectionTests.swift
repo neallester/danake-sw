@@ -52,9 +52,9 @@ class PersistentCollectionTests: XCTestCase {
         var batch = EventuallyConsistentBatch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.getCollection ()!)
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            let item = items[entity!.getId()]! as! Entity<MyStruct>
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            let item = entities[entity!.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {
@@ -83,9 +83,9 @@ class PersistentCollectionTests: XCTestCase {
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
         XCTAssertTrue (collection === entity!.getCollection ()!)
-        batch.syncItems() { items in
-            XCTAssertEqual (1, items.count)
-            let item = items[entity!.getId()]! as! Entity<MyStruct>
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            let item = entities[entity!.getId()]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {
@@ -130,9 +130,9 @@ class PersistentCollectionTests: XCTestCase {
             XCTFail ("Expected .persistent")
         }
         
-        collection.sync() { items in
-            XCTAssertEqual (1, items.count)
-            XCTAssertTrue (entityForProspect === items[entity.getId()]!.item!)
+        collection.sync() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertTrue (entityForProspect === entities[entity.getId()]!.item!)
         }
         let entityForProspect2 = collection.entityForProspect (prospectEntity: entityForProspect)
         XCTAssertTrue (entityForProspect === entityForProspect2)

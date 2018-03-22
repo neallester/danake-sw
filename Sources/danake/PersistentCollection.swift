@@ -125,7 +125,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
-        batch.insertAsync(item: result, closure: nil)
+        batch.insertAsync(entity: result, closure: nil)
         return result
     }
     
@@ -142,7 +142,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         cacheQueue.async() {
             self.cache[result.getId()] = WeakItem (item:result)
         }
-        batch.insertAsync(item: result, closure: nil)
+        batch.insertAsync(entity: result, closure: nil)
         return result
     }
 

@@ -101,27 +101,27 @@ public class EventuallyConsistentBatch {
         delegate.commit (retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
     }
 
-    internal func insertAsync (item: EntityManagement, closure: (() -> Void)?) {
+    internal func insertAsync (entity: EntityManagement, closure: (() -> Void)?) {
         queue.async {
-            self.delegate.items[item.getId()] = item
+            self.delegate.entities[entity.getId()] = entity
             if let closure = closure {
                 closure()
             }
         }
     }
     
-    internal func insertSync (item: EntityManagement, closure: (() -> Void)?) {
+    internal func insertSync (entity: EntityManagement, closure: (() -> Void)?) {
         queue.sync {
-            self.delegate.items[item.getId()] = item
+            self.delegate.entities[entity.getId()] = entity
             if let closure = closure {
                 closure()
             }
         }
     }
     
-    internal func syncItems (closure: (Dictionary<UUID, EntityManagement>) -> Void) {
+    internal func syncEntities (closure: (Dictionary<UUID, EntityManagement>) -> Void) {
         queue.sync () {
-            closure (self.delegate.items)
+            closure (self.delegate.entities)
         }
     }
     
@@ -146,7 +146,7 @@ fileprivate class BatchDelegate {
     init(logger: Logger?) {
         self.logger = logger
         id = UUID()
-        items = Dictionary()
+        entities = Dictionary()
         queue = DispatchQueue (label: "BatchDelegate \(id.uuidString)")
     }
     
@@ -159,19 +159,19 @@ fileprivate class BatchDelegate {
         dispatchQueue.asyncAfter (deadline: DispatchTime.now() + delay) {
             let group = DispatchGroup()
             self.queue.sync {
-                for key in self.items.keys {
+                for key in self.entities.keys {
                     group.enter()
-                    if let entity = self.items[key] {
+                    if let entity = self.entities[key] {
                         entity.commit (timeout: timeout) { result in
                             var logLevel: LogLevel? = nil
                             switch result {
                             case .ok:
                                 self.queue.sync {
-                                    let _ = self.items.removeValue(forKey: entity.getId())
+                                    let _ = self.entities.removeValue(forKey: entity.getId())
                                 }
                             case .unrecoverableError(_):
                                 self.queue.sync {
-                                    let _ = self.items.removeValue(forKey: entity.getId())
+                                    let _ = self.entities.removeValue(forKey: entity.getId())
                                 }
                                 logLevel = .error
                             case .error(_):
@@ -192,15 +192,15 @@ fileprivate class BatchDelegate {
                 break
             default:
                 self.queue.async {
-                    for entity in self.items.values {
+                    for entity in self.entities.values {
                         self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
                     }
-                    self.items.removeAll()
+                    self.entities.removeAll()
                 }
             }
             var isEmpty = false
             self.queue.sync {
-                isEmpty = self.items.isEmpty
+                isEmpty = self.entities.isEmpty
             }
             if !isEmpty {
                 self.commit (delay: retryInterval, retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
@@ -212,14 +212,14 @@ fileprivate class BatchDelegate {
     
     fileprivate func sync (closure: (Dictionary<UUID, EntityManagement>) -> ()) {
         queue.sync {
-            closure (items)
+            closure (entities)
         }
     }
     
     private let logger: Logger?
     private let queue: DispatchQueue
     fileprivate let id: UUID
-    fileprivate var items: Dictionary<UUID, EntityManagement>
+    fileprivate var entities: Dictionary<UUID, EntityManagement>
 }
 
 
