@@ -181,8 +181,9 @@ fileprivate class BatchDelegate {
             default:
                 self.queue.async {
                     for entity in self.items.values {
-                        self.logger?.log(level: .warning, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+                        self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
                     }
+                    self.items.removeAll()
                 }
             }
             var isEmpty = false

@@ -251,7 +251,7 @@ class BatchTests: XCTestCase {
         
         public func encode(to encoder: Encoder) throws {
             if !hasFired {
-                sleep (1)
+                usleep(100000)
             }
             hasFired = true
         }
@@ -264,48 +264,44 @@ class BatchTests: XCTestCase {
         private var hasFired = false
     }
     
-    
-//    func testCommitWithBatchTimeout() {
-//        let accessor = InMemoryAccessor()
-//        let logger = InMemoryLogger(level: .error)
-//        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-//        let collectionName: CollectionName = "myCollection"
-//        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
-//        let slowCollectionName: CollectionName = "slowCollection"
-//        let slowCollection = PersistentCollection<Database, SlowCodable>(database: database, name: slowCollectionName)
-//        let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(700), timeout: .milliseconds (500), logger: logger)
-//        let delegateId = batch.delegateId()
-//        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
-//        let slowCodable = SlowCodable()
-//        let entity2 = slowCollection.new (batch: batch, item: slowCodable)
-//        let waitFor = expectation (description: "waitFor")
-//        var preFetchCount = 0
-//        batch.commit() {
-//            waitFor.fulfill()
-//        }
-//        waitForExpectations(timeout: 10.0, handler: nil)
-//        switch entity1.getPersistenceState() {
-//        case .persistent:
-//            break
-//        default:
-//            XCTFail ("Expected .persistent")
-//        }
-//        switch entity2.getPersistenceState() {
-//        case .persistent:
-//            break
-//        default:
-//            XCTFail ("Expected .persistent")
-//        }
-//        XCTAssertEqual (2, accessor.count (name: collectionName))
-//        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.getId()))
-//        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.getId()))
-//        logger.sync() { entries in
-//            XCTAssertEqual (1, entries.count)
-//            XCTAssertEqual ("", entries[0].asTestString())
-//        }
-//    }
-
-    
+    func testCommitWithBatchTimeout() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .error)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let slowCollectionName: CollectionName = "slowCollection"
+        let slowCollection = PersistentCollection<Database, SlowCodable>(database: database, name: slowCollectionName)
+        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(130000), timeout: .microseconds (50000), logger: logger)
+        let batchDelegateId = batch.delegateId().uuidString
+        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let slowCodable = SlowCodable()
+        let entity2 = slowCollection.new (batch: batch, item: slowCodable)
+        let waitFor = expectation (description: "waitFor")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch entity1.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch entity2.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        XCTAssertEqual (1, accessor.count (name: collectionName))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.getId()))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity2.getId()))
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.getId().uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
+        }
+    }
     
     func testDispatchTimeIntervalExtension() {
         var interval: DispatchTimeInterval = .seconds (1)
