@@ -7,7 +7,7 @@ The Danake framework provides Swift application developers with tools to move da
 * Data structures which independently save and retrieve small portions of models featuring complex object graphs
 * Model objects only need to implement the Codable interface; application developers will work with a standard wrapper (Entity<T>) around the model objects.
 * Asynchronous and synchronous operations with thread safety designed in to normal usage patterns
-* Data updates are collected into batches which are submitted automatically when they go out of scope (or manually by the application developer) with a design which prevents developers from accidently making data changes which aren’t captured in a batch.
+* Data updates are collected into batches which are submitted or manually by the application developer with a design which prevents developers from accidently making data changes which aren’t captured in a batch.
 * Database writes are eventually consistent
 * Adapter architecture for supporting multiple backend databases.
 * Mongo DB and in-memory (test mock) adapters
@@ -26,6 +26,6 @@ The Danake framework provides Swift application developers with tools to move da
 * Inter process entity locking,collision resolution and/or field level merge.
 * Reference counting
 * Intra and inter process pub/sub
-* Hooks for adding undo/redo support to applications
+* Hooks for adding undo/redo support to applications
 
 
