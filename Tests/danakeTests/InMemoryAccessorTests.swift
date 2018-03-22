@@ -505,6 +505,15 @@ class InMemoryAccessorTests: XCTestCase {
         }
         
     }
+    
+    func testCount() {
+        let accessor = InMemoryAccessor()
+        XCTAssertEqual (0, accessor.count (name: standardCollectionName))
+        let data = Data (base64Encoded: "")!
+        let id = UUID()
+        let _ = accessor.add(name: standardCollectionName, id: id, data: data)
+        XCTAssertEqual (1, accessor.count (name: standardCollectionName))
+    }
 
     func testSetThrowError() {
         let accessor = InMemoryAccessor()

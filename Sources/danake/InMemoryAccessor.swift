@@ -177,6 +177,16 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
+    public func count (name: CollectionName) -> Int {
+        var result = 0
+        queue.sync {
+            if let collectionStorage = self.storage[name] {
+                result = collectionStorage.count
+            }
+        }
+        return result
+    }
+
     public func getData (name: CollectionName, id: UUID) -> Data? {
         var result: Data? = nil
         queue.sync() {

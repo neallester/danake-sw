@@ -11,6 +11,24 @@ public class BatchDefaults {
     public static let timeout: DispatchTimeInterval = .seconds (300)
 }
 
+internal extension DispatchTimeInterval {
+
+    func multipliedBy (_ multiplier: Int) -> DispatchTimeInterval {
+        switch self {
+        case .seconds(let value):
+            return .seconds (value * multiplier)
+        case .milliseconds(let value):
+            return .milliseconds(value * multiplier)
+        case .microseconds(let value):
+            return .microseconds (value * multiplier)
+        case .nanoseconds(let value):
+            return .nanoseconds (value * multiplier)
+        case .never:
+            return .never
+        }
+    }
+}
+
 /*
     Accumulates Entities whose state is different than their state in persistent memory. The framework will ensure these
     Entities are committed to persistent memory when the batch object is fully dereferenced. Alternatively, application
@@ -95,6 +113,14 @@ public class EventuallyConsistentBatch {
         }
     }
     
+    internal func delegateId() -> UUID {
+        var result: UUID? = nil
+        queue.sync() {
+            result = delegate.id
+        }
+        return result!
+    }
+    
     private let queue: DispatchQueue
     private var delegate: BatchDelegate
     private let logger: Logger?
@@ -112,69 +138,64 @@ fileprivate class BatchDelegate {
         queue = DispatchQueue (label: "BatchDelegate \(id.uuidString)")
     }
     
-    fileprivate func commit (retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
-        DispatchQueue.main.asyncAfter (deadline: DispatchTime.now()) {
-            self.commitImplementation(retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
-        }
+    public func commit (retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
+        commit (delay: .nanoseconds(0), retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
     }
     
-    private func commitImplementation (retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
-        let group = DispatchGroup()
-        queue.sync {
-            for key in items.keys {
-                group.enter()
-                if let entity = items[key] {
-                    entity.commit (timeout: timeout) { result in
-                        var logLevel: LogLevel? = nil
-                        var errorMessage: String = ""
-                        switch result {
-                        case .ok:
-                            self.queue.sync {
-                                let _ = self.items.removeValue(forKey: entity.getId())
+    fileprivate func commit (delay: DispatchTimeInterval, retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, completionHandler: (() -> ())?) {
+        let dispatchQueue = DispatchQueue (label: "EventuallyConsistentBatch.dispatchQueue \(id.uuidString)")
+        dispatchQueue.asyncAfter (deadline: DispatchTime.now() + delay) {
+            let group = DispatchGroup()
+            self.queue.sync {
+                for key in self.items.keys {
+                    group.enter()
+                    if let entity = self.items[key] {
+                        entity.commit (timeout: timeout) { result in
+                            var logLevel: LogLevel? = nil
+                            switch result {
+                            case .ok:
+                                self.queue.sync {
+                                    let _ = self.items.removeValue(forKey: entity.getId())
+                                }
+                            case .unrecoverableError(_):
+                                self.queue.sync {
+                                    let _ = self.items.removeValue(forKey: entity.getId())
+                                }
+                                logLevel = .error
+                            case .error(_):
+                                logLevel = .emergency
                             }
-                        case .unrecoverableError(let message):
-                            self.queue.sync {
-                                let _ = self.items.removeValue(forKey: entity.getId())
+                            if let logLevel = logLevel {
+                                self.logger?.log(level: logLevel, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "batchId", value: self.id.uuidString)])
                             }
-                            logLevel = .error
-                            errorMessage = message
-                        case .error(let message):
-                            logLevel = .emergency
-                            errorMessage = message
+                            
+                            
+                            group.leave()
                         }
-                        if let logLevel = logLevel {
-                            self.logger?.log(level: logLevel, source: self, featureName: "commitImplementation", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "batchId", value: self.id.uuidString), (name:"errorMessage", value: "\(errorMessage)")])
-                        }
-                        group.leave()
                     }
                 }
             }
-        }
-        // ******************************** TODO This should be 2 X timeout
-        switch group.wait(timeout: DispatchTime.now() + timeout) {
-        case .success:
-            break
-        default:
-            queue.async {
-                for entity in self.items.values {
-                    self.logger?.log(level: .warning, source: self, featureName: "commitImplementation", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+            switch group.wait(timeout: DispatchTime.now() + timeout.multipliedBy(2)) {
+            case .success:
+                break
+            default:
+                self.queue.async {
+                    for entity in self.items.values {
+                        self.logger?.log(level: .warning, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+                    }
                 }
-                
             }
-        }
-        var isEmpty = false
-        queue.sync {
-            isEmpty = items.isEmpty
-        }
-        if !isEmpty {
-            queue.asyncAfter (deadline: DispatchTime.now() + retryInterval) {
-                self.commitImplementation(retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
+            var isEmpty = false
+            self.queue.sync {
+                isEmpty = self.items.isEmpty
             }
-        } else if let completionHandler = completionHandler {
-            completionHandler()
+            if !isEmpty {
+                self.commit (delay: retryInterval, retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
+            } else if let completionHandler = completionHandler {
+                completionHandler()
+            }
         }
     }
-    
     
     private let logger: Logger?
     private let queue: DispatchQueue
