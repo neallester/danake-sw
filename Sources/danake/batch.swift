@@ -31,9 +31,9 @@ internal extension DispatchTimeInterval {
 
 /*
     Accumulates Entities whose state is different than their state in persistent memory. The framework will ensure these
-    Entities are committed to persistent memory when the batch object is fully dereferenced. Alternatively, application
-    developers may manually push these Entities to persistent storage using .commit. The batch object remains fully
-    usable as a "new" empty batch after calling .commit.
+    Entities are committed to persistent memory when the batch is pushed to persistent storage using .commit(). The batch
+    object remains fully usable as a "new" empty batch after calling .commit. If a batch is dereferenced without a .commit()
+    all pending changes are lost and logged as errors if a logger has been provided.
  
     In the usual case, all of the Entities in the batch will be saved to persistent storage more or less simultaneously.
     However, there are edge cases (e.g. database errors or an Entity present in more than batch) which may result in
@@ -46,12 +46,16 @@ internal extension DispatchTimeInterval {
  
     ** retryInterval: ** How long the framework waits until retrying a batch which experienced recoverable errors
                          during processing.
-    ** timeout: **       The timeout for individual commit operations on Entities. The timeout for the entire batch
-                         is 2x ** timeout **. That is, if all individual commit operations on Entities within the batch
-                         do not complete within 2x timeout the batch will timeout. This could occur if access to
-                         Entity.queue is blocked or if Entity serialization causes an endless loop. Note that the
-                         database bindings used by an implementation of DatabaseAccessor may have their own timeouts
-                         which will govern if they are shorter than those used in the batch.
+    ** timeout: **       The timeout for individual commit operations on Entities. Note that the database bindings used by
+                         an implementation of DatabaseAccessor may have their own timeouts which will govern if they are
+                         shorter than those specified here. All database operations are protected by this timeout, but some
+                         operations which occur during the commit process are not. Thus, if the Entity.queue is blocked or
+                         if Entity serialization causes an endless loop the individual Entity commit timeout will not
+                         fire. For these scenarios a timeout for the entire batch of 2x ** timeout ** is used. That is,
+                         if all individual commit operations on Entities within the batch do not complete within 2x timeout
+                         the batch will timeout. If the batch times out, any pending updates remaining in the batch are lost
+                         and logged if a logger has been provided. Successful database updates for other entities in the
+                         batch are NOT rolled back.
 */
 public class EventuallyConsistentBatch {
     
@@ -71,7 +75,15 @@ public class EventuallyConsistentBatch {
         queue = DispatchQueue (label: "EventuallyConsistentBatch \(delegate.id.uuidString)")
     }
 
-    // TODO denit calls commit
+    deinit {
+        if let logger = logger {
+            delegate.sync() { entities in
+                for entity in entities.values {
+                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.getId()), (name: "entityPersistenceState", value: "\(entity.getPersistenceState())")])
+                }
+            }
+        }
+    }
     
     public func commit () {
         commit (completionHandler: nil)
@@ -195,6 +207,12 @@ fileprivate class BatchDelegate {
             } else if let completionHandler = completionHandler {
                 completionHandler()
             }
+        }
+    }
+    
+    fileprivate func sync (closure: (Dictionary<UUID, EntityManagement>) -> ()) {
+        queue.sync {
+            closure (items)
         }
     }
     

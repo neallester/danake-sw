@@ -9,7 +9,6 @@ import XCTest
 @testable import danake
 
 class BatchTests: XCTestCase {
-    
 
     func testInsertAsyncNoClosure() {
         // No Closure
@@ -241,7 +240,6 @@ class BatchTests: XCTestCase {
             XCTAssertEqual ("EMERGENCY|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.getId().uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
-
     
     class SlowCodable : Codable {
         
@@ -335,6 +333,31 @@ class BatchTests: XCTestCase {
             XCTAssertEqual (8, value)
         default:
             XCTFail ("Expected .nanoseconds")
+        }
+    }
+    
+    func testNoCommitLogging() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        let entity1 = collection.new (batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
+        let entity2 = collection.new (batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
+        batch!.syncItems() { entities in
+            // Also forces this thread to wait on the batch queue
+            XCTAssertEqual (2, entities.count)
+        }
+        batch = nil
+        let entity1IdString = entity1.getId().uuidString
+        let entity2IdString = entity2.getId().uuidString
+        logger.sync() { entries in
+            XCTAssertEqual (2, entries.count)
+            var entryStrings = entries[0].asTestString()
+            entryStrings.append(entries[1].asTestString())
+            XCTAssertTrue (entryStrings.contains("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity1IdString);entityPersistenceState=new"))
+            XCTAssertTrue (entryStrings.contains("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity2IdString);entityPersistenceState=new"))
         }
     }
     
