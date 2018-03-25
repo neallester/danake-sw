@@ -44,6 +44,17 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 }
 
+func newTestEntitySchema5 (myInt: Int, myString: String) -> Entity<MyStruct> {
+    var myStruct = MyStruct()
+    myStruct.myInt = myInt
+    myStruct.myString = myString
+    let id = UUID()
+    let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+    let collection = PersistentCollection<Database, MyStruct>(database: database, name: "myCollection")
+    return Entity (collection: collection, id: id, version: 5, item: myStruct)
+}
+
+
 // JSONEncoder uses its own inscrutable rounding process for encoding dates, so this is what is necessary to reliably get the expected value of a date in a json encoded object
 func jsonEncodedDate (date: Date) throws -> String? {
     let accessor = InMemoryAccessor()

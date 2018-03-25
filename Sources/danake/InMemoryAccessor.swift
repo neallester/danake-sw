@@ -18,8 +18,8 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     // Implement protocol DatabaseAccessor
     
-    public func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable {
-        var result: T? = nil
+    public func get<T, E: Entity<T>> (type: E.Type, collection: PersistentCollection<Database, T>, id: UUID) -> RetrievalResult<Entity<T>> {
+        var result: Entity<T>? = nil
         var errorMessage: String? = nil
         if let preFetch = preFetch {
             preFetch (id)
@@ -29,13 +29,14 @@ public class InMemoryAccessor: DatabaseAccessor {
             if self.throwError {
                 errorMessage = "Test Error"
                 self.throwError = false
-            } else if let collectionDictionary = storage[name] {
+            } else if let collectionDictionary = storage[collection.name] {
                 let data = collectionDictionary[id]
                 if let data = data {
-                    do {
-                        result = try decoder.decode(type, from: data)
-                    } catch {
-                        errorMessage = "\(error)"
+                    switch entityCreator.entity(creator: {try decoder (collection: collection).decode(type, from: data)} ) {
+                    case .ok (let entity):
+                        result = entity
+                    case .error (let creationError):
+                        errorMessage = creationError
                     }
                 }
             }
@@ -46,21 +47,22 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, name: CollectionName) -> DatabaseAccessListResult<E> {
-        var resultList: [E] = []
-        var result = DatabaseAccessListResult<E>.ok (resultList)
+    public func scan<T, E: Entity<T>> (type: E.Type, collection: PersistentCollection<Database, T>) -> DatabaseAccessListResult<Entity<T>> {
+        var resultList: [Entity<T>] = []
+        var result = DatabaseAccessListResult<Entity<T>>.ok (resultList)
         queue.sync {
             if self.throwError {
                 result = .error ("Test Error")
                 self.throwError = false
-            } else if let collectionDictionary = storage [name] {
+            } else if let collectionDictionary = storage [collection.name] {
                 resultList.reserveCapacity (collectionDictionary.count)
                 for item in collectionDictionary.values {
-                    do {
-                        let entity = try decoder.decode (type, from: item)
+                    switch entityCreator.entity(creator: {try decoder (collection: collection).decode(type, from: item)} ) {
+                    case .ok (let entity):
                         resultList.append (entity)
-                    } catch {}
-                    
+                    case .error:
+                        break
+                    }
                 }
                 result = .ok (resultList)
             }
@@ -232,16 +234,18 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }()
     
-    public let decoder: JSONDecoder = {
+    public func decoder <D, T> (collection: PersistentCollection<D, T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
+        result.userInfo[Database.collectionKey] = collection
         return result
-    }()
+    }
     
     private var preFetch: ((UUID) -> Void)? = nil
     internal var throwError = false
     private var storage = Dictionary<CollectionName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue
+    private let entityCreator = EntityCreation()
     
 }

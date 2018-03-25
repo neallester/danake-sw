@@ -135,6 +135,13 @@ public enum RetrievalResult<T> {
     
 }
 
+public enum EntityConversionResult<T> {
+    
+    case ok (T)
+    case error (String)
+
+}
+
 public enum DatabaseAccessListResult<T> {
     
     case ok ([T])
@@ -194,13 +201,14 @@ public class Database {
     }
     
     static let registrar = Registrar<String, Database>()
+    public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
     
 }
 
 public protocol DatabaseAccessor {
     
-    func get<T> (type: T.Type, name: CollectionName, id: UUID) -> RetrievalResult<T> where T : Decodable
-    func scan<T> (type: Entity<T>.Type, name: CollectionName) -> DatabaseAccessListResult<Entity<T>>
+    func get<T> (type: Entity<T>.Type, collection: PersistentCollection<Database, T>, id: UUID) -> RetrievalResult<Entity<T>>
+    func scan<T> (type: Entity<T>.Type, collection: PersistentCollection<Database, T>) -> DatabaseAccessListResult<Entity<T>>
     
     /*
      Is the format of ** name ** a valid CollectionName in this storage medium and,
@@ -222,5 +230,20 @@ public protocol DatabaseAccessor {
     func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+}
+
+public class EntityCreation {
+    
+    public func entity<T, E: Entity<T>> (creator: () throws -> E) -> EntityConversionResult<Entity<T>> {
+        do {
+            let result = try creator()
+            return .ok (result)
+        } catch EntityDeserializationError<T>.alreadyCached(let cachedEntity) {
+            return .ok (cachedEntity)
+        } catch {
+            return .error ("\(error)")
+        }
+    }
     
 }

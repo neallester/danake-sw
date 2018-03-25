@@ -136,6 +136,12 @@ public struct EntityReferenceData<T: Codable> {
     
 }
 
+public enum EntityDeserializationError<T: Codable> : Error {
+    case NoCollectionInDecoderUserInfo
+    case alreadyCached (Entity<T>)
+    case illegalId (String)
+}
+
 /*
     **** Class Entity is the primary model object wrapper. ****
 */
@@ -150,6 +156,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
         created = Date()
+        collection.cacheEntity(self)
     }
 
     internal convenience init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
@@ -161,7 +168,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // deiniitalize
     
     deinit {
-        collection?.decache (id: id)
+        collection.decache (id: id)
     }
 
 // Metadata
@@ -324,86 +331,74 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     // Not thread safe: to be called on self.queue
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
-        if let collection = collection {
-            persistenceState = successState
-            version = version + 1
-            let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
-            let actionSource = databaseActionSource (collection.database.accessor)
-            let actionResult = actionSource (wrapper)
-            switch actionResult {
-            case .ok (let action):
-                persistenceState = .saving
-                var result: DatabaseUpdateResult? = nil
-                collection.database.workQueue.async {
-                    let group = DispatchGroup()
-                    group.enter()
-                    collection.database.workQueue.async {
-                        let tempResult = action()
-                        self.queue.sync {
-                            result = tempResult
-                        }
-                        group.leave()
+        persistenceState = successState
+        version = version + 1
+        let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
+        let actionSource = databaseActionSource (collection.database.accessor)
+        let actionResult = actionSource (wrapper)
+        switch actionResult {
+        case .ok (let action):
+            persistenceState = .saving
+            var result: DatabaseUpdateResult? = nil
+            collection.database.workQueue.async {
+                let group = DispatchGroup()
+                group.enter()
+                self.collection.database.workQueue.async {
+                    let tempResult = action()
+                    self.queue.sync {
+                        result = tempResult
                     }
-                    collection.database.workQueue.async {
-                        self.timeoutTestingHook()
-                        let _ = group.wait(timeout: DispatchTime.now() + timeout)
-                        self.queue.async {
-                            if result == nil {
-                                result = .error ("Entity.commit():timedOut:\(timeout)")
+                    group.leave()
+                }
+                self.collection.database.workQueue.async {
+                    self.timeoutTestingHook()
+                    let _ = group.wait(timeout: DispatchTime.now() + timeout)
+                    self.queue.async {
+                        if result == nil {
+                            result = .error ("Entity.commit():timedOut:\(timeout)")
+                        }
+                        if let result = result {
+                            switch result {
+                            case .ok:
+                                self.persistenceState = successState
+                            case .error, .unrecoverableError:
+                                self.persistenceState = failureState
+                                self.version = self.version - 1
                             }
-                            if let result = result {
+                            if let pendingAction = self.pendingAction {
+                                self.pendingAction = nil
+                                switch pendingAction {
+                                case .update:
+                                    self.handleAction(PersistenceAction.updateItem() { item in })
+                                case .remove:
+                                    self.handleAction(PersistenceAction.remove)
+                                }
                                 switch result {
                                 case .ok:
-                                    self.persistenceState = successState
+                                    self.handleAction(.commit (timeout, completionHandler))
+                                // see https://github.com/neallester/danake-sw/issues/3
                                 case .error, .unrecoverableError:
-                                    self.persistenceState = failureState
-                                    self.version = self.version - 1
-                                }
-                                if let pendingAction = self.pendingAction {
-                                    self.pendingAction = nil
-                                    switch pendingAction {
-                                    case .update:
-                                        self.handleAction(PersistenceAction.updateItem() { item in })
-                                    case .remove:
-                                        self.handleAction(PersistenceAction.remove)
-                                    }
-                                    switch result {
-                                    case .ok:
-                                        self.handleAction(.commit (timeout, completionHandler))
-                                    // see https://github.com/neallester/danake-sw/issues/3
-                                    case .error, .unrecoverableError:
-                                        self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
-                                    }
-                                    
-                                } else {
                                     self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                                 }
+                                
+                            } else {
+                                self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                             }
                         }
-
                     }
+
                 }
-            case .error (let errorMessage):
-                self.version = self.version - 1
-                persistenceState = failureState
-                self.callCommitCompletionHandler (completionHandler: completionHandler, result: .unrecoverableError(errorMessage))
             }
-            
-        } else {
+        case .error (let errorMessage):
+            self.version = self.version - 1
             persistenceState = failureState
-            self.callCommitCompletionHandler (completionHandler: completionHandler, result:.unrecoverableError ("\(type (of: self)).commit|missing_collection|Always use PersistentCollection.entityForProspect or PersistentCollection.initialize when implementing custom PersistentCollection getters; id=\(id.uuidString)"))
+            self.callCommitCompletionHandler (completionHandler: completionHandler, result: .unrecoverableError(errorMessage))
         }
     }
     
     private func callCommitCompletionHandler (completionHandler: @escaping (DatabaseUpdateResult) -> (), result: DatabaseUpdateResult) {
-        if let collection = collection {
-            collection.database.workQueue.async {
-                completionHandler (result)
-            }
-        } else {
-            queue.async {
-                completionHandler (result)
-            }
+        collection.database.workQueue.async {
+            completionHandler (result)
         }
     }
 
@@ -435,31 +430,40 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public required init (from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        id = try UUID (uuidString: values.decode(String.self, forKey: .id))!
-        version = try values.decode(Int.self, forKey: .version)
-        item = try values.decode (T.self, forKey: .item)
-        schemaVersion = try values.decode (Int.self, forKey: .schemaVersion)
-        created = try values.decode (Date.self, forKey: .created)
-        if values.contains(.saved) {
-            saved = try values.decode (Date.self, forKey: .saved)
+        let collection = decoder.userInfo[Database.collectionKey] as? PersistentCollection<Database, T>
+        if let collection = collection {
+            let idString = try values.decode(String.self, forKey: .id)
+            let id = UUID (uuidString: idString)
+            if let id = id {
+                if let cachedVersion = collection.cachedEntity(id: id) {
+                    throw EntityDeserializationError<T>.alreadyCached(cachedVersion)
+                }
+                self.id = id
+                self.collection = collection
+                schemaVersion = collection.database.schemaVersion
+                version = try values.decode(Int.self, forKey: .version)
+                item = try values.decode (T.self, forKey: .item)
+                created = try values.decode (Date.self, forKey: .created)
+                if values.contains(.saved) {
+                    saved = try values.decode (Date.self, forKey: .saved)
+                }
+                persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
+                self.queue = DispatchQueue (label: id.uuidString)
+                collection.cacheEntity(self)
+            } else {
+                throw EntityDeserializationError<T>.illegalId(idString)
+            }
+        } else {
+            throw EntityDeserializationError<T>.NoCollectionInDecoderUserInfo
         }
-        persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
-        self.queue = DispatchQueue (label: id.uuidString)
     }
     
 // Initialization
     
-    internal func setCollection (collection: PersistentCollection<Database, T>) {
-        queue.async {
-            self.collection = collection
-            self.schemaVersion = collection.database.schemaVersion
-        }
-    }
-    
     internal func isInitialized (onCollection: PersistentCollection<Database, T>) -> Bool {
         var result = false
         queue.sync {
-            if let collection = self.collection, collection === onCollection, collection.database.schemaVersion == self.schemaVersion {
+            if self.collection === onCollection, collection.database.schemaVersion == self.schemaVersion {
                 result = true
             }
         }
@@ -468,12 +472,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // Internal access for testing purposes
     
-    internal func setSchemaVersion (_ schemaVersion: Int) {
-        queue.sync {
-            self.schemaVersion = schemaVersion
-        }
-    }
-
     internal func getSchemaVersion () -> Int {
         var result: Int = 0
         queue.sync {
@@ -492,14 +490,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         queue.sync {
             self.persistenceState = persistenceState
         }
-    }
-    
-    internal func getCollection() -> PersistentCollection<Database, T>? {
-        var result: PersistentCollection<Database, T>? = nil
-        queue.sync {
-            result = collection
-        }
-        return result
     }
     
     internal func getPendingAction() -> PendingAction? {
@@ -533,9 +523,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var item: T
     fileprivate let queue: DispatchQueue
     private var persistenceState: PersistenceState
-    private private(set) var collection: PersistentCollection<Database, T>? // is nil when first decoded after database retrieval
+    internal let collection: PersistentCollection<Database, T>
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
 
 }
+

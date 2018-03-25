@@ -133,5 +133,75 @@ class DatabaseTests: XCTestCase {
         XCTAssertFalse (validationResult.isOk())
         XCTAssertEqual ("Error Description", validationResult.description())
     }
-
+    
+    func testEntityCreation() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .secondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let creationDateString1 = try! jsonEncodedDate (date: Date())!
+        let id1 = UUID()
+        var json = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        // Create new
+        decoder.userInfo[Database.collectionKey] = collection
+        let creation = EntityCreation()
+        var entity: Entity<MyStruct>? = nil
+        switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
+        case .ok (let entity1):
+            XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
+            XCTAssertEqual (id1.uuidString, entity1.getId().uuidString)
+            XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
+            XCTAssertEqual (10, entity1.getVersion() )
+            switch entity1.getPersistenceState() {
+            case .persistent:
+                break
+            default:
+                XCTFail ("Expected .persistent")
+            }
+            entity1.sync() { item in
+                XCTAssertEqual (100, item.myInt)
+                XCTAssertEqual("A \"Quoted\" String", item.myString)
+            }
+            try XCTAssertEqual (jsonEncodedDate (date: entity1.created)!, creationDateString1)
+            XCTAssertNil (entity1.getSaved())
+            entity = entity1
+        default:
+            XCTFail("Expected .ok")
+        }
+        // Create existing
+        switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
+        case .ok (let entity2):
+            XCTAssertTrue (entity2 === collection.cachedEntity(id: id1)!)
+            XCTAssertEqual (id1.uuidString, entity2.getId().uuidString)
+            XCTAssertEqual (5, entity2.getSchemaVersion()) // Schema version is taken from the collection, not the json
+            XCTAssertEqual (10, entity2.getVersion() )
+            switch entity2.getPersistenceState() {
+            case .persistent:
+                break
+            default:
+                XCTFail ("Expected .persistent")
+            }
+            entity2.sync() { item in
+                XCTAssertEqual (100, item.myInt)
+                XCTAssertEqual("A \"Quoted\" String", item.myString)
+            }
+            try XCTAssertEqual (jsonEncodedDate (date: entity2.created)!, creationDateString1)
+            XCTAssertNil (entity2.getSaved())
+            XCTAssertTrue (entity === entity2)
+        default:
+            XCTFail("Expected .ok")
+        }
+        // Create error
+        json = "{}"
+        switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
+        case .error(let errorString):
+            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", errorString)
+        default:
+            XCTFail("Expected .eror")
+        }
+    }
+    
 }

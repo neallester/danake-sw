@@ -652,20 +652,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -775,20 +762,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (30, item.myInt)
-            XCTAssertEqual ("30", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and timeouts
@@ -1019,20 +993,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -1356,20 +1317,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (30, item.myInt)
-            XCTAssertEqual ("30", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -1489,20 +1437,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (50, item.myInt)
-            XCTAssertEqual ("50", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and timeouts
@@ -1742,20 +1677,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (30, item.myInt)
-            XCTAssertEqual ("30", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -2070,20 +1992,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -2200,20 +2109,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (30, item.myInt)
-            XCTAssertEqual ("30", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and timeouts
@@ -2447,20 +2343,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
 
@@ -2749,20 +2632,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -2869,20 +2739,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and timeouts
@@ -3104,20 +2961,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -3427,20 +3271,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -3554,20 +3385,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and timeouts
@@ -3799,20 +3617,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (10, item.myInt)
-            XCTAssertEqual ("10", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending update followed by a pending remove
@@ -4130,20 +3935,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -4260,20 +4052,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (3, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (30, item.myInt)
-            XCTAssertEqual ("30", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
 
@@ -4516,20 +4295,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        let retrievedEntity = try accessor.decoder.decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
-        XCTAssertEqual (entity.getId(), retrievedEntity.getId())
-        XCTAssertEqual (1, retrievedEntity.getVersion())
-        XCTAssertNil (retrievedEntity.getPendingAction())
-        switch retrievedEntity.getPersistenceState() {
-        case .persistent:
-            break
-        default:
-            XCTFail ("Expected .persistent")
-        }
-        retrievedEntity.sync() { item in
-            XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual ("20", item.myString)
-        }
+        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
 

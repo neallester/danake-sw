@@ -57,11 +57,11 @@ public class PersistentCollection<D: Database, T: Codable> {
             result = cache[id]?.item
         }
         if (result == nil) {
-            let retrievalResult = self.database.getAccessor().get(type: Entity<T>.self, name: self.name, id: id)
+            let retrievalResult = self.database.getAccessor().get(type: Entity<T>.self, collection: self as! PersistentCollection<Database, T>, id: id)
             switch retrievalResult {
             case .ok (let prospectEntity):
                 if let prospectEntity = prospectEntity {
-                    result = self.entityForProspect(prospectEntity: prospectEntity)
+                    result = prospectEntity
                 } else {
                     self.database.logger?.log (level: .warning, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.getAccessor().hashValue()), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
                 }
@@ -90,13 +90,22 @@ public class PersistentCollection<D: Database, T: Codable> {
         will be included in the results
     */
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, name: name)
+        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, collection: self as! PersistentCollection<Database, T>)
         switch retrievalResult {
-        case .ok (var resultList):
+        case .ok (let resultList):
             if let criteria = criteria  {
-                return .ok (initialize(entities: resultList, criteria: criteria))
+                var result: [Entity<T>] = []
+                for entity in resultList {
+                    var matchesCriteria = true
+                    entity.sync() { item in
+                        matchesCriteria = criteria (item)
+                    }
+                    if matchesCriteria {
+                        result.append (entity)
+                    }
+                }
+                return .ok (result)
             } else {
-                initialize (entities: &resultList)
                 return .ok (resultList)
             }
         case .error (let errorMessage):
@@ -148,47 +157,72 @@ public class PersistentCollection<D: Database, T: Codable> {
 
 // Entity Initialization
     
-    internal func entityForProspect (prospectEntity: Entity<T>) -> Entity<T> {
+//    internal func entityForProspect (prospectEntity: Entity<T>) -> Entity<T> {
+//        var result: Entity<T>? = nil
+//        self.cacheQueue.sync {
+//            if let cachedResult = self.cache[prospectEntity.getId()]?.item {
+//                result = cachedResult
+//            } else {
+//                self.cache[prospectEntity.getId()] = WeakItem (item: prospectEntity)
+//                result = prospectEntity
+//            }
+//        }
+//        return result!
+//    }
+//
+//    /*
+//        Replaces ** entities ** with their cached version or initializes if not in cache
+//    */
+//    public func initialize (entities: inout [Entity<T>]) {
+//        var index = 0
+//        for entity in entities {
+//            entities[index] = entityForProspect(prospectEntity: entity)
+//            index = index + 1
+//        }
+//    }
+//
+//    /*
+//        Returns array containing cached or initilaized ** entities ** which match ** criteria **
+//    */
+//    public func initialize (entities: [Entity<T>], criteria: ((T) -> Bool)) -> [Entity<T>] {
+//        var result: [Entity<T>] = []
+//        for entity in entities {
+//            var matchesCriteria = true
+//            entity.sync() { item in
+//                matchesCriteria = criteria (item)
+//            }
+//            if matchesCriteria {
+//                result.append (entityForProspect(prospectEntity: entity))
+//            }
+//        }
+//        return result
+//    }
+//
+    internal func cachedEntity (id: UUID) -> Entity<T>? {
         var result: Entity<T>? = nil
-        self.cacheQueue.sync {
-            if let cachedResult = self.cache[prospectEntity.getId()]?.item {
-                result = cachedResult
-            } else {
-                prospectEntity.setCollection (collection: self as! PersistentCollection<Database, T>)
-                self.cache[prospectEntity.getId()] = WeakItem (item: prospectEntity)
-                result = prospectEntity
-            }
-        }
-        return result!
-    }
-    
-    /*
-        Replaces ** entities ** with their cached version or initializes if not in cache
-    */
-    public func initialize (entities: inout [Entity<T>]) {
-        var index = 0
-        for entity in entities {
-            entities[index] = entityForProspect(prospectEntity: entity)
-            index = index + 1
-        }
-    }
-    
-    /*
-        Returns array containing cached or initilaized ** entities ** which match ** criteria **
-    */
-    public func initialize (entities: [Entity<T>], criteria: ((T) -> Bool)) -> [Entity<T>] {
-        var result: [Entity<T>] = []
-        for entity in entities {
-            var matchesCriteria = true
-            entity.sync() { item in
-                matchesCriteria = criteria (item)
-            }
-            if matchesCriteria {
-                result.append (entityForProspect(prospectEntity: entity))
-            }
+        cacheQueue.sync() {
+            result = self.cache[id]?.item
         }
         return result
     }
+    
+    internal func cacheEntity (_ entity: Entity<T>) {
+        cacheQueue.async() {
+            precondition ( self.cache[entity.getId()]?.item == nil)
+            self.cache[entity.getId()] = WeakItem (item: entity)
+        }
+    }
+
+    //        self.cacheQueue.sync {
+    //            if let cachedResult = self.cache[prospectEntity.getId()]?.item {
+    //                result = cachedResult
+    //            } else {
+    //                self.cache[prospectEntity.getId()] = WeakItem (item: prospectEntity)
+    //                result = prospectEntity
+    //            }
+    //        }
+
+
 
 
     // For testing
