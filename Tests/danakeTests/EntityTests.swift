@@ -956,10 +956,20 @@ class EntityTests: XCTestCase {
         }
     }
     
-    func testEntityCreation() {
-        
+    func testEntityReferenceSerializationData() {
+        let id = UUID()
+        var data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
+        XCTAssertEqual ("dbId", data.databaseId)
+        XCTAssertEqual ("collectionName", data.collectionName)
+        XCTAssertEqual (id.uuidString, data.id.uuidString)
+        XCTAssertEqual (10, data.version)
+        let entity = newTestEntity(myInt: 10, myString: "20")
+        data = entity.referenceSerializationData()
+        XCTAssertEqual (entity.collection.database.accessor.hashValue(), data.databaseId)
+        XCTAssertEqual (entity.collection.name, data.collectionName)
+        XCTAssertEqual (entity.getId(), data.id)
+        XCTAssertEqual (entity.getVersion(), data.version)
     }
     
-
 }
 

@@ -136,6 +136,23 @@ public struct EntityReferenceData<T: Codable> {
     
 }
 
+// Data for serializing a reference to an entity
+internal struct EntityReferenceSerializationData {
+    
+    internal init  (databaseId: String, collectionName: String, id: UUID, version: Int) {
+        self.databaseId = databaseId
+        self.collectionName = collectionName
+        self.id = id
+        self.version = version
+    }
+    
+    let databaseId: String
+    let collectionName: String
+    let id: UUID
+    let version: Int
+
+}
+
 public enum EntityDeserializationError<T: Codable> : Error {
     case NoCollectionInDecoderUserInfo
     case alreadyCached (Entity<T>)
@@ -278,6 +295,18 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             }
         }
     }
+    
+// Serialization Data
+    
+    internal func referenceSerializationData() -> EntityReferenceSerializationData {
+        var localVersion = 0
+        queue.sync {
+            localVersion = version
+        }
+        return EntityReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
+    }
+    
+    
     
 // Persistence Action Handling
     
