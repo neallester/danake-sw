@@ -96,6 +96,14 @@ class Registrar<K: Hashable, V: AnyObject> {
         return result
     }
     
+    func value (key: K) -> V? {
+        var result: V? = nil
+        queue.sync {
+            result = items[key]?.item
+        }
+        return result
+    }
+    
     func count() -> Int {
         var result = 0
         queue.sync {
