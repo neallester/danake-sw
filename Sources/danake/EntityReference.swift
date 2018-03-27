@@ -110,6 +110,18 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             }
         }
     }
+    
+    public func getReference() -> EntityReferenceSerializationData? {
+        var result: EntityReferenceSerializationData? = nil
+        queue.sync {
+            if let entity = self.entity {
+                result = entity.referenceData()
+            } else {
+                result = self.referenceData
+            }
+        }
+        return result
+    }
 
     private var entity: Entity<T>?
     private var parent: EntityManagement?

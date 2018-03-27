@@ -394,4 +394,23 @@ class EntityReferenceTests: XCTestCase {
             XCTFail ("Expected Exception")
         } catch EntityReferenceSerializationError.noParentData {}
     }
+    
+    func testGetReference() {
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        let childId = UUID()
+        let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
+        // Nil
+        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        XCTAssertNil (reference.getReference())
+        // Creation with entity
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        XCTAssertEqual (child.referenceData(), reference.getReference()!)
+        // Creation with reference Data
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        XCTAssertEqual (child.referenceData(), reference.getReference()!)
+    }
 }
