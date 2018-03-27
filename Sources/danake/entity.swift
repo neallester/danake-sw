@@ -153,6 +153,23 @@ internal struct EntityReferenceSerializationData {
 
 }
 
+internal struct ParentedReferenceSerializationData {
+    
+    internal init  (databaseId: String, collectionName: String, id: UUID, version: Int, parent: EntityReferenceSerializationData) {
+        self.databaseId = databaseId
+        self.collectionName = collectionName
+        self.id = id
+        self.version = version
+        self.parent = parent
+    }
+
+    let databaseId: String
+    let collectionName: String
+    let id: UUID
+    let version: Int
+    let parent: EntityReferenceSerializationData
+}
+
 public enum EntityDeserializationError<T: Codable> : Error {
     case NoCollectionInDecoderUserInfo
     case alreadyCached (Entity<T>)
@@ -305,8 +322,20 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         return EntityReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
     }
-    
-    
+
+    internal func parentedReferenceSerializationData <I> (parent: Entity<I>) -> ParentedReferenceSerializationData {
+        return parentedReferenceSerializationData(parent: parent.referenceSerializationData())
+    }
+
+
+    internal func parentedReferenceSerializationData(parent: EntityReferenceSerializationData) -> ParentedReferenceSerializationData {
+        var localVersion = 0
+        queue.sync {
+            localVersion = version
+        }
+        return ParentedReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion, parent: parent)
+    }
+
     
 // Persistence Action Handling
     

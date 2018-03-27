@@ -971,5 +971,44 @@ class EntityTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), data.version)
     }
     
+    func testParentedReferenceSerializationData() {
+        let id = UUID()
+        let parentId = UUID()
+        let parent = EntityReferenceSerializationData (databaseId: "parentId", collectionName: "parentCollectionName", id: parentId, version: 100)
+        var data = ParentedReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10, parent: parent)
+        XCTAssertEqual ("dbId", data.databaseId)
+        XCTAssertEqual ("collectionName", data.collectionName)
+        XCTAssertEqual (id.uuidString, data.id.uuidString)
+        XCTAssertEqual (10, data.version)
+        var dataParent = data.parent
+        XCTAssertEqual ("parentId", dataParent.databaseId)
+        XCTAssertEqual ("parentCollectionName", dataParent.collectionName)
+        XCTAssertEqual (parentId.uuidString, dataParent.id.uuidString)
+        XCTAssertEqual (100, dataParent.version)
+        let parentEntity = newTestEntity(myInt: 200, myString: "200")
+        let childEntity = newTestEntity(myInt: 20, myString: "20")
+        data = childEntity.parentedReferenceSerializationData(parent: parentEntity)
+        XCTAssertEqual (childEntity.collection.database.accessor.hashValue(), data.databaseId)
+        XCTAssertEqual (childEntity.collection.name, data.collectionName)
+        XCTAssertEqual (childEntity.getId(), data.id)
+        XCTAssertEqual (childEntity.getVersion(), data.version)
+        dataParent = data.parent
+        XCTAssertEqual (parentEntity.collection.database.accessor.hashValue(), dataParent.databaseId)
+        XCTAssertEqual (parentEntity.collection.name, dataParent.collectionName)
+        XCTAssertEqual (parentEntity.getId(), dataParent.id)
+        XCTAssertEqual (parentEntity.getVersion(), dataParent.version)
+        data = childEntity.parentedReferenceSerializationData(parent: parentEntity.referenceSerializationData())
+        XCTAssertEqual (childEntity.collection.database.accessor.hashValue(), data.databaseId)
+        XCTAssertEqual (childEntity.collection.name, data.collectionName)
+        XCTAssertEqual (childEntity.getId(), data.id)
+        XCTAssertEqual (childEntity.getVersion(), data.version)
+        dataParent = data.parent
+        XCTAssertEqual (parentEntity.collection.database.accessor.hashValue(), dataParent.databaseId)
+        XCTAssertEqual (parentEntity.collection.name, dataParent.collectionName)
+        XCTAssertEqual (parentEntity.getId(), dataParent.id)
+        XCTAssertEqual (parentEntity.getVersion(), dataParent.version)
+    }
+
+    
 }
 
