@@ -210,6 +210,7 @@ public class Database {
     
     static let registrar = Registrar<String, Database>()
     public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
+    public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
     
 }
 

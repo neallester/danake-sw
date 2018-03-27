@@ -20,6 +20,7 @@ internal protocol EntityManagement : EntityProtocol, Encodable {
     
     func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
     func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
+    func referenceData() -> EntityReferenceSerializationData
     
 }
 
@@ -122,7 +123,7 @@ public class EntityPersistenceWrapper : Encodable {
 }
 
 // Data for a reference to an Entity
-public struct EntityReferenceData<T: Codable> {
+public struct EntityReferenceData<T: Codable> : Equatable {
     
     public init (collection: PersistentCollection<Database, T>, id: UUID, version: Int) {
         self.collection = collection
@@ -134,10 +135,17 @@ public struct EntityReferenceData<T: Codable> {
     let id: UUID
     let version: Int
     
+    public static func == <T> (lhs: EntityReferenceData<T>, rhs: EntityReferenceData<T>) -> Bool {
+        return
+            lhs.collection === rhs.collection &&
+            lhs.id.uuidString == rhs.id.uuidString &&
+            lhs.version == rhs.version
+    }
+    
 }
 
 // Data for serializing a reference to an entity
-internal struct EntityReferenceSerializationData {
+public struct EntityReferenceSerializationData: Equatable {
     
     internal init  (databaseId: String, collectionName: String, id: UUID, version: Int) {
         self.databaseId = databaseId
@@ -146,28 +154,20 @@ internal struct EntityReferenceSerializationData {
         self.version = version
     }
     
-    let databaseId: String
-    let collectionName: String
-    let id: UUID
-    let version: Int
-
-}
-
-internal struct ParentedReferenceSerializationData {
     
-    internal init  (databaseId: String, collectionName: String, id: UUID, version: Int, parent: EntityReferenceSerializationData) {
-        self.databaseId = databaseId
-        self.collectionName = collectionName
-        self.id = id
-        self.version = version
-        self.parent = parent
+    public let databaseId: String
+    public let collectionName: String
+    public let id: UUID
+    public let version: Int
+    
+    public static func == (lhs: EntityReferenceSerializationData, rhs: EntityReferenceSerializationData) -> Bool {
+        return
+            lhs.databaseId == rhs.databaseId &&
+            lhs.collectionName == rhs.collectionName &&
+            lhs.id == rhs.id &&
+            lhs.version == rhs.version
     }
 
-    let databaseId: String
-    let collectionName: String
-    let id: UUID
-    let version: Int
-    let parent: EntityReferenceSerializationData
 }
 
 public enum EntityDeserializationError<T: Codable> : Error {
@@ -180,6 +180,7 @@ public enum EntityDeserializationError<T: Codable> : Error {
     **** Class Entity is the primary model object wrapper. ****
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
+    
     
     internal init (collection: PersistentCollection<Database, T>, id: UUID, version: Int, item: T) {
         self.collection = collection
@@ -315,27 +316,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Serialization Data
     
-    internal func referenceSerializationData() -> EntityReferenceSerializationData {
+    public func referenceData() -> EntityReferenceSerializationData {
         var localVersion = 0
         queue.sync {
             localVersion = version
         }
         return EntityReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
     }
-
-    internal func parentedReferenceSerializationData <I> (parent: Entity<I>) -> ParentedReferenceSerializationData {
-        return parentedReferenceSerializationData(parent: parent.referenceSerializationData())
-    }
-
-
-    internal func parentedReferenceSerializationData(parent: EntityReferenceSerializationData) -> ParentedReferenceSerializationData {
-        var localVersion = 0
-        queue.sync {
-            localVersion = version
-        }
-        return ParentedReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion, parent: parent)
-    }
-
     
 // Persistence Action Handling
     
