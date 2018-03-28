@@ -18,7 +18,7 @@ class BatchTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         entity.sync() { (myStruct) in
@@ -29,7 +29,7 @@ class BatchTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         entity.sync() { (myStruct) in
@@ -42,9 +42,9 @@ class BatchTests: XCTestCase {
             XCTAssertEqual(2, entities.count)
             XCTAssertEqual(0, entity.getVersion())
             XCTAssertEqual(0, entity2.getVersion())
-            var retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            var retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
-            retrievedEntity = entities[entity2.getId()]! as! Entity<MyStruct>
+            retrievedEntity = entities[entity2.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity2 === retrievedEntity)
         }
         entity.sync() { (myStruct) in
@@ -67,7 +67,7 @@ class BatchTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyClass>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
         }
         entity.sync() { (entityClass) in
@@ -81,7 +81,7 @@ class BatchTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyClass>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
         }
         entity.sync() { (myClass) in
@@ -101,9 +101,9 @@ class BatchTests: XCTestCase {
             XCTAssertEqual(2, entities.count)
             XCTAssertEqual(0, entity.getVersion())
             XCTAssertEqual(0, entity2.getVersion())
-            var retrievedEntity = entities[entity.getId()]! as! Entity<MyClass>
+            var retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
-            retrievedEntity = entities[entity2.getId()]! as! Entity<MyClass>
+            retrievedEntity = entities[entity2.id]! as! Entity<MyClass>
             XCTAssertTrue (entity2 === retrievedEntity)
         }
         entity.sync() { (myClass) in
@@ -143,8 +143,8 @@ class BatchTests: XCTestCase {
             XCTFail ("Expected .persistent")
         }
         XCTAssertEqual (2, accessor.count (name: collectionName))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.getId()))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.getId()))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.id))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
@@ -159,7 +159,7 @@ class BatchTests: XCTestCase {
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
-        let entity1Id = entity1.getId().uuidString
+        let entity1Id = entity1.id.uuidString
         let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         let waitFor = expectation (description: "waitFor")
         let prefetch: (UUID) -> () = { id in
@@ -185,11 +185,11 @@ class BatchTests: XCTestCase {
             XCTFail ("Expected .persistent")
         }
         XCTAssertEqual (1, accessor.count (name: collectionName))
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity1.getId()))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.getId()))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity1.id))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.unrecoverableError(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.getId().uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.unrecoverableError(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
 
@@ -203,7 +203,7 @@ class BatchTests: XCTestCase {
         let delegateId = batch.delegateId()
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
-        let id1 = entity1.getId().uuidString
+        let id1 = entity1.id.uuidString
         let waitFor = expectation (description: "waitFor")
         var preFetchCount = 0
         let prefetch: (UUID) -> () = { id in
@@ -233,11 +233,11 @@ class BatchTests: XCTestCase {
             XCTFail ("Expected .persistent")
         }
         XCTAssertEqual (2, accessor.count (name: collectionName))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.getId()))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.getId()))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.id))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("EMERGENCY|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.getId().uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("EMERGENCY|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
     
@@ -297,11 +297,11 @@ class BatchTests: XCTestCase {
             XCTFail ("Expected .persistent")
         }
         XCTAssertEqual (1, accessor.count (name: collectionName))
-        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.getId()))
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity2.getId()))
+        XCTAssertTrue (accessor.has(name: collectionName, id: entity1.id))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.getId().uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.id.uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
         }
     }
     
@@ -354,8 +354,8 @@ class BatchTests: XCTestCase {
             XCTAssertEqual (2, entities.count)
         }
         batch = nil
-        let entity1IdString = entity1.getId().uuidString
-        let entity2IdString = entity2.getId().uuidString
+        let entity1IdString = entity1.id.uuidString
+        let entity2IdString = entity2.id.uuidString
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             var entryStrings = entries[0].asTestString()

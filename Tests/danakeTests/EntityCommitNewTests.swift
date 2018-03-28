@@ -426,7 +426,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -459,7 +459,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and errors
@@ -652,7 +652,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -762,7 +762,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and timeouts
@@ -993,7 +993,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -1061,7 +1061,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -1104,7 +1104,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and errors
@@ -1317,7 +1317,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -1437,7 +1437,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and timeouts
@@ -1677,7 +1677,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -1745,7 +1745,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -1785,7 +1785,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and errors
@@ -1992,7 +1992,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -2109,7 +2109,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and timeouts
@@ -2343,7 +2343,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
 
@@ -2411,7 +2411,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -2441,7 +2441,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and errors
@@ -2632,7 +2632,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -2739,7 +2739,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and timeouts
@@ -2961,7 +2961,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
     
@@ -3029,7 +3029,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -3066,7 +3066,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and errors
@@ -3271,7 +3271,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -3385,7 +3385,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and timeouts
@@ -3617,7 +3617,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending update followed by a pending remove
@@ -3684,7 +3684,7 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
         switch entity.getPersistenceState() {
@@ -3724,7 +3724,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.getId()))
+        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update followed by a pending remove and errors
@@ -3935,7 +3935,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -4052,7 +4052,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
     }
 
 
@@ -4295,7 +4295,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.getId().uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         entity.timeoutSemaphore.signal()
     }
 

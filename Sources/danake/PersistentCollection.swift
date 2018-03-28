@@ -132,7 +132,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     public func new (batch: EventuallyConsistentBatch, item: T) -> Entity<T> {
         let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
-            self.cache[result.getId()] = WeakItem (item:result)
+            self.cache[result.id] = WeakItem (item:result)
         }
         batch.insertAsync(entity: result, closure: nil)
         return result
@@ -149,7 +149,7 @@ public class PersistentCollection<D: Database, T: Codable> {
     public func new (batch: EventuallyConsistentBatch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
         let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
-            self.cache[result.getId()] = WeakItem (item:result)
+            self.cache[result.id] = WeakItem (item:result)
         }
         batch.insertAsync(entity: result, closure: nil)
         return result
@@ -167,8 +167,8 @@ public class PersistentCollection<D: Database, T: Codable> {
     
     internal func cacheEntity (_ entity: Entity<T>) {
         cacheQueue.async() {
-            precondition ( self.cache[entity.getId()]?.item == nil)
-            self.cache[entity.getId()] = WeakItem (item: entity)
+            precondition ( self.cache[entity.id]?.item == nil)
+            self.cache[entity.id] = WeakItem (item: entity)
         }
     }
 

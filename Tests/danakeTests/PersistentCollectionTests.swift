@@ -54,7 +54,7 @@ class PersistentCollectionTests: XCTestCase {
         XCTAssertTrue (collection === entity!.collection)
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            let item = entities[entity!.getId()]! as! Entity<MyStruct>
+            let item = entities[entity!.id]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {
@@ -69,7 +69,7 @@ class PersistentCollectionTests: XCTestCase {
         }
         collection.sync() { cache in
             XCTAssertEqual(1, cache.count)
-            XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
+            XCTAssertTrue (entity === cache[entity!.id]!.item!)
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
@@ -85,7 +85,7 @@ class PersistentCollectionTests: XCTestCase {
         XCTAssertTrue (collection === entity!.collection)
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            let item = entities[entity!.getId()]! as! Entity<MyStruct>
+            let item = entities[entity!.id]! as! Entity<MyStruct>
             XCTAssertTrue (item === entity!)
         }
         switch entity!.getPersistenceState() {
@@ -96,11 +96,11 @@ class PersistentCollectionTests: XCTestCase {
         }
         entity!.sync() { item in
             XCTAssertEqual(0, item.myInt)
-            XCTAssertEqual(entity!.getId().uuidString, item.myString)
+            XCTAssertEqual(entity!.id.uuidString, item.myString)
         }
         collection.sync() { cache in
             XCTAssertEqual(1, cache.count)
-            XCTAssertTrue (entity === cache[entity!.getId()]!.item!)
+            XCTAssertTrue (entity === cache[entity!.id]!.item!)
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
@@ -120,19 +120,19 @@ class PersistentCollectionTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
         let data = try accessor.encoder.encode(entity)
-        var result = collection.get (id: entity.getId())
+        var result = collection.get (id: entity.id)
         XCTAssertTrue (result.isOk())
         XCTAssertNil (result.item())
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.getId())", entry)
+            XCTAssertEqual ("WARNING|PersistentCollection<Database, MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
-        let _ = accessor.add(name: standardCollectionName, id: entity.getId(), data: data)
-        result = collection.get(id: entity.getId())
+        let _ = accessor.add(name: standardCollectionName, id: entity.id, data: data)
+        result = collection.get(id: entity.id)
         let retrievedEntity = result.item()!
-        XCTAssertEqual (entity.getId().uuidString, retrievedEntity.getId().uuidString)
+        XCTAssertEqual (entity.id.uuidString, retrievedEntity.id.uuidString)
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
         XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
         XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
@@ -151,7 +151,7 @@ class PersistentCollectionTests: XCTestCase {
         }
         collection.sync() { cache in
             XCTAssertEqual (1, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
@@ -159,31 +159,31 @@ class PersistentCollectionTests: XCTestCase {
         // Data In Cache=Yes; Data in Accessor=No
         let batch = EventuallyConsistentBatch()
         let entity2 = collection.new(batch: batch, item: MyStruct())
-        XCTAssertTrue (entity2 === collection.get(id: entity2.getId()).item()!)
+        XCTAssertTrue (entity2 === collection.get(id: entity2.id).item()!)
         XCTAssertEqual (5, entity2.getSchemaVersion())
         XCTAssertTrue (entity2.collection === collection)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
-            XCTAssertTrue (entity2 === cache[entity2.getId()]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
+            XCTAssertTrue (entity2 === cache[entity2.id]!.item!)
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
-            XCTAssertTrue (data == storage[standardCollectionName]![entity.getId()]!)
+            XCTAssertTrue (data == storage[standardCollectionName]![entity.id]!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=Yes
-        XCTAssertTrue (retrievedEntity === collection.get(id: entity.getId()).item()!)
+        XCTAssertTrue (retrievedEntity === collection.get(id: entity.id).item()!)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.getId()]!.item!)
-            XCTAssertTrue (entity2 === cache[entity2.getId()]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
+            XCTAssertTrue (entity2 === cache[entity2.id]!.item!)
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
-            XCTAssertTrue (data == storage[standardCollectionName]![entity.getId()]!)
+            XCTAssertTrue (data == storage[standardCollectionName]![entity.id]!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
@@ -213,9 +213,9 @@ class PersistentCollectionTests: XCTestCase {
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
         let data3 = try JSONEncoder().encode(entity)
-        let _ = accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3)
+        let _ = accessor.add(name: standardCollectionName, id: entity3.id, data: data3)
         accessor.setThrowError()
-        switch collection.get(id: entity3.getId()) {
+        switch collection.get(id: entity3.id) {
         case .error (let errorMessage):
             XCTAssertEqual ("Test Error", errorMessage)
         default:
@@ -224,7 +224,7 @@ class PersistentCollectionTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.getId());errorMessage=Test Error", entry)
+            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=Test Error", entry)
         }
     }
     
@@ -239,13 +239,13 @@ class PersistentCollectionTests: XCTestCase {
             let entity2 = newTestEntity(myInt: 20, myString: "A String2")
             let data2 = try accessor.encoder.encode(entity2)
             let dispatchGroup = DispatchGroup()
-            let _ = accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
-            let _ = accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
+            let _ = accessor.add(name: standardCollectionName, id: entity1.id, data: data1)
+            let _ = accessor.add(name: standardCollectionName, id: entity2.id, data: data2)
             let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
-                if uuid == entity1.getId() {
+                if uuid == entity1.id {
                     startSempaphore.wait()
                     startSempaphore.signal()
                 }
@@ -257,16 +257,16 @@ class PersistentCollectionTests: XCTestCase {
             let workQueue = DispatchQueue (label: "WorkQueue", attributes: .concurrent)
             dispatchGroup.enter()
             workQueue.async {
-                result1a = collection.get(id: entity1.getId())
+                result1a = collection.get(id: entity1.id)
                 dispatchGroup.leave()
             }
             dispatchGroup.enter()
             workQueue.async {
-                result1b = collection.get(id: entity1.getId())
+                result1b = collection.get(id: entity1.id)
                 dispatchGroup.leave()
             }
             workQueue.async {
-                result2 = collection.get(id: entity2.getId())
+                result2 = collection.get(id: entity2.id)
                 waitFor1.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
@@ -274,7 +274,7 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertNil (result1b)
             switch result2! {
             case .ok (let retrievedEntity):
-                XCTAssertEqual (entity2.getId(), retrievedEntity!.getId())
+                XCTAssertEqual (entity2.id, retrievedEntity!.id)
                 XCTAssertEqual (entity2.getVersion(), retrievedEntity!.getVersion())
                 XCTAssertEqual ((entity2.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity!.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
                 XCTAssertNil (retrievedEntity!.getSaved ())
@@ -328,11 +328,11 @@ class PersistentCollectionTests: XCTestCase {
             var waitFor2 = expectation(description: "wait2.1")
             var result1: RetrievalResult<Entity<MyStruct>>? = nil
             var result2: RetrievalResult<Entity<MyStruct>>? = nil
-            collection.get (id: entity1.getId()) { item in
+            collection.get (id: entity1.id) { item in
                 result1 = item
                 waitFor1.fulfill()
             }
-            collection.get (id: entity2.getId()) { item in
+            collection.get (id: entity2.id) { item in
                 result2 = item
                 waitFor2.fulfill()
             }
@@ -347,22 +347,22 @@ class PersistentCollectionTests: XCTestCase {
             // Data In Cache=No; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.2")
             waitFor2 = expectation(description: "wait2.2")
-            let _ = accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1)
-            let _ = accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2)
-            collection.get(id: entity1.getId()) { item in
+            let _ = accessor.add(name: standardCollectionName, id: entity1.id, data: data1)
+            let _ = accessor.add(name: standardCollectionName, id: entity2.id, data: data2)
+            collection.get(id: entity1.id) { item in
                 result1 = item
                 waitFor1.fulfill()
             }
-            collection.get(id: entity2.getId()) { item in
+            collection.get(id: entity2.id) { item in
                 result2 = item
                 waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             var retrievedEntity1 = result1!.item()!
             var retrievedEntity2 = result2!.item()!
-            XCTAssertEqual (entity1.getId().uuidString, retrievedEntity1.getId().uuidString)
+            XCTAssertEqual (entity1.id.uuidString, retrievedEntity1.id.uuidString)
             XCTAssertEqual (entity1.getVersion(), retrievedEntity1.getVersion())
-            XCTAssertEqual (entity2.getId().uuidString, retrievedEntity2.getId().uuidString)
+            XCTAssertEqual (entity2.id.uuidString, retrievedEntity2.id.uuidString)
             XCTAssertEqual (entity2.getVersion(), retrievedEntity2.getVersion())
             XCTAssertEqual (5, retrievedEntity1.getSchemaVersion())
             XCTAssertEqual (5, retrievedEntity2.getSchemaVersion())
@@ -394,8 +394,8 @@ class PersistentCollectionTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.getId()]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.getId()]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -406,12 +406,12 @@ class PersistentCollectionTests: XCTestCase {
             let batch = EventuallyConsistentBatch()
             let entity3 = collection.new(batch: batch, item: MyStruct())
             let entity4 = collection.new(batch: batch, item: MyStruct())
-            collection.get(id: entity3.getId()) { item in
+            collection.get(id: entity3.id) { item in
                 result1 = item
                 waitFor1.fulfill()
                 
             }
-            collection.get(id: entity4.getId())  { item in
+            collection.get(id: entity4.id)  { item in
                 result2 = item
                 waitFor2.fulfill()
                 
@@ -421,15 +421,15 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertTrue (entity4 === result2!.item()!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.getId()]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.getId()]!.item!)
-                XCTAssertTrue (entity3 === cache[entity3.getId()]!.item!)
-                XCTAssertTrue (entity4 === cache[entity4.getId()]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
+                XCTAssertTrue (entity3 === cache[entity3.id]!.item!)
+                XCTAssertTrue (entity4 === cache[entity4.id]!.item!)
             }
             accessor.sync() { storage in
                 XCTAssertEqual (2, storage[standardCollectionName]!.count)
-                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.getId()]!)
-                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.getId()]!)
+                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.id]!)
+                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.id]!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -437,11 +437,11 @@ class PersistentCollectionTests: XCTestCase {
             // Data In Cache=Yes; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.4")
             waitFor2 = expectation(description: "wait2.4")
-            collection.get (id: entity1.getId()) { item in
+            collection.get (id: entity1.id) { item in
                 result1 = item
                 waitFor1.fulfill()
             }
-            collection.get (id: entity2.getId()) { item in
+            collection.get (id: entity2.id) { item in
                 result2 = item
                 waitFor2.fulfill()
             }
@@ -452,15 +452,15 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertTrue (retrievedEntity2 === result2!.item()!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.getId()]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.getId()]!.item!)
-                XCTAssertTrue (entity3 === cache[entity3.getId()]!.item!)
-                XCTAssertTrue (entity4 === cache[entity4.getId()]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
+                XCTAssertTrue (entity3 === cache[entity3.id]!.item!)
+                XCTAssertTrue (entity4 === cache[entity4.id]!.item!)
             }
             accessor.sync() { storage in
                 XCTAssertEqual (2, storage[standardCollectionName]!.count)
-                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.getId()]!)
-                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.getId()]!)
+                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.id]!)
+                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.id]!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -507,13 +507,13 @@ class PersistentCollectionTests: XCTestCase {
             let data5 = try JSONEncoder().encode(entity1)
             let entity6 = newTestEntity(myInt: 60, myString: "A String6")
             let data6 = try JSONEncoder().encode(entity2)
-            let _ = accessor.add(name: standardCollectionName, id: entity5.getId(), data: data5)
-            let _ = accessor.add(name: standardCollectionName, id: entity6.getId(), data: data6)
+            let _ = accessor.add(name: standardCollectionName, id: entity5.id, data: data5)
+            let _ = accessor.add(name: standardCollectionName, id: entity6.id, data: data6)
             accessor.setThrowError()
             waitFor1 = expectation(description: "wait1.6")
             waitFor2 = expectation(description: "wait2.6")
             var errorsReported = 0
-            collection.get(id: entity5.getId()) { item in
+            collection.get(id: entity5.id) { item in
                 switch item {
                 case .error:
                     errorsReported = errorsReported + 1
@@ -522,7 +522,7 @@ class PersistentCollectionTests: XCTestCase {
                 }
                 waitFor1.fulfill()
             }
-            collection.get(id: entity6.getId()) { item in
+            collection.get(id: entity6.id) { item in
                 switch item {
                 case .error:
                     errorsReported = errorsReported + 1
@@ -559,7 +559,7 @@ class PersistentCollectionTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -570,7 +570,7 @@ class PersistentCollectionTests: XCTestCase {
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -581,24 +581,24 @@ class PersistentCollectionTests: XCTestCase {
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = collection.get (id: entity3.getId()).item()!
+            entity3 = collection.get (id: entity3.id).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = collection.get (id: entity4.getId()).item()!
+            entity4 = collection.get (id: entity4.id).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -611,8 +611,8 @@ class PersistentCollectionTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
             }
             // Retrieve Data
             retrievedEntities = collection.scan(criteria: nil).item()!
@@ -628,16 +628,16 @@ class PersistentCollectionTests: XCTestCase {
                 default:
                     XCTFail ("Expected .persistent")
                 }
-                if retrievedEntity.getId().uuidString == entity1.getId().uuidString {
+                if retrievedEntity.id.uuidString == entity1.id.uuidString {
                     XCTAssertNil (retrievedEntity1)
                     retrievedEntity1 = retrievedEntity
-                } else if retrievedEntity.getId().uuidString == entity2.getId().uuidString {
+                } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
                     XCTAssertNil (retrievedEntity2)
                     retrievedEntity2 = retrievedEntity
-                } else if retrievedEntity.getId().uuidString == entity3.getId().uuidString {
+                } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
                     XCTAssertNil (retrievedEntity3)
                     retrievedEntity3 = retrievedEntity
-                } else if retrievedEntity.getId().uuidString == entity4.getId().uuidString {
+                } else if retrievedEntity.id.uuidString == entity4.id.uuidString {
                     XCTAssertNil (retrievedEntity4)
                     retrievedEntity4 = retrievedEntity
                 } else {
@@ -645,7 +645,7 @@ class PersistentCollectionTests: XCTestCase {
                 }
             }
             XCTAssertEqual (4, retrievedEntities.count)
-            XCTAssertEqual (entity1.getId().uuidString, retrievedEntity1!.getId().uuidString)
+            XCTAssertEqual (entity1.id.uuidString, retrievedEntity1!.id.uuidString)
             XCTAssertTrue (entity1 !== retrievedEntity1)
             entity1.sync() { item1 in
                 retrievedEntity1!.sync() { retrievedItem1 in
@@ -653,23 +653,23 @@ class PersistentCollectionTests: XCTestCase {
                     XCTAssertEqual (item1.myString, retrievedItem1.myString)
                 }
             }
-            XCTAssertEqual (entity2.getId().uuidString, retrievedEntity2?.getId().uuidString)
+            XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
             entity2.sync() { item2 in
                 retrievedEntity2!.sync() { retrievedItem2 in
                     XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
                     XCTAssertEqual (item2.myString, retrievedItem2.myString)
                 }
             }
-            XCTAssertEqual (entity3.getId().uuidString, retrievedEntity3!.getId().uuidString)
+            XCTAssertEqual (entity3.id.uuidString, retrievedEntity3!.id.uuidString)
             XCTAssertTrue (entity3 === retrievedEntity3!)
-            XCTAssertEqual (entity4.getId().uuidString, retrievedEntity4!.getId().uuidString)
+            XCTAssertEqual (entity4.id.uuidString, retrievedEntity4!.id.uuidString)
             XCTAssertTrue (entity4 === retrievedEntity4!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (cache[entity1.getId()]!.item! === retrievedEntity1!)
-                XCTAssertTrue (cache[entity2.getId()]!.item! === retrievedEntity2!)
-                XCTAssertTrue (cache[entity3.getId()]!.item! === retrievedEntity3!)
-                XCTAssertTrue (cache[entity4.getId()]!.item! === retrievedEntity4!)
+                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity1!)
+                XCTAssertTrue (cache[entity2.id]!.item! === retrievedEntity2!)
+                XCTAssertTrue (cache[entity3.id]!.item! === retrievedEntity3!)
+                XCTAssertTrue (cache[entity4.id]!.item! === retrievedEntity4!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
@@ -704,7 +704,7 @@ class PersistentCollectionTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -715,7 +715,7 @@ class PersistentCollectionTests: XCTestCase {
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -726,24 +726,24 @@ class PersistentCollectionTests: XCTestCase {
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = collection.get (id: entity3.getId()).item()!
+            entity3 = collection.get (id: entity3.id).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = collection.get (id: entity4.getId()).item()!
+            entity4 = collection.get (id: entity4.id).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -756,8 +756,8 @@ class PersistentCollectionTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
             }
             // Retrieve Data
             let retrievedEntities = (collection.scan(){ item in
@@ -772,7 +772,7 @@ class PersistentCollectionTests: XCTestCase {
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (entity1.getId().uuidString, retrievedEntity.getId().uuidString)
+            XCTAssertEqual (entity1.id.uuidString, retrievedEntity.id.uuidString)
             entity1.sync() { item1 in
                 retrievedEntity.sync() { retrievedItem in
                     XCTAssertEqual (item1.myInt, retrievedItem.myInt)
@@ -781,9 +781,9 @@ class PersistentCollectionTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (3, cache.count)
-                XCTAssertTrue (cache[entity1.getId()]!.item! === retrievedEntity)
-                XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity)
+                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
             }
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
@@ -800,7 +800,7 @@ class PersistentCollectionTests: XCTestCase {
                 entity1.setPersistenceState (.persistent)
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
                 case .ok:
                     break
                 default:
@@ -811,7 +811,7 @@ class PersistentCollectionTests: XCTestCase {
                 entity2.setPersistenceState (.persistent)
                 entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
-                switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+                switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
                 case .ok:
                     break
                 default:
@@ -822,24 +822,24 @@ class PersistentCollectionTests: XCTestCase {
                 entity3.setPersistenceState (.persistent)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
                 case .ok:
                     break
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity3 = collection.get (id: entity3.getId()).item()!
+                entity3 = collection.get (id: entity3.id).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.setPersistenceState (.persistent)
                 entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
-                switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+                switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
                 case .ok:
                     break
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity4 = collection.get (id: entity4.getId()).item()!
+                entity4 = collection.get (id: entity4.id).item()!
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
@@ -852,8 +852,8 @@ class PersistentCollectionTests: XCTestCase {
                 }
                 collection.sync() { cache in
                     XCTAssertEqual (2, cache.count)
-                    XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                    XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                    XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                    XCTAssertTrue (cache[entity4.id]!.item! === entity4)
                 }
                 // Retrieve Data
                 let retrievedEntities = (collection.scan(){ item in
@@ -871,8 +871,8 @@ class PersistentCollectionTests: XCTestCase {
                 XCTAssert (entity3 === retrievedEntity)
                 collection.sync() { cache in
                     XCTAssertEqual (2, cache.count)
-                    XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                    XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                    XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                    XCTAssertTrue (cache[entity4.id]!.item! === entity4)
                 }
                 logger.sync() { entries in
                     XCTAssertEqual (0, entries.count)
@@ -891,7 +891,7 @@ class PersistentCollectionTests: XCTestCase {
             entity1.setPersistenceState (.persistent)
             entity1.setSaved (Date())
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -902,7 +902,7 @@ class PersistentCollectionTests: XCTestCase {
             entity2.setPersistenceState (.persistent)
             entity2.setSaved (Date())
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -913,24 +913,24 @@ class PersistentCollectionTests: XCTestCase {
             entity3.setPersistenceState (.persistent)
             entity3.setSaved (Date())
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = collection.get (id: entity3.getId()).item()!
+            entity3 = collection.get (id: entity3.id).item()!
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.setPersistenceState (.persistent)
             entity4.setSaved (Date())
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = collection.get (id: entity4.getId()).item()!
+            entity4 = collection.get (id: entity4.id).item()!
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -943,8 +943,8 @@ class PersistentCollectionTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.getId()]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.getId()]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
             }
             // Retrieve Data
             accessor.setThrowError()
@@ -978,7 +978,7 @@ class PersistentCollectionTests: XCTestCase {
                 entity1.setPersistenceState (.persistent)
                 entity1.setSaved (Date())
                 let data1 = try accessor.encoder.encode(entity1)
-                switch accessor.add(name: standardCollectionName, id: entity1.getId(), data: data1) {
+                switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
                 case .ok:
                     break
                 default:
@@ -989,7 +989,7 @@ class PersistentCollectionTests: XCTestCase {
                 entity2.setPersistenceState (.persistent)
                 entity2.setSaved (Date())
                 let data2 = try accessor.encoder.encode(entity2)
-                switch accessor.add(name: standardCollectionName, id: entity2.getId(), data: data2) {
+                switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
                 case .ok:
                     break
                 default:
@@ -1000,24 +1000,24 @@ class PersistentCollectionTests: XCTestCase {
                 entity3.setPersistenceState (.persistent)
                 entity3.setSaved (Date())
                 let data3 = try accessor.encoder.encode(entity3)
-                switch accessor.add(name: standardCollectionName, id: entity3.getId(), data: data3) {
+                switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
                 case .ok:
                     break
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity3 = collection.get (id: entity3.getId()).item()!
+                entity3 = collection.get (id: entity3.id).item()!
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.setPersistenceState (.persistent)
                 entity4.setSaved (Date())
                 let data4 = try accessor.encoder.encode(entity4)
-                switch accessor.add(name: standardCollectionName, id: entity4.getId(), data: data4) {
+                switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
                 case .ok:
                     break
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity4 = collection.get (id: entity4.getId()).item()!
+                entity4 = collection.get (id: entity4.id).item()!
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
@@ -1044,16 +1044,16 @@ class PersistentCollectionTests: XCTestCase {
                             default:
                                 XCTFail ("Expected .persistent but got \(persistenceState)")
                             }
-                            if retrievedEntity.getId().uuidString == entity1.getId().uuidString {
+                            if retrievedEntity.id.uuidString == entity1.id.uuidString {
                                 XCTAssertNil (retrievedEntity1)
                                 retrievedEntity1 = retrievedEntity
-                            } else if retrievedEntity.getId().uuidString == entity2.getId().uuidString {
+                            } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
                                 XCTAssertNil (retrievedEntity2)
                                 retrievedEntity2 = retrievedEntity
-                            } else if retrievedEntity.getId().uuidString == entity3.getId().uuidString {
+                            } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
                                 XCTAssertNil (retrievedEntity3)
                                 retrievedEntity3 = retrievedEntity
-                            } else if retrievedEntity.getId().uuidString == entity4.getId().uuidString {
+                            } else if retrievedEntity.id.uuidString == entity4.id.uuidString {
                                 XCTAssertNil (retrievedEntity4)
                                 retrievedEntity4 = retrievedEntity
                             } else {
@@ -1061,23 +1061,23 @@ class PersistentCollectionTests: XCTestCase {
                             }
                         }
                         XCTAssertEqual (4, retrievedEntities.count)
-                        XCTAssertEqual (entity1.getId().uuidString, retrievedEntity1?.getId().uuidString)
+                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity1?.id.uuidString)
                         entity1.sync() { item1 in
                             retrievedEntity1!.sync() { retrievedItem1 in
                                 XCTAssertEqual (item1.myInt, retrievedItem1.myInt)
                                 XCTAssertEqual (item1.myString, retrievedItem1.myString)
                             }
                         }
-                        XCTAssertEqual (entity2.getId().uuidString, retrievedEntity2?.getId().uuidString)
+                        XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
                         entity2.sync() { item2 in
                             retrievedEntity2!.sync() { retrievedItem2 in
                                 XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
                                 XCTAssertEqual (item2.myString, retrievedItem2.myString)
                             }
                         }
-                        XCTAssertEqual (entity3.getId().uuidString, retrievedEntity3?.getId().uuidString)
+                        XCTAssertEqual (entity3.id.uuidString, retrievedEntity3?.id.uuidString)
                         XCTAssertTrue (entity3 === retrievedEntity3!)
-                        XCTAssertEqual (entity4.getId().uuidString, retrievedEntity4?.getId().uuidString)
+                        XCTAssertEqual (entity4.id.uuidString, retrievedEntity4?.id.uuidString)
                         XCTAssertTrue (entity4 === retrievedEntity4!)
                         dispatchGroup.leave()
                     }
@@ -1094,7 +1094,7 @@ class PersistentCollectionTests: XCTestCase {
                         default:
                             XCTFail ("Expected .persistent")
                         }
-                        XCTAssertEqual (entity1.getId().uuidString, retrievedEntity.getId().uuidString)
+                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity.id.uuidString)
                         entity1.sync() { item1 in
                             retrievedEntity.sync() { retrievedItem in
                                 XCTAssertEqual (item1.myInt, retrievedItem.myInt)

@@ -206,10 +206,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // Metadata
     
-    public func getId() -> UUID {
-        return self.id
-    }
-    
     // Version is incremented each time the entity is stored in the persistent media
     public func getVersion() -> Int {
         var result: Int? = nil

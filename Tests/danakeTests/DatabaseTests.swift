@@ -193,7 +193,7 @@ class DatabaseTests: XCTestCase {
         switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
         case .ok (let entity1):
             XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
-            XCTAssertEqual (id1.uuidString, entity1.getId().uuidString)
+            XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
             XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
             XCTAssertEqual (10, entity1.getVersion() )
             switch entity1.getPersistenceState() {
@@ -216,7 +216,7 @@ class DatabaseTests: XCTestCase {
         switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
         case .ok (let entity2):
             XCTAssertTrue (entity2 === collection.cachedEntity(id: id1)!)
-            XCTAssertEqual (id1.uuidString, entity2.getId().uuidString)
+            XCTAssertEqual (id1.uuidString, entity2.id.uuidString)
             XCTAssertEqual (5, entity2.getSchemaVersion()) // Schema version is taken from the collection, not the json
             XCTAssertEqual (10, entity2.getVersion() )
             switch entity2.getPersistenceState() {

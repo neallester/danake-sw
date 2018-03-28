@@ -47,7 +47,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
         group.enter()
         entity.commit() { result in
             switch result {
@@ -75,7 +75,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.getId()))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
     }
 
     // Test calling entity.commit() when entity is PersistenceState.abandoned
@@ -102,7 +102,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.getId()))
+        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
         group.enter()
         entity.commit() { result in
             switch result {
@@ -130,7 +130,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.getId()))
+        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
     }
     
     // Test calling entity.commit() when entity is PersistenceState.saving

@@ -102,7 +102,7 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
@@ -134,7 +134,7 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
@@ -231,7 +231,7 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
@@ -263,7 +263,7 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
@@ -281,7 +281,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         // Decoding with isNil:false
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -307,7 +307,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.databaseId, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key databaseId (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
         }
         // No databaseId
-        json = "{\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -315,7 +315,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.databaseId, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key databaseId (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal databaseId
-        json = "{\"databaseId\":44,\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":44,\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -339,7 +339,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("illegalId(\"AAA\")", "\(error)")
         }
         // isEager missing
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -347,7 +347,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.isEager, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key isEager (\\\"isEager\\\").\", underlyingError: nil))", "\(error)")
         }
         // illegal isEager
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":\"what?\",\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":\"what?\",\"collectionName\":\"myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -355,7 +355,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.isEager], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing collectionName
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -363,7 +363,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.collectionName, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key collectionName (\\\"collectionName\\\").\", underlyingError: nil))", "\(error)")
         }
         // illegal collectionName
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":false,\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":false,\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -371,7 +371,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.collectionName], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing Version
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\"}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\"}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -379,7 +379,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.version, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key version (\\\"version\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Version
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.getId().uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":\"10\"}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":\"10\"}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -435,15 +435,15 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (willUpdate)
         }
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
-        reference.willUpdate(newId: child.getId()) { willUpdate in
+        reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
-        reference.willUpdate(newId: child.getId()) { willUpdate in
+        reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertFalse (willUpdate)
         }
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
-        reference.willUpdate(newId: child.getId()) { willUpdate in
+        reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertFalse (willUpdate)
         }
         let newID = UUID()
@@ -510,7 +510,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         batch = EventuallyConsistentBatch()
         reference.set (entity: entity1, batch: batch)
@@ -552,7 +552,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         batch = EventuallyConsistentBatch()
         reference.set (entity: nil, batch: batch)
@@ -574,7 +574,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         reference.set (entity: nil, batch: batch)
         reference.sync() { reference in
@@ -595,7 +595,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         // Same again, with pending closure
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
@@ -654,7 +654,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -716,7 +716,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -748,7 +748,7 @@ class EntityReferenceTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
-            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+            XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {

@@ -98,7 +98,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             if let entity = entity {
                 try container.encode(entity.collection.database.accessor.hashValue(), forKey: .databaseId)
                 try container.encode (entity.collection.name, forKey: .collectionName)
-                try container.encode (entity.getId(), forKey: .id)
+                try container.encode (entity.id, forKey: .id)
                 try container.encode (entity.getVersion(), forKey: .version)
             } else if let referenceData = referenceData {
                 try container.encode(referenceData.databaseId, forKey: .databaseId)
@@ -125,7 +125,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     
     public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
         queue.async {
-            let wasUpdated = self.willUpdate(newId: entity?.getId())
+            let wasUpdated = self.willUpdate(newId: entity?.id)
             self.entity = entity
             self.referenceData = nil
             self.state = .loaded
@@ -166,7 +166,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         if let newId = newId {
             return
                 (self.entity == nil && self.referenceData == nil) ||
-                (self.entity != nil && self.entity?.getId().uuidString != newId.uuidString) ||
+                (self.entity != nil && self.entity?.id.uuidString != newId.uuidString) ||
                 (self.referenceData != nil && self.referenceData?.id.uuidString != newId.uuidString)
         } else {
             return entity != nil || self.referenceData != nil

@@ -45,7 +45,7 @@ class InMemoryAccessorTests: XCTestCase {
             if let retrievedEntity = retrievedEntity {
                 retrievedEntity1 = retrievedEntity
                 XCTAssertTrue (retrievedEntity === collection.cachedEntity(id: id1)!)
-                XCTAssertEqual (id1.uuidString, retrievedEntity.getId().uuidString)
+                XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
                 XCTAssertEqual (5, retrievedEntity.getSchemaVersion()) // Schema version is taken from the collection, not the json
                 XCTAssertEqual (10, retrievedEntity.getVersion() )
                 switch retrievedEntity.getPersistenceState() {
@@ -100,7 +100,7 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
-        XCTAssertEqual (String (data: accessor.getData (name: collection.name, id: retrievedEntity1!.getId())!, encoding: .utf8), String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8))
+        XCTAssertEqual (String (data: accessor.getData (name: collection.name, id: retrievedEntity1!.id)!, encoding: .utf8), String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8))
         let id2 = UUID()
         let creationDateString2 = try jsonEncodedDate(date: Date())!
         let savedDateString2 = try jsonEncodedDate(date: Date())!
@@ -126,7 +126,7 @@ class InMemoryAccessorTests: XCTestCase {
                 } else {
                     XCTAssertTrue (entity === collection.cachedEntity(id: id2)!)
                     retrievedEntity2 = entity
-                    XCTAssertEqual (id2.uuidString, entity.getId().uuidString)
+                    XCTAssertEqual (id2.uuidString, entity.id.uuidString)
                     XCTAssertEqual (5, entity.getSchemaVersion()) // Schema version is taken from the collection, not the json
                     XCTAssertEqual (10, entity.getVersion() )
                     switch entity.getPersistenceState() {
@@ -172,13 +172,13 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (found2)
         // Test get and scan throwError
         accessor.setThrowError()
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.getId()) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
         case .error (let errorMessage):
             XCTAssertEqual ("Test Error", errorMessage)
         default:
             XCTFail("Expected .error")
         }
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.getId()) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
         case .ok:
             break
         default:
@@ -205,7 +205,7 @@ class InMemoryAccessorTests: XCTestCase {
         entity3.setSaved (Date())
         var prefetchUuid: String? = nil
         accessor.setPreFetch() { uuid in
-            if uuid.uuidString == entity3.getId().uuidString {
+            if uuid.uuidString == entity3.id.uuidString {
                 prefetchUuid = uuid.uuidString
             }
         }
@@ -222,15 +222,15 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         XCTAssertEqual (3, accessor.count(name: collection.name))
-        XCTAssertEqual (prefetchUuid!, entity3.getId().uuidString)
-        XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: entity3.getId())!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
-        XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.getId()))
+        XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
+        XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: entity3.id)!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
+        XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.id))
         prefetchUuid = nil
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection, id: entity3.getId()) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection, id: entity3.id) {
         case .ok (let retrievedEntity):
             XCTAssertTrue (retrievedEntity === entity3)
-            XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.getId()))
-            XCTAssertEqual (prefetchUuid!, entity3.getId().uuidString)
+            XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.id))
+            XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
         default:
             XCTFail ("Expected .ok")
         }
@@ -255,7 +255,7 @@ class InMemoryAccessorTests: XCTestCase {
                 if entity === entity3 {
                     found3 = true
                     XCTAssertTrue (entity === entity3)
-                    XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.getId())!)
+                    XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.id)!)
                 }
             }
         default:
@@ -289,7 +289,7 @@ class InMemoryAccessorTests: XCTestCase {
             switch closure() {
             case .ok:
                 XCTAssertEqual (4, accessor.count (name: collection.name))
-                XCTAssertTrue (accessor.has(name: collection.name, id: entity4.getId()))
+                XCTAssertTrue (accessor.has(name: collection.name, id: entity4.id))
                 
             default:
                 XCTFail ("Expected .ok")
@@ -300,29 +300,29 @@ class InMemoryAccessorTests: XCTestCase {
         // Test Remove with error and prefetch
         prefetchUuid = nil
         accessor.setPreFetch() { uuid in
-            if uuid.uuidString == entity4.getId().uuidString {
+            if uuid.uuidString == entity4.id.uuidString {
                 prefetchUuid = uuid.uuidString
             }
         }
         accessor.setThrowError()
         switch accessor.removeAction(wrapper: wrapper4) {
         case .error (let errorMessage):
-            XCTAssertEqual (prefetchUuid!, entity4.getId().uuidString)
+            XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
             XCTAssertEqual ("Test Error", errorMessage)
             XCTAssertEqual (4, accessor.count(name: collection.name))
-            XCTAssertTrue (accessor.has(name: collection.name, id: entity4.getId()))
+            XCTAssertTrue (accessor.has(name: collection.name, id: entity4.id))
         default:
             XCTFail ("Expected .error")
         }
         switch accessor.removeAction(wrapper: wrapper4) {
         case .ok (let closure):
-            XCTAssertEqual (prefetchUuid!, entity4.getId().uuidString)
+            XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
             accessor.setThrowError()
             switch closure() {
             case .error(let errorMessage):
-                XCTAssertEqual (prefetchUuid!, entity4.getId().uuidString)
+                XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
                 prefetchUuid = nil
                 XCTAssertEqual ("Test Error", errorMessage)
                 XCTAssertEqual(4, accessor.count(name: collection.name))
@@ -331,13 +331,13 @@ class InMemoryAccessorTests: XCTestCase {
             }
             switch closure() {
             case .ok:
-                XCTAssertEqual (prefetchUuid!, entity4.getId().uuidString)
+                XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
                 prefetchUuid = nil
                 XCTAssertEqual(3, accessor.count(name: collection.name))
-                XCTAssertFalse (accessor.has (name: collection.name, id: entity4.getId()))
-                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity1!.getId()))
-                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity2!.getId()))
-                XCTAssertTrue (accessor.has (name: collection.name, id: entity3.getId()))
+                XCTAssertFalse (accessor.has (name: collection.name, id: entity4.id))
+                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity1!.id))
+                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity2!.id))
+                XCTAssertTrue (accessor.has (name: collection.name, id: entity3.id))
             default:
                 XCTFail ("Expected .ok")
             }
