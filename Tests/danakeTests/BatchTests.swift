@@ -249,7 +249,7 @@ class BatchTests: XCTestCase {
         
         public func encode(to encoder: Encoder) throws {
             if !hasFired {
-                usleep(100000)
+                usleep(200000)
             }
             hasFired = true
         }
@@ -262,6 +262,10 @@ class BatchTests: XCTestCase {
         private var hasFired = false
     }
     
+    // This test is non-deterministic
+    // The timeout, SlowCodable delay, and retryInterval times are arbitrary
+    // If the processing associated with one of them happens to take longer than allotted
+    // the test may fail
     func testCommitWithBatchTimeout() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
@@ -270,7 +274,7 @@ class BatchTests: XCTestCase {
         let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
         let slowCollectionName: CollectionName = "slowCollection"
         let slowCollection = PersistentCollection<Database, SlowCodable>(database: database, name: slowCollectionName)
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(130000), timeout: .microseconds (50000), logger: logger)
+        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(400000), timeout: .microseconds (100000), logger: logger)
         let batchDelegateId = batch.delegateId().uuidString
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let slowCodable = SlowCodable()
