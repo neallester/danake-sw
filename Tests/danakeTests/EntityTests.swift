@@ -20,7 +20,7 @@ class EntityTests: XCTestCase {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
-        XCTAssertEqual (id.uuidString, entity1.getId().uuidString)
+        XCTAssertEqual (id.uuidString, entity1.id.uuidString)
         XCTAssertEqual (10, entity1.getVersion())
         XCTAssertEqual (5, entity1.getSchemaVersion())
         switch entity1.getPersistenceState() {
@@ -33,13 +33,13 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (100, item.myInt)
             XCTAssertEqual ("Test String 1", item.myString)
         }
-        XCTAssertTrue (entity1 === collection.cachedEntity(id: entity1.getId()))
+        XCTAssertTrue (entity1 === collection.cachedEntity(id: entity1.id))
         // Creation with itemClosure
         let id2 = UUID()
         let entity2 = Entity (collection: collection, id: id2, version: 20) { reference in
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
-        XCTAssertEqual (id2.uuidString, entity2.getId().uuidString)
+        XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
         XCTAssertEqual (20, entity2.getVersion())
         XCTAssertEqual (5, entity1.getSchemaVersion())
         switch entity2.getPersistenceState() {
@@ -50,9 +50,9 @@ class EntityTests: XCTestCase {
         }
         entity2.sync() { item in
             XCTAssertEqual (20, item.myInt)
-            XCTAssertEqual (entity2.getId().uuidString, item.myString)
+            XCTAssertEqual (entity2.id.uuidString, item.myString)
         }
-        XCTAssertTrue (entity2 === collection.cachedEntity(id: entity2.getId()))
+        XCTAssertTrue (entity2 === collection.cachedEntity(id: entity2.id))
     }
 
     func testSettersGetters() {
@@ -152,7 +152,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .dirty
@@ -177,7 +177,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .persistent
@@ -203,7 +203,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .abandoned
@@ -229,7 +229,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .pendingRemoval
@@ -255,7 +255,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .new
@@ -283,7 +283,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .dirty
@@ -311,7 +311,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .persistent
@@ -340,7 +340,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .abandoned
@@ -369,7 +369,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .pendingRemoval
@@ -398,7 +398,7 @@ class EntityTests: XCTestCase {
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual(0, entity.getVersion())
-            let retrievedEntity = entities[entity.getId()]! as! Entity<MyStruct>
+            let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
     }
@@ -444,7 +444,7 @@ class EntityTests: XCTestCase {
         decoder.userInfo[Database.collectionKey] = collection
         let entity1 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
         XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
-        XCTAssertEqual (id1.uuidString, entity1.getId().uuidString)
+        XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
         XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
         XCTAssertEqual (10, entity1.getVersion() )
         switch entity1.getPersistenceState() {
@@ -489,7 +489,7 @@ class EntityTests: XCTestCase {
         do {
             let entity2 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTAssertTrue (entity2 === collection.cachedEntity(id: id2)!)
-            XCTAssertEqual (id2.uuidString, entity2.getId().uuidString)
+            XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
             XCTAssertEqual (5, entity2.getSchemaVersion())
             XCTAssertEqual (10, entity2.getVersion() )
             switch entity2.getPersistenceState() {
@@ -509,7 +509,7 @@ class EntityTests: XCTestCase {
         do {
             let entity3 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTAssertTrue (entity3 === collection.cachedEntity(id: id3)!)
-            XCTAssertEqual (id3.uuidString, entity3.getId().uuidString)
+            XCTAssertEqual (id3.uuidString, entity3.id.uuidString)
             XCTAssertEqual (5, entity3.getSchemaVersion())
             XCTAssertEqual (10, entity3.getVersion() )
             switch entity3.getPersistenceState() {
@@ -611,7 +611,7 @@ class EntityTests: XCTestCase {
         do {
             let entity4 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTAssertTrue (entity4 === collection.cachedEntity(id: id4)!)
-            XCTAssertEqual (id4.uuidString, entity4.getId().uuidString)
+            XCTAssertEqual (id4.uuidString, entity4.id.uuidString)
             XCTAssertEqual (5, entity4.getSchemaVersion())
             XCTAssertEqual (10, entity4.getVersion() )
             switch entity4.getPersistenceState() {
@@ -633,7 +633,7 @@ class EntityTests: XCTestCase {
     func testAnyEntity() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let anyEntity: AnyEntity = AnyEntity (item: entity)
-        XCTAssertEqual (entity.getId(), anyEntity.getId())
+        XCTAssertEqual (entity.id, anyEntity.id)
         XCTAssertEqual (entity.getVersion(), anyEntity.getVersion())
         XCTAssertEqual (entity.getPersistenceState(), anyEntity.getPersistenceState())
         XCTAssertEqual (entity.getCreated(), anyEntity.getCreated())
@@ -643,7 +643,7 @@ class EntityTests: XCTestCase {
     func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.collection.name, item: entity)
-        XCTAssertEqual (entity.getId(), wrapper.getId())
+        XCTAssertEqual (entity.id, wrapper.id)
         XCTAssertEqual (entity.collection.name, wrapper.collectionName)
         let encoder = JSONEncoder()
         let entityData = try encoder.encode(entity)
@@ -845,7 +845,7 @@ class EntityTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
+            XCTAssertTrue (entity === entities[entity.id] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -864,7 +864,7 @@ class EntityTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
+            XCTAssertTrue (entity === entities[entity.id] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -883,7 +883,7 @@ class EntityTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
+            XCTAssertTrue (entity === entities[entity.id] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -902,7 +902,7 @@ class EntityTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
+            XCTAssertTrue (entity === entities[entity.id] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -926,7 +926,7 @@ class EntityTests: XCTestCase {
         }
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
-            XCTAssertTrue (entity === entities[entity.getId()] as! Entity<MyStruct>)
+            XCTAssertTrue (entity === entities[entity.id] as! Entity<MyStruct>)
         }
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
@@ -959,14 +959,14 @@ class EntityTests: XCTestCase {
     func testEntityReferenceData() {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let entity2 = newTestEntity(myInt: 20, myString: "20")
-        let data1 = EntityReferenceData (collection: entity.collection, id: entity.getId(), version: entity.getVersion())
-        var data2 = EntityReferenceData (collection: entity.collection, id: entity.getId(), version: entity.getVersion())
+        let data1 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.getVersion())
+        var data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.getVersion())
         XCTAssertEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity2.collection, id: entity.getId(), version: entity.getVersion())
+        data2 = EntityReferenceData (collection: entity2.collection, id: entity.id, version: entity.getVersion())
         XCTAssertNotEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity.collection, id: entity2.getId(), version: entity.getVersion())
+        data2 = EntityReferenceData (collection: entity.collection, id: entity2.id, version: entity.getVersion())
         XCTAssertNotEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity.collection, id: entity.getId(), version: 2)
+        data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: 2)
         XCTAssertNotEqual (data1, data2)
     }
     
@@ -991,7 +991,7 @@ class EntityTests: XCTestCase {
         data = entity.referenceData()
         XCTAssertEqual (entity.collection.database.accessor.hashValue(), data.databaseId)
         XCTAssertEqual (entity.collection.name, data.collectionName)
-        XCTAssertEqual (entity.getId(), data.id)
+        XCTAssertEqual (entity.id, data.id)
         XCTAssertEqual (entity.getVersion(), data.version)
     }
     

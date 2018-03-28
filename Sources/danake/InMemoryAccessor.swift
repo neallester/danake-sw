@@ -74,7 +74,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
             if let preFetch = preFetch {
-                preFetch (wrapper.getId())
+                preFetch (wrapper.id)
             }
             if throwError {
                 throwError = false
@@ -87,7 +87,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         do {
             let data = try self.encoder.encode (wrapper)
             let result = { () -> DatabaseUpdateResult in
-                return self.add (name: wrapper.collectionName, id: wrapper.getId(), data: data)
+                return self.add (name: wrapper.collectionName, id: wrapper.id, data: data)
             }
             return .ok (result)
         } catch {
@@ -103,7 +103,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
             if let preFetch = preFetch {
-                preFetch (wrapper.getId())
+                preFetch (wrapper.id)
             }
             if throwError {
                 throwError = false
@@ -114,7 +114,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             return errorResult
         }
         let result = { () -> DatabaseUpdateResult in
-            return self.remove(name: wrapper.collectionName, id: wrapper.getId())
+            return self.remove(name: wrapper.collectionName, id: wrapper.id)
         }
         return .ok (result)
     }

@@ -79,7 +79,7 @@ public class EventuallyConsistentBatch {
         if let logger = logger {
             delegate.sync() { entities in
                 for entity in entities.values {
-                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.getId()), (name: "entityPersistenceState", value: "\(entity.getPersistenceState())")])
+                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.id), (name: "entityPersistenceState", value: "\(entity.getPersistenceState())")])
                 }
             }
         }
@@ -103,7 +103,7 @@ public class EventuallyConsistentBatch {
 
     internal func insertAsync (entity: EntityManagement, closure: (() -> Void)?) {
         queue.async {
-            self.delegate.entities[entity.getId()] = entity
+            self.delegate.entities[entity.id] = entity
             if let closure = closure {
                 closure()
             }
@@ -112,7 +112,7 @@ public class EventuallyConsistentBatch {
     
     internal func insertSync (entity: EntityManagement, closure: (() -> Void)?) {
         queue.sync {
-            self.delegate.entities[entity.getId()] = entity
+            self.delegate.entities[entity.id] = entity
             if let closure = closure {
                 closure()
             }
@@ -167,18 +167,18 @@ fileprivate class BatchDelegate {
                             switch result {
                             case .ok:
                                 self.queue.sync {
-                                    let _ = self.entities.removeValue(forKey: entity.getId())
+                                    let _ = self.entities.removeValue(forKey: entity.id)
                                 }
                             case .unrecoverableError(_):
                                 self.queue.sync {
-                                    let _ = self.entities.removeValue(forKey: entity.getId())
+                                    let _ = self.entities.removeValue(forKey: entity.id)
                                 }
                                 logLevel = .error
                             case .error(_):
                                 logLevel = .emergency
                             }
                             if let logLevel = logLevel {
-                                self.logger?.log(level: logLevel, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "batchId", value: self.id.uuidString)])
+                                self.logger?.log(level: logLevel, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "batchId", value: self.id.uuidString)])
                             }
                             
                             
@@ -193,7 +193,7 @@ fileprivate class BatchDelegate {
             default:
                 self.queue.async {
                     for entity in self.entities.values {
-                        self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.getId().uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+                        self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
                     }
                     self.entities.removeAll()
                 }

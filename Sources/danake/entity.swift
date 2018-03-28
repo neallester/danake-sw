@@ -8,7 +8,7 @@ import Foundation
 
 public protocol EntityProtocol {
 
-    func getId() -> UUID
+    var id: UUID {get}
     func getVersion() -> Int
     func getPersistenceState() -> PersistenceState
     func getCreated() -> Date
@@ -70,11 +70,10 @@ public class AnyEntity : EntityProtocol {
     
     init (item: EntityProtocol) {
         self.item = item
+        self.id = item.id
     }
     
-    public func getId() -> UUID {
-        return item.getId()
-    }
+    public let id: UUID
     
     public func getVersion() -> Int {
         return item.getVersion()
@@ -105,6 +104,7 @@ public class EntityPersistenceWrapper : Encodable {
     init (collectionName: CollectionName, item: EntityManagement) {
         self.collectionName = collectionName
         self.item = item
+        self.id = item.id
     }
     
     // Not Thread Safe
@@ -112,9 +112,7 @@ public class EntityPersistenceWrapper : Encodable {
         try item.encode (to: encoder)
     }
     
-    public func getId() -> UUID {
-        return item.getId()
-    }
+    let id: UUID
     
     public let collectionName: CollectionName
     private let item: EntityManagement
