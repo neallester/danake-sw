@@ -38,6 +38,11 @@
                BlueprintName = "danakeTests"
                ReferencedContainer = "container:danake.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "BatchTests/testCommitWithBatchTimeout()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
       <AdditionalOptions>

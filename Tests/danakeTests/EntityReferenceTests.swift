@@ -413,4 +413,376 @@ class EntityReferenceTests: XCTestCase {
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         XCTAssertEqual (child.referenceData(), reference.getReference()!)
     }
+    
+    func testWillUpdate() {
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        let childId = UUID()
+        let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
+        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference.willUpdate(newId: nil) { willUpdate in
+            XCTAssertFalse (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference.willUpdate(newId: nil) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference.willUpdate(newId: nil) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference.willUpdate(newId: child.getId()) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference.willUpdate(newId: child.getId()) { willUpdate in
+            XCTAssertFalse (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference.willUpdate(newId: child.getId()) { willUpdate in
+            XCTAssertFalse (willUpdate)
+        }
+        let newID = UUID()
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference.willUpdate(newId: newID) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference.willUpdate(newId: newID) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference.willUpdate(newId: newID) { willUpdate in
+            XCTAssertTrue (willUpdate)
+        }
+    }
+    
+    public func testSetEntity() {
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var batch = EventuallyConsistentBatch()
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertNil (reference.parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertNil (reference.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(0, entities.count)
+        }
+        let entity1Id = UUID()
+        let entity1 = Entity (collection: collection, id: entity1Id, version: 10, item: MyStruct (myInt: 20, myString: "20"))
+        let entity2Id = UUID()
+        let entity2 = Entity (collection: collection, id: entity2Id, version: 10, item: MyStruct (myInt: 30, myString: "30"))
+        reference.set (entity: entity1, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity1)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        batch = EventuallyConsistentBatch()
+        reference.set (entity: entity1, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity1)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(0, entities.count)
+        }
+        reference.set (entity: entity2, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity2)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        batch = EventuallyConsistentBatch()
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        // Same again, with pending closure
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        batch = EventuallyConsistentBatch()
+        var retrievalResult: RetrievalResult<Entity<MyStruct>>? = nil
+        var waitFor = expectation(description: "waitFor1")
+        let closure: (RetrievalResult<Entity<MyStruct>>) -> () = { result in
+            retrievalResult = result
+            waitFor.fulfill()
+        }
+        reference.appendClosure(closure)
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertNil (reference.parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertNil (reference.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(0, entities.count)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertNil (retrievedEntity)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        waitFor = expectation(description: "waitFor2")
+        retrievalResult = nil
+        reference.appendClosure(closure)
+        reference.set (entity: entity1, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity1)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertTrue (retrievedEntity === entity1)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        waitFor = expectation(description: "waitFor3")
+        retrievalResult = nil
+        reference.appendClosure(closure)
+        batch = EventuallyConsistentBatch()
+        reference.set (entity: entity1, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity1)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(0, entities.count)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertTrue (retrievedEntity === entity1)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        waitFor = expectation(description: "waitFor4")
+        retrievalResult = nil
+        reference.appendClosure(closure)
+        reference.set (entity: entity2, batch: batch)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity === entity2)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertTrue (retrievedEntity === entity2)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        waitFor = expectation(description: "waitFor5")
+        retrievalResult = nil
+        reference.appendClosure(closure)
+        batch = EventuallyConsistentBatch()
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual(1, entities.count)
+            XCTAssertTrue (entities[parent.getId()] as! Entity<MyStruct> === parent)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertNil (retrievedEntity)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        waitFor = expectation(description: "waitFor6")
+        retrievalResult = nil
+        reference.appendClosure(closure)
+        reference.set (entity: nil, batch: batch)
+        reference.sync() { reference in
+            XCTAssertNil (reference.entity)
+            XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertTrue (reference.collection === entity2.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+            XCTAssertFalse (reference.isEager)
+            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch retrievalResult! {
+        case .ok (let retrievedEntity):
+            XCTAssertNil (retrievedEntity)
+        default:
+            XCTFail ("Expected .ok")
+        }
+    }
 }

@@ -122,6 +122,57 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         }
         return result
     }
+    
+    public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
+        queue.async {
+            let wasUpdated = self.willUpdate(newId: entity?.getId())
+            self.entity = entity
+            self.referenceData = nil
+            self.state = .loaded
+            for closure in self.pendingEntityClosures {
+                self.parentData.collection.database.workQueue.async {
+                    closure (.ok (entity))
+                }
+            }
+            if let entity = entity {
+                self.collection = entity.collection
+            }
+            self.pendingEntityClosures = []
+            if wasUpdated {
+                if self.parent == nil {
+                    let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
+                    if let parent = retrievalResult.item() {
+                        self.parent = parent
+                    } else {
+                        self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "set:entity", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
+                    }
+                }
+                if let parent = self.parent {
+                    batch.insertAsync(entity: parent, closure: nil)
+                }
+            }
+        }
+    }
+    
+    internal func willUpdate (newId: UUID?, closure: (Bool) -> ()) {
+        queue.sync {
+            closure (willUpdate (newId: newId))
+        }
+    }
+    
+    // Will setting an entity or referenceData with ** newId ** change the referenced entity?
+    // Not thread safe, must call within closure on queue
+    private func willUpdate (newId: UUID?) -> Bool {
+        if let newId = newId {
+            return
+                (self.entity == nil && self.referenceData == nil) ||
+                (self.entity != nil && self.entity?.getId().uuidString != newId.uuidString) ||
+                (self.referenceData != nil && self.referenceData?.id.uuidString != newId.uuidString)
+        } else {
+            return entity != nil || self.referenceData != nil
+        }
+
+    }
 
     private var entity: Entity<T>?
     private var parent: EntityManagement?
@@ -130,6 +181,8 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var collection: PersistentCollection<Database, T>?
     private var state: EntityReferenceState
     private let queue: DispatchQueue
+    private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
+    
     public let isEager: Bool
     
     static func queueName (collectionName: String) -> String {
@@ -138,10 +191,16 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     
     internal func sync (closure: (EntityReferenceContents<P, T>) -> ()) {
         queue.sync {
-            closure ((entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager))
+            closure ((entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count))
+        }
+    }
+    
+    internal func appendClosure (_ closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
+        queue.async {
+            self.pendingEntityClosures.append(closure)
         }
     }
     
 }
 
-internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<Database, T>?, state: EntityReferenceState, isEager: Bool)
+internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<Database, T>?, state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)
