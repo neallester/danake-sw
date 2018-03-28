@@ -23,7 +23,6 @@
 /* Begin PBXBuildFile section */
 		08028E272069F34300F8C57F /* EntityReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08028E252069A78800F8C57F /* EntityReference.swift */; };
 		08028E29206A9CFD00F8C57F /* EntityReferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08028E28206A9CFD00F8C57F /* EntityReferenceTests.swift */; };
-		08028E3F206C350000F8C57F /* DecoderWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08028E3D206C34CA00F8C57F /* DecoderWrapper.swift */; };
 		08569B6A2054440C0016502F /* EntityCommitNewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B692054440C0016502F /* EntityCommitNewTests.swift */; };
 		08569B6F2054481A0016502F /* database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B6B205445C30016502F /* database.swift */; };
 		08569B72205449DA0016502F /* common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B71205449DA0016502F /* common.swift */; };
@@ -65,7 +64,6 @@
 /* Begin PBXFileReference section */
 		08028E252069A78800F8C57F /* EntityReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityReference.swift; sourceTree = "<group>"; };
 		08028E28206A9CFD00F8C57F /* EntityReferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityReferenceTests.swift; sourceTree = "<group>"; };
-		08028E3D206C34CA00F8C57F /* DecoderWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecoderWrapper.swift; sourceTree = "<group>"; };
 		08569B692054440C0016502F /* EntityCommitNewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCommitNewTests.swift; sourceTree = "<group>"; };
 		08569B6B205445C30016502F /* database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = database.swift; sourceTree = "<group>"; };
 		08569B6D205447560016502F /* InMemoryAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryAccessor.swift; sourceTree = "<group>"; };
@@ -180,7 +178,6 @@
 				08569B6B205445C30016502F /* database.swift */,
 				08569B6D205447560016502F /* InMemoryAccessor.swift */,
 				08028E252069A78800F8C57F /* EntityReference.swift */,
-				08028E3D206C34CA00F8C57F /* DecoderWrapper.swift */,
 			);
 			name = danake;
 			path = Sources/danake;
@@ -302,7 +299,6 @@
 				08569B6F2054481A0016502F /* database.swift in Sources */,
 				08028E272069F34300F8C57F /* EntityReference.swift in Sources */,
 				08569B7320544D1E0016502F /* InMemoryAccessor.swift in Sources */,
-				08028E3F206C350000F8C57F /* DecoderWrapper.swift in Sources */,
 				0877F992201BF151004B05B8 /* batch.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
