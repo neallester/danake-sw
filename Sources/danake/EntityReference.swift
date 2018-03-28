@@ -65,8 +65,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
 
     public required init (from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        let parentData = decoder.userInfo[Database.parentDataKey] as? EntityReferenceData<P>
-        if let parentData = parentData {
+        if let parentContainer = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentData = parentContainer.data as? EntityReferenceData<P> {
             self.parentData = parentData
             self.isEager = try values.decode (Bool.self, forKey: .isEager)
             queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))

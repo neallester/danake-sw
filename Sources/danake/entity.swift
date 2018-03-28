@@ -65,6 +65,12 @@ struct PersistenceStatePair : Codable {
     
 }
 
+internal class DataContainer {
+    
+    var data: Any?
+    
+}
+
 // type erased access to the metadata for any Entity
 public class AnyEntity : EntityProtocol {
     
@@ -480,8 +486,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 self.id = id
                 self.collection = collection
                 schemaVersion = collection.database.schemaVersion
-                version = try values.decode(Int.self, forKey: .version)
-                item = try values.decode (T.self, forKey: .item)
+                let version = try values.decode(Int.self, forKey: .version)
+                self.version = version
+                if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer {
+                    container.data = EntityReferenceData (collection: collection, id: id, version: version)
+                    item = try values.decode (T.self, forKey: .item)
+                    container.data = nil
+                } else {
+                    item = try values.decode (T.self, forKey: .item)
+                }
                 created = try values.decode (Date.self, forKey: .created)
                 if values.contains(.saved) {
                     saved = try values.decode (Date.self, forKey: .saved)

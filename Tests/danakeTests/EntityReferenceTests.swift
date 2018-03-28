@@ -21,7 +21,9 @@ class EntityReferenceTests: XCTestCase {
         let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
-        decoder.userInfo[Database.parentDataKey] = parentData
+        let parentDataContainer = DataContainer()
+        parentDataContainer.data = parentData
+        decoder.userInfo[Database.parentDataKey] = parentDataContainer
         // Creation with entity
         var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
         reference.sync() { reference in

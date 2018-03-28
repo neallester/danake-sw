@@ -630,6 +630,74 @@ class EntityTests: XCTestCase {
         }
     }
     
+    func testDecodeEntityReference() throws {
+        
+        class EntityReferenceContainer : Codable {
+            
+            init (parentData: EntityReferenceData<EntityReferenceContainer>) {
+                entityReference = EntityReference<EntityReferenceContainer, MyStruct> (parent: parentData, entity: nil)
+            }
+            
+            internal let entityReference: EntityReference<EntityReferenceContainer, MyStruct>
+        }
+        
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let json = "{\"id\":\"438AF59B-0CC1-46C1-8C73-336BDC2AA606\",\"schemaVersion\":5,\"created\":543967928.51027906,\"item\":{\"entityReference\":{\"isEager\":false,\"isNil\":true}},\"version\":10,\"persistenceState\":\"persistent\"}"
+        let parentId = UUID (uuidString: "438AF59B-0CC1-46C1-8C73-336BDC2AA606")!
+        let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"databaseId\":\"\(accessor.hashValue())\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"collectionName\":\"childCollection\",\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
+        let parentId2 = UUID (uuidString: "BE6458D5-8762-4AEF-9748-94870B0BBCB1")!
+        let parentCollection = PersistentCollection<Database, EntityReferenceContainer> (database: database, name: "parentCollection")
+        let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
+        let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
+        let parent = parentCollection.get(id: parentId).item()!
+        var parentVersion = parent.getVersion()
+        parent.sync() { item in
+            XCTAssertNotNil(item.entityReference)
+            item.entityReference.sync() { reference in
+                XCTAssertNil (reference.entity)
+                XCTAssertNil (reference.parent)
+                XCTAssertTrue (reference.parentData.collection === parentCollection)
+                XCTAssertTrue (reference.parentData.id.uuidString == parent.id.uuidString)
+                XCTAssertEqual (parentVersion, reference.parentData.version)
+                XCTAssertNil (reference.referenceData)
+                switch reference.state {
+                case .loaded:
+                    break
+                default:
+                    XCTFail ("Expected .loaded")
+                }
+                XCTAssertFalse (reference.isEager)
+                XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            }
+
+        }
+        let parent2 = parentCollection.get(id: parentId2).item()!
+        parentVersion = parent2.getVersion()
+        parent2.sync() { item in
+            XCTAssertNotNil(item.entityReference)
+            item.entityReference.sync() { reference in
+                XCTAssertNil (reference.entity)
+                XCTAssertNil (reference.parent)
+                XCTAssertTrue (reference.parentData.collection === parentCollection)
+                XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
+                XCTAssertEqual (parentVersion, reference.parentData.version)
+                XCTAssertEqual (accessor.hashValue(), reference.referenceData!.databaseId)
+                XCTAssertEqual ("childCollection", reference.referenceData!.collectionName)
+                XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
+                XCTAssertEqual (3, reference.referenceData!.version)
+                switch reference.state {
+                case .decoded:
+                    break
+                default:
+                    XCTFail ("Expected .decoded")
+                }
+                XCTAssertFalse (reference.isEager)
+                XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            }
+        }
+    }
+    
     func testAnyEntity() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let anyEntity: AnyEntity = AnyEntity (item: entity)

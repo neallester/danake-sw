@@ -238,6 +238,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.collectionKey] = collection
+        result.userInfo[Database.parentDataKey] = DataContainer()
         return result
     }
     
