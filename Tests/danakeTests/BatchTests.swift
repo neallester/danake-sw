@@ -189,7 +189,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.unrecoverableError(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
 
@@ -237,7 +237,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("EMERGENCY|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
     
@@ -301,7 +301,7 @@ class BatchTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.id.uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|BatchDelegate.commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.id.uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
         }
     }
     
@@ -360,8 +360,8 @@ class BatchTests: XCTestCase {
             XCTAssertEqual (2, entries.count)
             var entryStrings = entries[0].asTestString()
             entryStrings.append(entries[1].asTestString())
-            XCTAssertTrue (entryStrings.contains("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity1IdString);entityPersistenceState=new"))
-            XCTAssertTrue (entryStrings.contains("ERROR|(BatchDelegate in _5AC4B1DA02E994E5118286AB05909266).deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity2IdString);entityPersistenceState=new"))
+            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity1IdString);entityPersistenceState=new"))
+            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity2IdString);entityPersistenceState=new"))
         }
     }
     

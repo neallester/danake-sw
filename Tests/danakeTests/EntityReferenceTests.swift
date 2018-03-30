@@ -306,7 +306,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.databaseId, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key databaseId (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"databaseId\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"databaseId\\\", intValue: nil) (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
         }
         // No databaseId
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
@@ -314,7 +314,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.databaseId, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key databaseId (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"databaseId\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"databaseId\\\", intValue: nil) (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal databaseId
         json = "{\"databaseId\":44,\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
@@ -322,7 +322,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.databaseId], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"databaseId\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
         }
         // No id
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
@@ -330,7 +330,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal id
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"AAA\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
@@ -346,7 +346,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.isEager, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key isEager (\\\"isEager\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"isEager\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"isEager\\\", intValue: nil) (\\\"isEager\\\").\", underlyingError: nil))", "\(error)")
         }
         // illegal isEager
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":\"what?\",\"collectionName\":\"myCollection\",\"version\":10}"
@@ -354,7 +354,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.isEager], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"isEager\", intValue: nil)], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing collectionName
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
@@ -362,7 +362,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.collectionName, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key collectionName (\\\"collectionName\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"collectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"collectionName\\\", intValue: nil) (\\\"collectionName\\\").\", underlyingError: nil))", "\(error)")
         }
         // illegal collectionName
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":false,\"version\":10}"
@@ -370,7 +370,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.collectionName], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"collectionName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing Version
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\"}"
@@ -378,7 +378,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.version, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key version (\\\"version\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Version
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":\"10\"}"
@@ -386,7 +386,7 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [danake.EntityReference<danakeTests.MyStruct, danakeTests.MyStruct>.CodingKeys.version], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"version\", intValue: nil)], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         // No parentData

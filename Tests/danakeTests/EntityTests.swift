@@ -473,7 +473,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
         }
         // Invalid id
         json = "{\"id\":\"AAA\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -530,7 +530,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.created, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key created (\\\"created\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"created\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"created\\\", intValue: nil) (\\\"created\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Created
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\"AAA\",\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -538,7 +538,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Double, Swift.DecodingError.Context(codingPath: [danake.Entity<danakeTests.MyStruct>.CodingKeys.created], debugDescription: \"Expected to decode Double but found a string/data instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.Double, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"created\", intValue: nil)], debugDescription: \"Expected to decode Double but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         // No Item
         // json = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -547,7 +547,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.item, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key item (\\\"item\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"item\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"item\\\", intValue: nil) (\\\"item\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Item
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"noInt\":100,\"noString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -555,7 +555,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danakeTests.MyStruct.(CodingKeys in _254DF1EB8F8A26790A8445B53E121042).myInt, Swift.DecodingError.Context(codingPath: [danake.Entity<danakeTests.MyStruct>.CodingKeys.item], debugDescription: \"No value associated with key myInt (\\\"myInt\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"myInt\", intValue: nil), Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"item\", intValue: nil)], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"myInt\\\", intValue: nil) (\\\"myInt\\\").\", underlyingError: nil))", "\(error)")
         }
         // No persistenceState
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"version\":10}"
@@ -563,7 +563,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.persistenceState, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key persistenceState (\\\"persistenceState\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"persistenceState\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"persistenceState\\\", intValue: nil) (\\\"persistenceState\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal persistence state
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"illegal\",\"version\":10}"
@@ -571,7 +571,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [danake.Entity<danakeTests.MyStruct>.CodingKeys.persistenceState], debugDescription: \"Cannot initialize PersistenceState from invalid String value illegal\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"persistenceState\", intValue: nil)], debugDescription: \"Cannot initialize PersistenceState from invalid String value illegal\", underlyingError: nil))", "\(error)")
         }
         // No version
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\"}"
@@ -579,7 +579,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.version, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key version (\\\"version\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal version
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":\"AAA\"}"
@@ -587,7 +587,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [danake.Entity<danakeTests.MyStruct>.CodingKeys.version], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"version\", intValue: nil)], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         // Illegal Json
         json = "\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -603,7 +603,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Double, Swift.DecodingError.Context(codingPath: [danake.Entity<danakeTests.MyStruct>.CodingKeys.saved], debugDescription: \"Expected to decode Double but found a string/data instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.Double, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"saved\", intValue: nil)], debugDescription: \"Expected to decode Double but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         // With Saved
         let savedDateString = try jsonEncodedDate(date: Date())!
