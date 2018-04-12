@@ -787,4 +787,465 @@ class EntityReferenceTests: XCTestCase {
             XCTFail ("Expected .ok")
         }
     }
+    
+    public func testAsync() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        // loaded nil
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        var wasNil = false
+        var waitFor = expectation(description: "wait1")
+        reference.async() { result in
+            switch result {
+            case .ok (let entity):
+                wasNil = (entity == nil)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        XCTAssert (wasNil)
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        let batch = EventuallyConsistentBatch()
+        // loaded not nil
+        let entity = collection.new (batch: batch, item: MyStruct (myInt: 20, myString: "20"))
+        reference.set(entity: entity, batch: batch)
+        var retrievedEntity: Entity<MyStruct>? = nil
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        waitFor = expectation(description: "wait2")
+        reference.async() { result in
+            switch result {
+            case .ok (let entity):
+                retrievedEntity = entity
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        XCTAssertTrue (entity === retrievedEntity)
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        // Decoded with valid reference
+        reference = EntityReference (parent: parentData, referenceData: entity.referenceData())
+        retrievedEntity = nil
+        reference.sync() { contents in
+            switch contents.state {
+            case .decoded:
+                break
+            default:
+                XCTFail ("Expected .decoded")
+            }
+        }
+        waitFor = expectation(description: "wait3")
+        reference.async() { result in
+            switch result {
+            case .ok (let entity):
+                retrievedEntity = entity
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        XCTAssertTrue (entity === retrievedEntity)
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        // Decoded with invalid reference
+        let invalidReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: UUID(), version: 1)
+        reference = EntityReference (parent: parentData, referenceData: invalidReferenceData)
+        reference.sync() { contents in
+            switch contents.state {
+            case .decoded:
+                break
+            default:
+                XCTFail ("Expected .decoded")
+            }
+        }
+        waitFor = expectation(description: "wait4")
+        reference.async() { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        var suspendSeconds: TimeInterval = 0.0
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrievalError(let suspendtime, let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                let now = Date()
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + reference.retryInterval - 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + reference.retryInterval + 1.0).timeIntervalSince1970)
+                suspendSeconds = suspendtime.timeIntervalSince1970
+            default:
+                XCTFail ("Expected .retrievalError")
+            }
+        }
+        // retrievalError during suspense period        
+        waitFor = expectation(description: "wait5")
+        reference.async() { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrievalError(let suspendtime, let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual (suspendSeconds, suspendtime.timeIntervalSince1970)
+            default:
+                XCTFail ("Expected .retrievalError")
+            }
+        }
+        // retrievalError after suspense period
+        let oldTime = Date (timeIntervalSince1970: Date().timeIntervalSince1970 - 1000.0)
+        reference.setState(state: .retrievalError(oldTime, "Test Error"))
+        waitFor = expectation(description: "wait6")
+        reference.async() { result in
+            switch result {
+            case .error(let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        suspendSeconds = 0.0
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrievalError(let suspendtime, let errorMessage):
+                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                let now = Date()
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + reference.retryInterval - 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + reference.retryInterval + 1.0).timeIntervalSince1970)
+                suspendSeconds = suspendtime.timeIntervalSince1970
+            default:
+                XCTFail ("Expected .retrievalError")
+            }
+        }
+        // retrievalError after suspense period; no subsequent retrieval error
+        var persistentUUID = UUID()
+        let creationDateString = try! jsonEncodedDate (date: Date())!
+        let savedDateString = try! jsonEncodedDate (date: Date())!
+        var json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        var persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        reference.setState(state: .retrievalError(oldTime, "Test Error"))
+        waitFor = expectation(description: "wait7")
+        reference.async() { result in
+            switch result {
+            case .ok(let retrievedEntity):
+                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        suspendSeconds = 0.0
+        reference.sync() { contents in
+            switch contents.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
+            }
+        }
+        // .retrieving with retrieval success
+        var semaphore = DispatchSemaphore(value: 1)
+        var preFetchCount = 0
+        var prefetch: (UUID) -> () = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        persistentUUID = UUID()
+        json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        
+        waitFor = expectation(description: "wait7")
+        reference.async() { result in
+            switch result {
+            case .ok(let retrievedEntity):
+                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+        var waitFor2 = expectation(description: "wait7a")
+        reference.async() { result in
+            switch result {
+            case .ok(let retrievedEntity):
+                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+                waitFor2.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+
+        semaphore.signal()
+        waitForExpectations(timeout: 10.0, handler: nil)
+        // .retrieving with retrieval failure
+        semaphore = DispatchSemaphore(value: 1)
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    accessor.setThrowError()
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        persistentUUID = UUID()
+        json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        
+        waitFor = expectation(description: "wait8")
+        reference.async() { result in
+            switch result {
+            case .error (let errorMessage):
+                XCTAssertEqual ("Test Error", errorMessage)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+        waitFor2 = expectation(description: "wait8a")
+        reference.async() { result in
+            switch result {
+            case .error (let errorMessage):
+                XCTAssertEqual ("Test Error", errorMessage)
+                waitFor2.fulfill()
+            default:
+                XCTFail ("Expected .error")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+        semaphore.signal()
+        waitForExpectations(timeout: 10.0, handler: nil)
+        // Obsolete callback
+        semaphore = DispatchSemaphore(value: 1)
+        preFetchCount = 0
+        prefetch = { id in
+            if preFetchCount == 1 {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    break
+                default:
+                    XCTFail ("Expected Success")
+                }
+                semaphore.signal()
+            }
+            preFetchCount = preFetchCount + 1
+            
+        }
+        accessor.setPreFetch (prefetch)
+        persistentUUID = UUID()
+        json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        waitFor = expectation(description: "wait9")
+        reference.async() { result in
+            switch result {
+            case .ok(let retrievedEntity):
+                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
+                waitFor.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+        waitFor2 = expectation(description: "wait9a")
+        reference.async() { result in
+            switch result {
+            case .ok(let retrievedEntity):
+                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
+                waitFor2.fulfill()
+            default:
+                XCTFail ("Expected .ok")
+            }
+        }
+        reference.sync() { contents in
+            switch contents.state {
+            case .retrieving (let data):
+                XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
+                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
+                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+            default:
+                XCTFail ("Expected .retrieving")
+            }
+        }
+        reference.set (entity: entity, batch: batch)
+        semaphore.signal()
+        waitForExpectations(timeout: 10.0, handler: nil)
+    }
+    
+    public func testGet() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        let creationDateString = try! jsonEncodedDate (date: Date())!
+        let savedDateString = try! jsonEncodedDate (date: Date())!
+        let entityId = UUID()
+        let json = "{\"id\":\"\(entityId.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        let _ = accessor.add(name: collection.name, id: entityId, data: json.data(using: .utf8)!)
+        let persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: entityId, version: 10)
+        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        switch reference.get() {
+        case .ok(let retrievedEntity):
+            XCTAssertEqual (entityId.uuidString, retrievedEntity!.id.uuidString)
+        default:
+            XCTFail ("Expected .ok")
+        }
+
+    }
 }

@@ -122,6 +122,107 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         return result
     }
     
+    public func async (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
+        queue.async {
+            switch self.state {
+            case .loaded:
+                let result = self.entity
+                self.parentData.collection.database.workQueue.async {
+                    closure (.ok (result))
+                }
+            case .decoded:
+                self.retrieve (closure: closure)
+            case .retrieving:
+                self.pendingEntityClosures.append(closure)
+            case .retrievalError(let retryTime, let errorMessage):
+                let now = Date()
+                if now.timeIntervalSince1970 > retryTime.timeIntervalSince1970 {
+                    self.retrieve (closure: closure)
+                } else {
+                    self.parentData.collection.database.workQueue.async {
+                        closure (.error (errorMessage))
+                    }
+                }
+            }
+        }
+    }
+    
+    public func get() -> RetrievalResult<Entity<T>> {
+        let group = DispatchGroup()
+        group .enter()
+        var result = RetrievalResult<Entity<T>>.error("timedOut")
+        async() { retrievalResult in
+            result = retrievalResult
+            group.leave()
+        }
+        group.wait()
+        return result
+    }
+    
+    // Not thread safe, must be called within queue
+    private func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
+        if let referenceData = self.referenceData {
+            if collection == nil {
+                if let database = Database.registrar.value(key: referenceData.databaseId) {
+                    if let candidateCollection = database.collectionRegistrar.value(key: referenceData.collectionName) {
+                        if let collection = candidateCollection as? PersistentCollection<Database, T> {
+                            self.collection = collection
+                        } else {
+                            closure (.error ("collectionName: \(referenceData.collectionName) returns wrong type: \(type (of: candidateCollection))"))
+                        }
+                    } else {
+                        closure (.error ("Unknown collectionName: \(referenceData.collectionName)"))
+                    }
+                } else {
+                    closure (.error ("Unknown databaseId: \(referenceData.databaseId)"))
+                }
+            }
+            if let collection = collection {
+                pendingEntityClosures.append(closure)
+                self.state = .retrieving (referenceData)
+                collection.get(id: referenceData.id) { retrievalResult in
+                    self.queue.async {
+                        switch self.state {
+                        case .retrieving (let pendingReferenceData):
+                            if referenceData.id.uuidString == pendingReferenceData.id.uuidString {
+                                var finalResult = retrievalResult
+                                let pendingClosures = self.pendingEntityClosures
+                                self.pendingEntityClosures = []
+                                switch retrievalResult {
+                                case .ok (let retrievedEntity):
+                                    if let retrievedEntity = retrievedEntity {
+                                        self.entity = retrievedEntity
+                                        self.state = .loaded
+                                    } else {
+                                        let errorMessage = "\(type (of: self)): Unknown id \(referenceData.id.uuidString)"
+                                        finalResult = .error (errorMessage)
+                                        self.state = .retrievalError (Date() + self.retryInterval, errorMessage)
+                                    }
+                                    
+                                case .error(let errorMessage):
+                                    self.state = .retrievalError (Date() + self.retryInterval, errorMessage)
+                                }
+                                collection.database.workQueue.async {
+                                    for closure in pendingClosures {
+                                        closure (finalResult)
+                                    }
+                                }
+                            }
+                        default:
+                            break
+                        }
+                        
+                    }
+                }
+            }
+        } else {
+            state = .loaded
+            self.parentData.collection.database.workQueue.async {
+                closure (.ok (nil))
+            }
+        }
+    }
+    
     public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
         queue.async {
             let wasUpdated = self.willUpdate(newId: entity?.id)
@@ -181,6 +282,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var state: EntityReferenceState
     private let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
+    public let retryInterval: TimeInterval = 120.0
     
     public let isEager: Bool
     
@@ -197,6 +299,12 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     internal func appendClosure (_ closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         queue.async {
             self.pendingEntityClosures.append(closure)
+        }
+    }
+    
+    internal func setState (state: EntityReferenceState) {
+        queue.sync {
+            self.state = state
         }
     }
     
