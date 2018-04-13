@@ -61,6 +61,11 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         }        
         self.isEager = isEager
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        if self.isEager {
+            queue.async {
+                self.retrieve() { result in}
+            }
+        }
     }
 
     public required init (from decoder: Decoder) throws {
@@ -84,6 +89,11 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                     throw EntityReferenceSerializationError.illegalId(idString)
                 }
                 state = .decoded
+            }
+            if self.isEager {
+                queue.async {
+                    self.retrieve() { result in}
+                }
             }
         } else {
             throw EntityReferenceSerializationError.noParentData
@@ -255,6 +265,9 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                 case .loaded, .decoded:
                     if let _ = referenceData {
                         self.state = .decoded
+                        if self.isEager {
+                            self.retrieve() { result in }
+                        }
                     } else {
                         self.state = .loaded
                     }
