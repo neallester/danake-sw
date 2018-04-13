@@ -239,24 +239,49 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             }
             self.pendingEntityClosures = []
             if wasUpdated {
-                if self.parent == nil {
-                    let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
-                    if let parent = retrievalResult.item() {
-                        self.parent = parent
+                self.addParentTo(batch: batch)
+            }
+        }
+    }
+
+    public func set (referenceData: EntityReferenceSerializationData?, batch: EventuallyConsistentBatch) {
+        queue.async {
+            let wasUpdated = self.willUpdate(newId: referenceData?.id)
+            if wasUpdated {
+                self.addParentTo(batch: batch)
+                self.entity = nil
+                self.referenceData = referenceData
+                switch self.state {
+                case .loaded, .decoded:
+                    if let _ = referenceData {
+                        self.state = .decoded
                     } else {
-                        self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "set:entity", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
+                        self.state = .loaded
                     }
-                }
-                if let parent = self.parent {
-                    batch.insertAsync(entity: parent, closure: nil)
+                case .retrieving, .retrievalError:
+                    self.retrieve() { result in }
                 }
             }
         }
     }
-    
+
     internal func willUpdate (newId: UUID?, closure: (Bool) -> ()) {
         queue.sync {
             closure (willUpdate (newId: newId))
+        }
+    }
+    
+    internal func addParentTo (batch: EventuallyConsistentBatch) {
+        if self.parent == nil {
+            let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
+            if let parent = retrievalResult.item() {
+                self.parent = parent
+            } else {
+                self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentToBatch", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
+            }
+        }
+        if let parent = self.parent {
+            batch.insertAsync(entity: parent, closure: nil)
         }
     }
     
