@@ -178,6 +178,7 @@ public enum EntityDeserializationError<T: Codable> : Error {
     case NoCollectionInDecoderUserInfo
     case alreadyCached (Entity<T>)
     case illegalId (String)
+    case missingUserInfoValue (CodingUserInfoKey)
 }
 
 /*

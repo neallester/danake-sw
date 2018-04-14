@@ -239,6 +239,9 @@ public class InMemoryAccessor: DatabaseAccessor {
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.collectionKey] = collection
         result.userInfo[Database.parentDataKey] = DataContainer()
+        if let closure = collection.getDeserializationEnvironmentClosure() {
+            closure (&result.userInfo)
+        }
         return result
     }
     

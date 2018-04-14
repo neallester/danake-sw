@@ -21,9 +21,15 @@ public class PersistentCollection<D: Database, T: Codable> {
     typealias entityType = T
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public init (database: D, name: CollectionName) {
+    public convenience init (database: D, name: CollectionName) {
+        self.init (database: database, name: name, deserializationEnvironmentClosure: nil)
+    }
+    
+    // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
+    public init (database: D, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?) {
         self.database = database
         self.name = name
+        self.deserializationEnvironmentClosure = deserializationEnvironmentClosure
         cache = Dictionary<UUID, WeakItem<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         self.workQueue = database.workQueue
@@ -34,6 +40,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         if !nameValidationResult.isOk() {
             database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.getAccessor()))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
         }
+
     }
 
     deinit {
@@ -179,7 +186,14 @@ public class PersistentCollection<D: Database, T: Codable> {
             closure (cache)
         }
     }
-
+// Deserialization Environment
+    
+    internal func getDeserializationEnvironmentClosure() -> ((inout [CodingUserInfoKey : Any]) -> ())? {
+        return deserializationEnvironmentClosure
+    }
+    
+    private let deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?
+    
 // Attributes
     
     internal let database: Database

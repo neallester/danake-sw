@@ -389,4 +389,82 @@ class InMemoryAccessorTests: XCTestCase {
         accessor.setThrowError (true)
         XCTAssertTrue (accessor.isThrowError())
     }
+
+    fileprivate class MyStructContainer : Codable {
+        
+        public required init (from decoder: Decoder) throws {
+            if let myStruct = decoder.userInfo[MyStructContainer.structKey] as? MyStruct {
+                self.myStruct = myStruct
+            } else {
+                throw EntityDeserializationError<MyStruct>.missingUserInfoValue(MyStructContainer.structKey)
+            }
+        }
+
+        let myStruct: MyStruct
+        
+        static let structKey = CodingUserInfoKey (rawValue: "struct")!
+    }
+    
+    func testGetWithDeserializationClosure() throws {
+        let creationDateString = try jsonEncodedDate(date: Date())!
+        let savedDateString = try jsonEncodedDate(date: Date())!
+        let id = UUID()
+        let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        var collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName)
+        let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
+        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>, id: id) {
+        case .error(let errorMessage):
+            XCTAssertEqual ("missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \"struct\"))", errorMessage)
+        default:
+            XCTFail ("Expected .error")
+        }
+        let myStruct = MyStruct (myInt: 10, myString: "10")
+        collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+            userInfo[MyStructContainer.structKey] = myStruct
+        }
+        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>, id: id) {
+        case .ok(let retrievedEntity):
+            retrievedEntity?.sync() { item in
+                XCTAssertEqual (10, item.myStruct.myInt)
+                XCTAssertEqual ("10", item.myStruct.myString)
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+
+    }
+    func testScanWithDeserializationClosure() throws {
+        let creationDateString = try jsonEncodedDate(date: Date())!
+        let savedDateString = try jsonEncodedDate(date: Date())!
+        let id = UUID()
+        let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        var collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName)
+        let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
+        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>) {
+        case .ok(let result):
+            XCTAssertEqual (0, result.count)
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let myStruct = MyStruct (myInt: 10, myString: "10")
+        collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+            userInfo[MyStructContainer.structKey] = myStruct
+        }
+        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>) {
+        case .ok(let result):
+            XCTAssertEqual (1, result.count)
+            result[0].sync() { item in
+                XCTAssertEqual (10, item.myStruct.myInt)
+                XCTAssertEqual ("10", item.myStruct.myString)
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+        
+    }
+
 }

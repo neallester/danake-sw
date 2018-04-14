@@ -11,6 +11,9 @@ import XCTest
 class PersistentCollectionTests: XCTestCase {
     
     func testCreation() {
+        
+        let myKey: CodingUserInfoKey = CodingUserInfoKey(rawValue: "myKey")!
+        
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
@@ -30,6 +33,19 @@ class PersistentCollectionTests: XCTestCase {
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (0, database.collectionRegistrar.count())
+        // Creation with closure
+        let deserializationClosure: (inout [CodingUserInfoKey : Any]) -> () = { userInfo in
+            userInfo[myKey] = "myValue"
+        }
+        collection = PersistentCollection<Database, MyStruct> (database: database, name: collectionName, deserializationEnvironmentClosure: deserializationClosure)
+        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertEqual (1, database.collectionRegistrar.count())
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+        }
+        var userInfo: [CodingUserInfoKey : Any] = [:]
+        collection?.getDeserializationEnvironmentClosure()!(&userInfo)
+        XCTAssertEqual ("myValue", userInfo[myKey] as! String)
     }
 
     func testCreationInvalidName() {
