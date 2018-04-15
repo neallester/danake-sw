@@ -36,6 +36,7 @@
 		0877F98F201BD20C004B05B8 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98B201BBBB5004B05B8 /* entity.swift */; };
 		0877F992201BF151004B05B8 /* batch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F990201BF074004B05B8 /* batch.swift */; };
 		0877F994201C0188004B05B8 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F993201C0188004B05B8 /* BatchTests.swift */; };
+		08827A222082A1480047387D /* ParallelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08827A212082A1480047387D /* ParallelTests.swift */; };
 		08A780952024E247001AC519 /* PersistentCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A780932024D903001AC519 /* PersistentCollection.swift */; };
 		08A78099202507CB001AC519 /* PersistentCollectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A78098202507CB001AC519 /* PersistentCollectionTests.swift */; };
 		08A7809E202E6505001AC519 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A7809D202E6505001AC519 /* LoggingTests.swift */; };
@@ -77,6 +78,7 @@
 		0877F98D201BCF68004B05B8 /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
 		0877F990201BF074004B05B8 /* batch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = batch.swift; sourceTree = "<group>"; };
 		0877F993201C0188004B05B8 /* BatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchTests.swift; sourceTree = "<group>"; };
+		08827A212082A1480047387D /* ParallelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallelTests.swift; sourceTree = "<group>"; };
 		08A780932024D903001AC519 /* PersistentCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentCollection.swift; sourceTree = "<group>"; };
 		08A78098202507CB001AC519 /* PersistentCollectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistentCollectionTests.swift; sourceTree = "<group>"; };
 		08A7809B202E63C1001AC519 /* logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logging.swift; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 				08569B7A205829B50016502F /* EntityCommitPendingRemovalTests.swift */,
 				0875DEE72060438300D6F137 /* EntityCommitTests.swift */,
 				08028E28206A9CFD00F8C57F /* EntityReferenceTests.swift */,
+				08827A212082A1480047387D /* ParallelTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -279,6 +282,7 @@
 				0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */,
 				08569B7520544E560016502F /* DatabaseTests.swift in Sources */,
 				08A78099202507CB001AC519 /* PersistentCollectionTests.swift in Sources */,
+				08827A222082A1480047387D /* ParallelTests.swift in Sources */,
 				0875DEE82060438300D6F137 /* EntityCommitTests.swift in Sources */,
 				08569B77205457EB0016502F /* InMemoryAccessorTests.swift in Sources */,
 				08569B6A2054440C0016502F /* EntityCommitNewTests.swift in Sources */,

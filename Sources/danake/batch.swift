@@ -181,7 +181,6 @@ fileprivate class BatchDelegate {
                                 self.logger?.log(level: logLevel, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "batchId", value: self.id.uuidString)])
                             }
                             
-                            
                             group.leave()
                         }
                     }

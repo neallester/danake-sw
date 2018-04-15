@@ -308,7 +308,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         will produce errors (i.e. RetrievalResult.error) when those references are accessed.
      */
     public func remove (batch: EventuallyConsistentBatch) {
-        queue.async {
+        queue.sync {
             batch.insertSync(entity: self) {
                 self.handleAction(.remove)
             }
