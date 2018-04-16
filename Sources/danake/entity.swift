@@ -279,15 +279,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 
 // Convention is Entity.queue -> Batch.queue
     
-    public func async (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
-        queue.async () {
-            batch.insertSync(entity: self) {
-                self.handleAction(.updateItem (closure))
-            }
-        }
-    }
-    
-    public func sync (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
+    public func update (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.sync {
             batch.insertSync (entity: self) {
                 self.handleAction(.updateItem (closure))

@@ -422,7 +422,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -552,7 +552,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -642,7 +642,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -748,7 +748,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -882,7 +882,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -996,7 +996,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1130,7 +1130,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1140,7 +1140,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1261,7 +1261,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1271,7 +1271,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1361,7 +1361,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -1371,7 +1371,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -1478,7 +1478,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("50", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 60
             item.myString = "60"
         }
@@ -1492,7 +1492,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 70
             item.myString = "70"
         }
@@ -1622,7 +1622,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1632,7 +1632,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1747,7 +1747,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -1761,7 +1761,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -1906,7 +1906,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -2036,7 +2036,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -2133,7 +2133,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -2245,7 +2245,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -2381,7 +2381,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -2502,7 +2502,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -2854,7 +2854,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -3088,7 +3088,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         // There is no timeout protection when building the pending removeAction closure
         // Timeout occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 10
             item.myString = "10"
         }
@@ -3554,7 +3554,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -3802,7 +3802,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         // There is no timeout protection when building the pending removeAction closure
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4032,7 +4032,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4163,7 +4163,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4258,7 +4258,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -4286,7 +4286,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch (nil)
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -4376,7 +4376,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("40", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -4510,7 +4510,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4539,7 +4539,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         // There is no timeout protection when building the pending removeAction closure
         // Timeout occurs when firing the pending removeAction closure
         accessor.setPreFetch (nil)
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4635,7 +4635,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }

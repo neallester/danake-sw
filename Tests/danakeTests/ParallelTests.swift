@@ -45,7 +45,6 @@ class ParallelTests: XCTestCase {
                 }
                 
             }
-
             var tests = [test1, test2, test3]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
@@ -124,6 +123,7 @@ class ParallelTests: XCTestCase {
         let myStructCollection: PersistentCollection<Database, MyStruct>
     }
     
+    // Create
     private static func myStructTest1 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch = EventuallyConsistentBatch()
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch)
@@ -133,6 +133,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
+    // Remove
     private static func myStructTest2 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch()
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -148,6 +149,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
+    // Update
     private static func myStructTest3 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch()
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -155,7 +157,7 @@ class ParallelTests: XCTestCase {
             let batch2 = EventuallyConsistentBatch()
             var counter = 1
             for myStruct in structs.structs {
-                myStruct.sync(batch: batch2) { item in
+                myStruct.update(batch: batch2) { item in
                     let newInt = item.myInt * 10
                     item.myInt = newInt
                     item.myString = "\(newInt)"                    

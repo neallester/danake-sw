@@ -442,7 +442,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -547,7 +547,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -635,7 +635,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -671,7 +671,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        entity.async(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -744,7 +744,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -855,7 +855,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -963,7 +963,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1077,7 +1077,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1087,7 +1087,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1192,7 +1192,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1202,7 +1202,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1290,7 +1290,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -1300,7 +1300,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -1336,7 +1336,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        entity.async(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -1409,7 +1409,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("50", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 60
             item.myString = "60"
         }
@@ -1419,7 +1419,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 70
             item.myString = "70"
         }
@@ -1530,7 +1530,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1540,7 +1540,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -1637,7 +1637,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -1647,7 +1647,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 50
             item.myString = "50"
         }
@@ -1768,7 +1768,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1880,7 +1880,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -1975,7 +1975,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -2011,7 +2011,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        entity.async(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -2091,7 +2091,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -2209,7 +2209,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -2313,7 +2313,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        entity.async (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -2546,7 +2546,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending removeAction closure
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
@@ -2652,7 +2652,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
@@ -2851,7 +2851,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // There is no timeout protection for building removeAction closure
         // Timeout occurs when firing the pending removeAction closure
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
@@ -3178,7 +3178,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending removeAction closure
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
@@ -3291,7 +3291,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
@@ -3504,7 +3504,7 @@ class EntityCommitNewTests: XCTestCase {
         // There is no timeout protection for building the removeAction closure
         // Error occurs when firing the pending removeAction closure
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 10
             item.myString = "10"
         }
@@ -3700,7 +3700,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -3812,7 +3812,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -3839,7 +3839,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending removeAction closure
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
         }
@@ -3910,7 +3910,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }
@@ -3955,7 +3955,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         preFetchCount = 0
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
         }
@@ -4027,7 +4027,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 40
             item.myString = "40"
         }
@@ -4150,7 +4150,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         let batch = EventuallyConsistentBatch()
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4178,7 +4178,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // There is no timeout protection when building the pending removeAction closure
         // Error occurs when firing the pending removeAction closure
-        entity.sync(batch: batch) { item in
+        entity.update(batch: batch) { item in
             item.myInt = 20
             item.myString = "20"
         }
@@ -4258,7 +4258,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        entity.sync (batch: batch) { item in
+        entity.update (batch: batch) { item in
             item.myInt = 30
             item.myString = "30"
         }

@@ -132,7 +132,7 @@ class EntityTests: XCTestCase {
             XCTFail("Expected .new")
         }
         // sync: persistentState = .new
-        entity.sync(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 10
             item.myString = "10"
         }
@@ -158,7 +158,7 @@ class EntityTests: XCTestCase {
         // sync: persistentState = .dirty
         entity.setPersistenceState(.dirty)
         batch = EventuallyConsistentBatch()
-        entity.sync(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
         }
@@ -183,7 +183,7 @@ class EntityTests: XCTestCase {
         // sync: persistentState = .persistent
         entity.setPersistenceState(.dirty)
         batch = EventuallyConsistentBatch()
-        entity.sync(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
         }
@@ -209,7 +209,7 @@ class EntityTests: XCTestCase {
         // sync: persistentState = .abandoned
         entity.setPersistenceState(.abandoned)
         batch = EventuallyConsistentBatch()
-        entity.sync(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
         }
@@ -235,7 +235,7 @@ class EntityTests: XCTestCase {
         // sync: persistentState = .pendingRemoval
         entity.setPersistenceState(.pendingRemoval)
         batch = EventuallyConsistentBatch()
-        entity.sync(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
         }
@@ -261,7 +261,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .new
         entity.setPersistenceState(.new)
         var waitFor = expectation(description: ".new")
-        entity.async(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 10
             item.myString = "10"
             waitFor.fulfill()
@@ -290,7 +290,7 @@ class EntityTests: XCTestCase {
         waitFor = expectation(description: ".dirty")
         entity.setPersistenceState(.dirty)
         batch = EventuallyConsistentBatch()
-        entity.async(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
             waitFor.fulfill()
@@ -318,7 +318,7 @@ class EntityTests: XCTestCase {
         waitFor = expectation(description: ".persistetnt")
         entity.setPersistenceState(.dirty)
         batch = EventuallyConsistentBatch()
-        entity.async(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
             waitFor.fulfill()
@@ -347,7 +347,7 @@ class EntityTests: XCTestCase {
         waitFor = expectation(description: ".abandoned")
         entity.setPersistenceState(.abandoned)
         batch = EventuallyConsistentBatch()
-        entity.async(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
             waitFor.fulfill()
@@ -376,7 +376,7 @@ class EntityTests: XCTestCase {
         waitFor = expectation(description: ".pendingRemoval")
         entity.setPersistenceState(.pendingRemoval)
         batch = EventuallyConsistentBatch()
-        entity.async(batch: batch) { (item: inout MyStruct) in
+        entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
             waitFor.fulfill()

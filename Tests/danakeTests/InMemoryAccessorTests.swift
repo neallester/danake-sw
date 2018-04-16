@@ -83,7 +83,7 @@ class InMemoryAccessorTests: XCTestCase {
         }
         // Update
         let batch = EventuallyConsistentBatch()
-        retrievedEntity1!.sync(batch: batch) { item in
+        retrievedEntity1!.update(batch: batch) { item in
             item.myInt = 11
             item.myString = "11"
         }
