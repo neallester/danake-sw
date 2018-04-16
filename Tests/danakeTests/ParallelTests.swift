@@ -19,17 +19,34 @@ class ParallelTests: XCTestCase {
         var testCount = 0
         while testCount < repetitions {
             var persistenceObjects = ParallelTestPersistence (accessor: accessor)
+            let resultQueue = DispatchQueue (label: "results")
             let testDispatcher = DispatchQueue (label: "testDispatcher", attributes: .concurrent)
             let testGroup = DispatchGroup()
-            var test1Results: [UUID] = []
-            var test2Results: [UUID] = []
+            var test1Results: [[UUID]] = []
+            var test2Results: [[UUID]] = []
+            var test3Results: [[UUID]] = []
             let test1 = {
-                test1Results = ParallelTests.myStructTest1(persistenceObjects: persistenceObjects, group: testGroup)
+                let result = ParallelTests.myStructTest1(persistenceObjects: persistenceObjects, group: testGroup)
+                resultQueue.async {
+                    test1Results.append (result)
+                }
             }
             let test2 = {
-                test2Results = ParallelTests.myStructTest2(persistenceObjects: persistenceObjects, group: testGroup)
+                let result = ParallelTests.myStructTest2(persistenceObjects: persistenceObjects, group: testGroup)
+                resultQueue.async {
+                    test2Results.append (result)
+                }
+                
             }
-            var tests = [test1, test2]
+            let test3 = {
+                let result = ParallelTests.myStructTest3(persistenceObjects: persistenceObjects, group: testGroup)
+                resultQueue.async {
+                    test3Results.append (result)
+                }
+                
+            }
+
+            var tests = [test1, test2, test3]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
                 let itemToRemove = Int (arc4random_uniform(UInt32(tests.count)))
@@ -42,27 +59,54 @@ class ParallelTests: XCTestCase {
             }
             testGroup.wait()
             persistenceObjects = ParallelTestPersistence (accessor: accessor)
+            XCTAssertEqual (1, test1Results.count)
+            XCTAssertEqual (1, test2Results.count)
             // Test 1
-            XCTAssertEqual (6, test1Results.count)
-            var counter = 1
-            for uuid in test1Results {
-                let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
-                entity.sync { myStruct in
-                    XCTAssertEqual (counter * 10, myStruct.myInt)
+            for testResult in test1Results {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
+                    entity.sync { myStruct in
+                        let expectedInt = counter * 10
+                        XCTAssertEqual (expectedInt, myStruct.myInt)
+                        XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
                 }
-                switch entity.getPersistenceState() {
-                case .persistent:
-                    break
-                default:
-                    XCTFail ("Expected .persistent")
-                }
-                counter = counter + 1
             }
-            testCount = testCount + 1
             // Test 2
-            XCTAssertEqual(6, test2Results.count)
-            for uuid in test2Results {
-                XCTAssertNil (persistenceObjects.myStructCollection.get(id: uuid).item())
+            for testResult in test2Results {
+                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                for uuid in testResult {
+                    XCTAssertNil (persistenceObjects.myStructCollection.get(id: uuid).item())
+                }
+            }
+            // Test 3
+            for testResult in test3Results {
+                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
+                    entity.sync { myStruct in
+                        let expectedInt = counter * 100
+                        XCTAssertEqual (expectedInt, myStruct.myInt)
+                        XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
             }
             testCount = testCount + 1
         }
@@ -82,40 +126,64 @@ class ParallelTests: XCTestCase {
     
     private static func myStructTest1 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch = EventuallyConsistentBatch()
-        let s1 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 10, myString: "10"))
-        let s2 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 20, myString: "20"))
-        let s3 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 30, myString: "30"))
-        let s4 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 40, myString: "40"))
-        let s5 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 50, myString: "50"))
-        let s6 = persistenceObjects.myStructCollection.new(batch: batch, item: MyStruct (myInt: 60, myString: "60"))
+        let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch)
         batch.commit() {
             group.leave()
         }
-        return [s1.id, s2.id, s3.id, s4.id, s5.id, s6.id]
+        return structs.ids
     }
 
     private static func myStructTest2 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch()
-        let s1 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 10, myString: "10"))
-        let s2 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 20, myString: "20"))
-        let s3 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 30, myString: "30"))
-        let s4 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 40, myString: "40"))
-        let s5 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 50, myString: "50"))
-        let s6 = persistenceObjects.myStructCollection.new(batch: batch1, item: MyStruct (myInt: 60, myString: "60"))
-        let result = [s1.id, s2.id, s3.id, s4.id, s5.id, s6.id]
+        let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
         batch1.commit() {
             let batch2 = EventuallyConsistentBatch()
-            s1.remove(batch: batch2)
-            s2.remove(batch: batch2)
-            s3.remove(batch: batch2)
-            s4.remove(batch: batch2)
-            s5.remove(batch: batch2)
-            s6.remove(batch: batch2)
+            for myStruct in structs.structs {
+                myStruct.remove (batch: batch2)
+            }
             batch2.commit() {
                 group.leave()
             }
         }
-        return result
+        return structs.ids
     }
+
+    private static func myStructTest3 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch()
+        let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+        batch1.commit() {
+            let batch2 = EventuallyConsistentBatch()
+            var counter = 1
+            for myStruct in structs.structs {
+                myStruct.sync(batch: batch2) { item in
+                    let newInt = item.myInt * 10
+                    item.myInt = newInt
+                    item.myString = "\(newInt)"                    
+                }
+                counter = counter + 1
+            }
+            batch2.commit() {
+                group.leave()
+            }
+        }
+        return structs.ids
+    }
+    
+    private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
+        var counter = 1
+        var structs: [Entity<MyStruct>] = []
+        var ids: [UUID] = []
+        while counter <= myStructCount {
+            let myInt = 10 * counter
+            let myString = "\(myInt)"
+            let newEntity = persistenceObjects.myStructCollection.new (batch: batch, item: MyStruct (myInt: myInt, myString: myString))
+            structs.append (newEntity)
+            ids.append (newEntity.id)
+            counter = counter + 1
+        }
+        return (structs: structs, ids: ids)
+    }
+    
+    private static let myStructCount = 6
 
 }
