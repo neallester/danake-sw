@@ -88,8 +88,8 @@ struct LogEntry {
     
 }
 
-class InMemoryLogger : Logger {
-    
+class ThreadSafeLogger : Logger {
+
     init() {
         level = .debug
     }
@@ -101,9 +101,22 @@ class InMemoryLogger : Logger {
     func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         if (level >= self.level) {
             queue.async () {
-                self.entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
+                self.logImplementation(level: level, source: source, featureName: featureName, message: message, data: data)
             }
         }
+    }
+    
+    let level: LogLevel
+
+    fileprivate func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {}
+    
+    fileprivate let queue = DispatchQueue (label: UUID().uuidString)
+}
+
+class InMemoryLogger : ThreadSafeLogger {
+    
+    override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+        entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
     }
     
     func sync (closure: ([LogEntry]) -> Void) {
@@ -112,10 +125,24 @@ class InMemoryLogger : Logger {
         }
     }
     
-    let level: LogLevel
-    
     private var entries: [LogEntry] = []
-    private let queue = DispatchQueue (label: UUID().uuidString)
     
 }
+
+class ConsoleLogger : ThreadSafeLogger {
+    
+    override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+        print (LogEntry (level: level, source: source, featureName: featureName, message: message, data: data).asTestString())
+    }
+    
+    func sync (closure: ([LogEntry]) -> Void) {
+        queue.sync () {
+            closure (self.entries)
+        }
+    }
+    
+    private var entries: [LogEntry] = []
+    
+}
+
 
