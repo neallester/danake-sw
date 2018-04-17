@@ -381,18 +381,22 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             collection.database.workQueue.async {
                 let group = DispatchGroup()
                 group.enter()
+                var timedOut = false
                 self.collection.database.workQueue.async {
                     let tempResult = action()
                     self.queue.sync {
-                        result = tempResult
+                        if !timedOut {
+                            result = tempResult
+                            group.leave()
+                        }
                     }
-                    group.leave()
                 }
                 self.collection.database.workQueue.async {
                     self.timeoutTestingHook()
                     let _ = group.wait(timeout: DispatchTime.now() + timeout)
                     self.queue.async {
                         if result == nil {
+                            timedOut = true
                             result = .error ("Entity.commit():timedOut:\(timeout)")
                         }
                         if let result = result {

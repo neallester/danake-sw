@@ -272,10 +272,10 @@ class EntityReferenceTests: XCTestCase {
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         waitFor = expectation(description: "wait1")
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.appendClosure() { result in
+        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
             waitFor.fulfill()
         }
+        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
@@ -291,6 +291,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         waitForExpectations(timeout: 10, handler: nil)
+        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
             XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
             XCTAssertNil (reference.parent)
@@ -439,10 +440,10 @@ class EntityReferenceTests: XCTestCase {
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         waitFor = expectation(description: "wait3")
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.appendClosure() { result in
+        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
             waitFor.fulfill()
         }
+        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
@@ -458,6 +459,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         waitForExpectations(timeout: 10, handler: nil)
+        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
             XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
             XCTAssertNil (reference.parent)
@@ -475,10 +477,10 @@ class EntityReferenceTests: XCTestCase {
         // Decoding with isNil:false
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
         waitFor = expectation(description: "wait4")
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.appendClosure() { result in
+        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
             waitFor.fulfill()
         }
+        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
@@ -494,6 +496,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         waitForExpectations(timeout: 10, handler: nil)
+        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
             XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
             XCTAssertNil (reference.parent)

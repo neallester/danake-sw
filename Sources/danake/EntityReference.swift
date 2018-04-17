@@ -90,6 +90,9 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                 }
                 state = .decoded
             }
+            if let closureContainer = decoder.userInfo[Database.initialClosureKey] as? ClosureContainer<T> {
+                pendingEntityClosures.append(closureContainer.closure)
+            }
             if self.isEager {
                 queue.async {
                     self.retrieve() { result in}
@@ -345,6 +348,16 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             self.state = state
         }
     }
+    
+}
+
+internal struct ClosureContainer<T: Codable> {
+    
+    init (_ closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
+        self.closure = closure
+    }
+    
+    let closure: (RetrievalResult<Entity<T>>) -> ()
     
 }
 

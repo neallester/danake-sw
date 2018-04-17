@@ -941,7 +941,7 @@ class EntityCommitNewTests: XCTestCase {
             case .dirty:
                 break
             default:
-                XCTFail ("Expected .dirty")
+                XCTFail ("Expected .dirty but got \(entity.getPersistenceState())")
             }
             XCTAssertEqual (1, entity.getVersion())
             entity.sync() { item in
