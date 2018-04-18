@@ -247,7 +247,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
-    // Remove
+    // Create -> Remove
     private static func myStructTest2 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -265,7 +265,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
-    // Remove
+    // Create || Remove
     private static func myStructTest2p (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -290,6 +290,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
     
+    // Remove (already existing)
     private static func myStructTest2r (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
         let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let internalGroup = DispatchGroup()
@@ -312,7 +313,7 @@ class ParallelTests: XCTestCase {
     }
 
 
-    // Update
+    // Create -> Update
     private static func myStructTest3 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -336,6 +337,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
+    // Create || Update
     private static func myStructTest3p (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -364,6 +366,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
     
+    // Update (already existing)
     private static func myStructTest3r (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
         let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let internalGroup = DispatchGroup()
@@ -388,18 +391,7 @@ class ParallelTests: XCTestCase {
         }
     }
     
-    private static func executeOnMyStruct (persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStruct>) -> ()) {
-        persistenceObjects.myStructCollection.get(id: id) { retrievalResult in
-            if let retrievedEntity = retrievalResult.item() {
-                closure (retrievedEntity)
-                group.leave()
-            } else {
-                executeOnMyStruct(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
-            }
-        }
-    }
-    
-    // Update or Edit
+    // Create -> Update || Remove
     private static func myStructTest4 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -439,6 +431,7 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
+    // Create -> Update || Remove (separate batches)
     private static func myStructTest4b (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
         let structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
@@ -486,7 +479,6 @@ class ParallelTests: XCTestCase {
         return structs.ids
     }
 
-
     private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
         var counter = 1
         var structs: [Entity<MyStruct>] = []
@@ -504,6 +496,17 @@ class ParallelTests: XCTestCase {
         return (structs: structs, ids: ids)
     }
     
+    private static func executeOnMyStruct (persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStruct>) -> ()) {
+        persistenceObjects.myStructCollection.get(id: id) { retrievalResult in
+            if let retrievedEntity = retrievalResult.item() {
+                closure (retrievedEntity)
+                group.leave()
+            } else {
+                executeOnMyStruct(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
+            }
+        }
+    }
+
     private static let myStructCount = 6
 
 }
