@@ -1545,8 +1545,6 @@ class EntityCommitDirtyTests: XCTestCase {
             let _ = try accessor.decoder (collection: collection).decode(Entity<MyStruct>.self, from: accessor.getData(name: collectionName, id: id)!)
             XCTFail ("Expected exception")
         } catch EntityDeserializationError<MyStruct>.alreadyCached(let cachedEntity) {
-            print (cachedEntity.id.uuidString)
-            print (entity.id.uuidString)
             XCTAssertTrue (cachedEntity === entity)
         } catch {
             print (error)
