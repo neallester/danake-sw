@@ -189,7 +189,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
 
@@ -237,7 +237,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: collectionName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"Test Error\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
         }
     }
     

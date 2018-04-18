@@ -27,7 +27,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
         queue.sync() {
             if self.throwError {
-                errorMessage = "Test Error"
+                errorMessage = "getError"
                 self.throwError = false
             } else if let collectionDictionary = storage[collection.name] {
                 let data = collectionDictionary[id]
@@ -52,7 +52,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         var result = DatabaseAccessListResult<Entity<T>>.ok (resultList)
         queue.sync {
             if self.throwError {
-                result = .error ("Test Error")
+                result = .error ("scanError")
                 self.throwError = false
             } else if let collectionDictionary = storage [collection.name] {
                 resultList.reserveCapacity (collectionDictionary.count)
@@ -76,9 +76,9 @@ public class InMemoryAccessor: DatabaseAccessor {
             if let preFetch = preFetch {
                 preFetch (wrapper.id)
             }
-            if throwError {
+            if throwError && !throwOnlyRecoverableErrors {
                 throwError = false
-                errorResult = .error ("Test Error")
+                errorResult = .error ("addActionError")
             }
         }
         if let errorResult = errorResult {
@@ -105,9 +105,9 @@ public class InMemoryAccessor: DatabaseAccessor {
             if let preFetch = preFetch {
                 preFetch (wrapper.id)
             }
-            if throwError {
+            if throwError && !throwOnlyRecoverableErrors {
                 throwError = false
-                errorResult = .error ("Test Error")
+                errorResult = .error ("removeActionError")
             }
         }
         if let errorResult = errorResult {
@@ -142,7 +142,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             }
             if throwError {
                 throwError = false
-                result = .error ("Test Error")
+                result = .error ("addError")
             } else {
                 if self.storage[name] == nil {
                     let collectionDictionary = Dictionary<UUID, Data>()
@@ -162,7 +162,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             }
             if throwError {
                 throwError = false
-                result = .error ("Test Error")
+                result = .error ("removeError")
             } else {
                 self.storage[name]?[id] = nil
             }
@@ -209,6 +209,13 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
+    public func setThrowOnlyRecoverableErrors (_ throwRecoverableErrors: Bool) {
+        queue.async {
+            self.throwOnlyRecoverableErrors = throwRecoverableErrors
+        }
+        
+    }
+    
     public func isThrowError() -> Bool {
         var result = false
         queue.sync {
@@ -247,6 +254,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     private var preFetch: ((UUID) -> Void)? = nil
     internal var throwError = false
+    internal var throwOnlyRecoverableErrors = false
     private var storage = Dictionary<CollectionName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue

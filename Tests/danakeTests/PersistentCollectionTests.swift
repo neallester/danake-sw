@@ -233,14 +233,14 @@ class PersistentCollectionTests: XCTestCase {
         accessor.setThrowError()
         switch collection.get(id: entity3.id) {
         case .error (let errorMessage):
-            XCTAssertEqual ("Test Error", errorMessage)
+            XCTAssertEqual ("getError", errorMessage)
         default:
             XCTFail("Expected .error")
         }
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=Test Error", entry)
+            XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=getError", entry)
         }
     }
     
@@ -966,14 +966,14 @@ class PersistentCollectionTests: XCTestCase {
             accessor.setThrowError()
             switch collection.scan(criteria: nil) {
             case .error (let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("scanError", errorMessage)
             default:
                 XCTFail("Expected .error")
             }
             logger.sync() { entries in
                 XCTAssertEqual (1, entries.count)
                 let entry = entries[0].asTestString()
-                XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=Test Error", entry)
+                XCTAssertEqual ("EMERGENCY|PersistentCollection<Database, MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
             }
         }
     }

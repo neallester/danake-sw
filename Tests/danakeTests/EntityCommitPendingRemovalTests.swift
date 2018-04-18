@@ -64,7 +64,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -139,7 +139,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -521,7 +521,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -611,7 +611,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -717,7 +717,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1230,7 +1230,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1330,7 +1330,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -1447,7 +1447,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1998,7 +1998,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2095,7 +2095,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -2208,7 +2208,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2721,7 +2721,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3406,7 +3406,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -4132,7 +4132,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("removeError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }

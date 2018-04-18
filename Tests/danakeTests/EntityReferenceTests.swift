@@ -1804,7 +1804,7 @@ class EntityReferenceTests: XCTestCase {
         reference.async() { result in
             switch result {
             case .error (let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("getError", errorMessage)
                 waitFor.fulfill()
             default:
                 XCTFail ("Expected .error")
@@ -1825,7 +1825,7 @@ class EntityReferenceTests: XCTestCase {
         reference.async() { result in
             switch result {
             case .error (let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("getError", errorMessage)
                 waitFor2.fulfill()
             default:
                 XCTFail ("Expected .error")

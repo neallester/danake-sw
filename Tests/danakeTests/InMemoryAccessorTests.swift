@@ -174,7 +174,7 @@ class InMemoryAccessorTests: XCTestCase {
         accessor.setThrowError()
         switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
         case .error (let errorMessage):
-            XCTAssertEqual ("Test Error", errorMessage)
+            XCTAssertEqual ("getError", errorMessage)
         default:
             XCTFail("Expected .error")
         }
@@ -188,7 +188,7 @@ class InMemoryAccessorTests: XCTestCase {
         accessor.setThrowError()
         switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
         case .error(let errorMessage):
-            XCTAssertEqual ("Test Error", errorMessage)
+            XCTAssertEqual ("scanError", errorMessage)
         default:
             XCTFail ("Expected .error")
 
@@ -199,6 +199,37 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
+        // Test get and scan throwError with setThrowOnlyRecoverableErrors (true)
+        accessor.setThrowOnlyRecoverableErrors(true)
+        accessor.setThrowError()
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        case .error (let errorMessage):
+            XCTAssertEqual ("getError", errorMessage)
+        default:
+            XCTFail("Expected .error")
+        }
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        
+        accessor.setThrowError()
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        case .error(let errorMessage):
+            XCTAssertEqual ("scanError", errorMessage)
+        default:
+            XCTFail ("Expected .error")
+            
+        }
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        accessor.setThrowOnlyRecoverableErrors(false)
         // Second Entity added public add
         // Also test preFetch
         let entity3 = collection.new(batch: batch, item: MyStruct (myInt: 30, myString: "A String 3"))
@@ -265,24 +296,24 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (found2)
         XCTAssertTrue (found3)
         // Public add with errors
-        let entity4 = collection.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
+        var entity4 = collection.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
         entity4.setSaved (Date())
         accessor.setThrowError()
         switch accessor.addAction(wrapper: wrapper3) {
         case .error (let errorMessage):
-            XCTAssertEqual ("Test Error", errorMessage)
+            XCTAssertEqual ("addActionError", errorMessage)
         default:
             XCTFail("Expected .error")
         }
         XCTAssertEqual (3, accessor.count(name: collection.name))
-        let wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, item: entity4)
+        var wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, item: entity4)
         switch accessor.addAction(wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (3, accessor.count(name: collection.name))
             accessor.setThrowError()
             switch closure() {
             case .error (let errorMessage):
-                XCTAssertEqual ("Test Error", errorMessage)
+                XCTAssertEqual ("addError", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -297,6 +328,45 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
+
+
+        // Public addAction with errors with setThrowOnlyRecoverableErrors(true)
+        accessor.setThrowOnlyRecoverableErrors(true)
+        entity4 = collection.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
+        entity4.setSaved (Date())
+        accessor.setThrowError()
+        switch accessor.addAction(wrapper: wrapper3) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        XCTAssertEqual (4, accessor.count(name: collection.name))
+        wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, item: entity4)
+        switch accessor.addAction(wrapper: wrapper4) {
+        case .ok (let closure):
+            XCTAssertEqual (4, accessor.count(name: collection.name))
+            accessor.setThrowError()
+            switch closure() {
+            case .error (let errorMessage):
+                XCTAssertEqual ("addError", errorMessage)
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch closure() {
+            case .ok:
+                XCTAssertEqual (5, accessor.count (name: collection.name))
+                XCTAssertTrue (accessor.has(name: collection.name, id: entity4.id))
+                
+            default:
+                XCTFail ("Expected .ok")
+            }
+        default:
+            XCTFail("Expected .ok")
+        }
+        accessor.setThrowOnlyRecoverableErrors(false)
+
+
         // Test Remove with error and prefetch
         prefetchUuid = nil
         accessor.setPreFetch() { uuid in
@@ -309,8 +379,8 @@ class InMemoryAccessorTests: XCTestCase {
         case .error (let errorMessage):
             XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
-            XCTAssertEqual ("Test Error", errorMessage)
-            XCTAssertEqual (4, accessor.count(name: collection.name))
+            XCTAssertEqual ("removeActionError", errorMessage)
+            XCTAssertEqual (5, accessor.count(name: collection.name))
             XCTAssertTrue (accessor.has(name: collection.name, id: entity4.id))
         default:
             XCTFail ("Expected .error")
@@ -324,8 +394,8 @@ class InMemoryAccessorTests: XCTestCase {
             case .error(let errorMessage):
                 XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
                 prefetchUuid = nil
-                XCTAssertEqual ("Test Error", errorMessage)
-                XCTAssertEqual(4, accessor.count(name: collection.name))
+                XCTAssertEqual ("removeError", errorMessage)
+                XCTAssertEqual(5, accessor.count(name: collection.name))
             default:
                 XCTFail ("Expected .error")
             }
@@ -333,7 +403,7 @@ class InMemoryAccessorTests: XCTestCase {
             case .ok:
                 XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
                 prefetchUuid = nil
-                XCTAssertEqual(3, accessor.count(name: collection.name))
+                XCTAssertEqual(4, accessor.count(name: collection.name))
                 XCTAssertFalse (accessor.has (name: collection.name, id: entity4.id))
                 XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity1!.id))
                 XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity2!.id))
@@ -344,6 +414,41 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail ("Expected .ok")
         }
+
+
+        // Test Remove with removeActionError and removeError when accessor.setThrowOnlyRecoverableErrors(true)
+        accessor.setThrowOnlyRecoverableErrors(true)
+        accessor.setThrowError()
+        switch accessor.removeAction(wrapper: wrapper3) {
+        case .ok:
+            XCTAssertEqual (4, accessor.count(name: collection.name))
+            XCTAssertTrue (accessor.has(name: collection.name, id: wrapper3.id))
+        default:
+            XCTFail ("Expected .ok")
+        }
+        switch accessor.removeAction(wrapper: wrapper3) {
+        case .ok (let closure):
+            accessor.setThrowError()
+            switch closure() {
+            case .error(let errorMessage):
+                XCTAssertEqual ("removeError", errorMessage)
+                XCTAssertEqual(4, accessor.count(name: collection.name))
+            default:
+                XCTFail ("Expected .error")
+            }
+            switch closure() {
+            case .ok:
+                XCTAssertEqual(3, accessor.count(name: collection.name))
+                XCTAssertFalse (accessor.has (name: collection.name, id: entity3.id))
+                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity1!.id))
+                XCTAssertTrue (accessor.has (name: collection.name, id: retrievedEntity2!.id))
+            default:
+                XCTFail ("Expected .ok")
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+        accessor.setThrowOnlyRecoverableErrors(false)
     }
     
     func testDecoder() {
