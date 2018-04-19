@@ -704,6 +704,15 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual (1, entities.count)
             XCTAssertTrue (entities[parentId]!.referenceData().id.uuidString == parentId.uuidString)
         }
+        reference.sync() { referenceAttributes in
+            let parent = referenceAttributes.parent as! Entity<MyStruct>
+            switch parent.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
+        }
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
         }
@@ -713,6 +722,15 @@ class EntityReferenceTests: XCTestCase {
         batch.syncEntities() { entities in
             XCTAssertEqual (1, entities.count)
             XCTAssertTrue (entities[parentId]!.referenceData().id.uuidString == parentId.uuidString)
+        }
+        reference.sync() { referenceAttributes in
+            let parent = referenceAttributes.parent as! Entity<MyStruct>
+            switch parent.getPersistenceState() {
+            case .dirty:
+                break
+            default:
+                XCTFail ("Expected .dirty")
+            }
         }
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)

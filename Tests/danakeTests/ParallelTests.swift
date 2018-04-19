@@ -38,6 +38,15 @@ class ParallelTests: XCTestCase {
             test2Results.append (removeExisting)
             let editExisting = ParallelTests.newStructs (persistenceObjects: persistenceObjects, batch: setupBatch).ids
             test3Results.append (editExisting)
+            let containerRemoveExisting = ParallelTests.newContainers(persistenceObjects: persistenceObjects, structs: nil, batch: setupBatch)
+            test2Results.append (containerRemoveExisting.ids)
+            var containerRemoveExistingStructIds: [UUID] = []
+            for entity in containerRemoveExisting.containers {
+                entity.sync() { container in
+                    containerRemoveExistingStructIds.append(container.myStruct.get().item()!.id)
+                }
+            }
+            test2Results.append (containerRemoveExistingStructIds)
             setupGroup.enter()
             setupBatch.commit() {
                 setupGroup.leave()
@@ -144,7 +153,30 @@ class ParallelTests: XCTestCase {
                     test100naResults.append (result)
                 }
             }
-            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na]
+            let test200r = {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.start", data: nil)
+                ParallelTests.containerTest200r(persistenceObjects: persistenceObjects, group: testGroup, ids: containerRemoveExisting.ids)
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.end", data: nil)
+            }
+            let test300 = {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.start", data: nil)
+                let result = ParallelTests.containerTest300(persistenceObjects: persistenceObjects, group: testGroup)
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.end", data: nil)
+                resultQueue.async {
+                    test1Results.append(result.myStructs)
+                    test100nResults.append (result.containers)
+                }
+            }
+            let test300a = {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.start", data: nil)
+                let result = ParallelTests.containerTest300(persistenceObjects: persistenceObjects, group: testGroup)
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.end", data: nil)
+                resultQueue.async {
+                    test1Results.append(result.myStructs)
+                    test100naResults.append (result.containers)
+                }
+            }
+            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
                 let itemToRemove = Int (arc4random_uniform(UInt32(tests.count)))
@@ -418,10 +450,6 @@ class ParallelTests: XCTestCase {
                 }
                 group.wait()
             }
-
-
-
-
             // Test 100n
             persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100n", data: nil)
             for testResult in test100nResults {
@@ -526,10 +554,6 @@ class ParallelTests: XCTestCase {
                 }
                 group.wait()
             }
-
-
-
-
             persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             testCount = testCount + 1
         }
@@ -822,6 +846,53 @@ class ParallelTests: XCTestCase {
         }
         return containers.ids
     }
+    
+    // MyStructContainer Remove (already existing)
+    private static func containerTest200r (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
+        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
+        let internalGroup = DispatchGroup()
+        for id in ids {
+            internalGroup.enter()
+            executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: internalGroup) { entity in
+                entity.async() { container in
+                    container.myStruct.async() { result in
+                        result.item()!.remove(batch: batch)
+                        internalGroup.leave()
+                    }
+                }
+                entity.remove(batch: batch)
+            }
+            usleep(arc4random_uniform (500))
+        }
+        internalGroup.wait()
+        persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "batch.commit()", data: nil)
+        batch.commit() {
+            persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "group.leave()", data: nil)
+            group.leave()
+        }
+    }
+    
+    // MyStructContainer Create -> Update (set nil)
+    private static func containerTest300 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> (containers: [UUID], myStructs: [UUID]) {
+        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
+        let myStructs = newStructs(persistenceObjects: persistenceObjects, batch: batch1)
+        let containers = newContainers (persistenceObjects: persistenceObjects, structs: myStructs.structs, batch: batch1)
+        batch1.commit() {
+            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
+            for container in containers.containers {
+                container.sync { item in
+                    item.myStruct.set(entity: nil, batch: batch2)
+                }
+            }
+            persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest300", message: "batch2.commit()", data: nil)
+            batch2.commit() {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest300", message: "group.leave()", data: nil)
+                group.leave()
+            }
+        }
+        return (containers.ids, myStructs.ids)
+    }
+
 
     private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
         var counter = 1
@@ -851,6 +922,16 @@ class ParallelTests: XCTestCase {
         }
     }
     
+    private static func executeOnContainer (persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStructContainer>) -> ()) {
+        persistenceObjects.containerCollection.get(id: id) { retrievalResult in
+            if let retrievedEntity = retrievalResult.item() {
+                closure (retrievedEntity)
+            } else {
+                executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
+            }
+        }
+    }
+
     private static func newContainers (persistenceObjects: ParallelTestPersistence, structs: [Entity<MyStruct>?]?, batch: EventuallyConsistentBatch) -> (containers: [Entity<MyStructContainer>], ids: [UUID]) {
         var index = 0
         var containers: [Entity<MyStructContainer>] = []

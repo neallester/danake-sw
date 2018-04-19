@@ -82,7 +82,6 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("expected .new")
         }
-
     }
 
     func testReadAccess() {
@@ -403,7 +402,68 @@ class EntityTests: XCTestCase {
         }
     }
     
-    
+    func testSetDirty() {
+        // Creation with item
+        var myStruct = MyStruct()
+        myStruct.myInt = 100
+        myStruct.myString = "Test String 1"
+        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
+        var batch = EventuallyConsistentBatch()
+        let waitFor = expectation(description: "wait1")
+        let entity = collection.new(batch: batch, item: myStruct)
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        switch entity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail("Expected .persistent")
+        }
+        entity.setDirty(batch: batch)
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertTrue (entities[entity.id] as! Entity<MyStruct> === entity)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        entity.setDirty(batch: batch)
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail("Expected .dirty")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertTrue (entities[entity.id] as! Entity<MyStruct> === entity)
+        }
+        XCTAssertNil (entity.getPendingAction())
+        batch = EventuallyConsistentBatch()
+        entity.setPersistenceState(.saving)
+        entity.setDirty(batch: batch)
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail("Expected .saving")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertTrue (entities[entity.id] as! Entity<MyStruct> === entity)
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+    }
+
     public let encoder: JSONEncoder = {
         let result = JSONEncoder()
         result.dateEncodingStrategy = .secondsSince1970
@@ -817,8 +877,104 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (60, item.myInt)
             XCTAssertEqual ("60", item.myString)
         }
-
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
     }
+
+    func testHandleActionSetDirty () {
+        let entity = newTestEntity(myInt: 10, myString: "10")
+        var action = PersistenceAction<MyStruct>.setDirty
+        // persistenceState = .new
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .dirty
+        entity.setPersistenceState(.dirty)
+        action = PersistenceAction<MyStruct>.setDirty
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .pendingRemoval
+        entity.setPersistenceState(.pendingRemoval)
+        action = PersistenceAction<MyStruct>.setDirty
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .abandoned
+        entity.setPersistenceState(.abandoned)
+        action = PersistenceAction<MyStruct>.setDirty
+        entity.handleAction(action)
+        XCTAssertNil (entity.getPendingAction())
+        switch entity.getPersistenceState() {
+        case .new:
+            break
+        default:
+            XCTFail ("Expected .new")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        // persistenceState = .saving
+        entity.setPersistenceState(.saving)
+        action = PersistenceAction<MyStruct>.setDirty
+        entity.handleAction(action)
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+        switch entity.getPersistenceState() {
+        case .saving:
+            break
+        default:
+            XCTFail ("Expected .saving")
+        }
+        entity.sync() { item in
+            XCTAssertEqual (10, item.myInt)
+            XCTAssertEqual ("10", item.myString)
+        }
+        switch entity.getPendingAction()! {
+        case .update:
+            break
+        default:
+            XCTFail ("Expected .update")
+        }
+    }
+
+    
     
     func testHandleActionRemove () {
         let entity = newTestEntity(myInt: 10, myString: "10")

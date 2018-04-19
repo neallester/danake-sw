@@ -237,7 +237,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     }
     
     public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
-        queue.async {
+        queue.sync {
             let wasUpdated = self.willUpdate(newId: entity?.id)
             self.entity = entity
             self.referenceData = nil
@@ -258,7 +258,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     }
 
     public func set (referenceData: EntityReferenceSerializationData?, batch: EventuallyConsistentBatch) {
-        queue.async {
+        queue.sync {
             let wasUpdated = self.willUpdate(newId: referenceData?.id)
             if wasUpdated {
                 self.addParentTo(batch: batch)
@@ -297,7 +297,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             }
         }
         if let parent = self.parent {
-            batch.insertAsync(entity: parent, closure: nil)
+            parent.setDirty(batch: batch)
         }
     }
     

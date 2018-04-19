@@ -21,6 +21,7 @@ internal protocol EntityManagement : EntityProtocol, Encodable {
     func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
     func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
     func referenceData() -> EntityReferenceSerializationData
+    func setDirty (batch: EventuallyConsistentBatch)
     
 }
 
@@ -42,6 +43,7 @@ public enum PendingAction {
 
 public enum PersistenceAction<T: Codable> {
 
+    case setDirty
     case updateItem ((inout T) -> ())
     case remove
     case commit (DispatchTimeInterval, (DatabaseUpdateResult) -> ())
@@ -286,6 +288,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             }
         }
     }
+
+    // Not Thread Safe
+    func setDirty (batch: EventuallyConsistentBatch) {
+        batch.insertSync(entity: self) {
+            self.handleAction(.setDirty)
+        }
+    }
     
 // Removal
     
@@ -335,6 +344,17 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 closure(&item)
             case .new, .dirty:
                 closure(&item)
+            }
+        case .setDirty:
+            switch self.persistenceState {
+            case .persistent, .pendingRemoval:
+                persistenceState = .dirty
+            case .abandoned:
+                persistenceState = .new
+            case .saving:
+                pendingAction = .update
+            case .new, .dirty:
+                break
             }
         case .remove:
             switch self.persistenceState {
