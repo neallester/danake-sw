@@ -24,6 +24,10 @@ class ParallelTests: XCTestCase {
             var test2Results: [[UUID]] = []
             var test3Results: [[UUID]] = []
             var test4Results: [[UUID]] = []
+            var test100Results: [[UUID]] = []
+            var test100aResults: [[UUID]] = []
+//            var test100nResults: [[UUID]] = []
+//            var test100naResults: [[UUID]] = []
             let resultQueue = DispatchQueue (label: "results")
             let testDispatcher = DispatchQueue (label: "testDispatcher", attributes: .concurrent)
             var persistenceObjects = ParallelTestPersistence (accessor: accessor)
@@ -108,7 +112,23 @@ class ParallelTests: XCTestCase {
                     test4Results.append (result)
                 }
             }
-            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b]
+            let test100 = {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.start", data: nil)
+                let result = ParallelTests.containerTest100(persistenceObjects: persistenceObjects, group: testGroup)
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.end", data: nil)
+                resultQueue.async {
+                    test100Results.append (result)
+                }
+            }
+            let test100a = {
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.start", data: nil)
+                let result = ParallelTests.containerTest100(persistenceObjects: persistenceObjects, group: testGroup)
+                persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.end", data: nil)
+                resultQueue.async {
+                    test100aResults.append (result)
+                }
+            }
+            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
                 let itemToRemove = Int (arc4random_uniform(UInt32(tests.count)))
@@ -167,6 +187,25 @@ class ParallelTests: XCTestCase {
                     counter = counter + 1
                 }
             }
+            for testResult in test1Results {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
+                    entity.sync { myStruct in
+                        let expectedInt = counter * 10
+                        XCTAssertEqual (expectedInt, myStruct.myInt)
+                        XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+            }
             // Test 2
             persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.2", data: nil)
             for testResult in test2Results {
@@ -175,8 +214,33 @@ class ParallelTests: XCTestCase {
                     XCTAssertNil (persistenceObjects.myStructCollection.get(id: uuid).item())
                 }
             }
+            for testResult in test2Results {
+                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                for uuid in testResult {
+                    XCTAssertNil (persistenceObjects.myStructCollection.get(id: uuid).item())
+                }
+            }
             // Test 3
             persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.3", data: nil)
+            for testResult in test3Results {
+                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
+                    entity.sync { myStruct in
+                        let expectedInt = counter * 100
+                        XCTAssertEqual (expectedInt, myStruct.myInt)
+                        XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+            }
             for testResult in test3Results {
                 XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
                 var counter = 1
@@ -218,6 +282,126 @@ class ParallelTests: XCTestCase {
                     counter = counter + 1
                 }
             }
+            for testResult in test4Results {
+                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    if let entity = persistenceObjects.myStructCollection.get(id: uuid).item() {
+                        entity.sync { myStruct in
+                            let expectedInt = counter * 100
+                            XCTAssertEqual (expectedInt, myStruct.myInt)
+                            XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                        }
+                        switch entity.getPersistenceState() {
+                        case .persistent:
+                            break
+                        default:
+                            XCTFail ("Expected .persistent")
+                        }
+                    }
+                    counter = counter + 1
+                }
+            }
+            // Test 100
+            persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100", data: nil)
+            for testResult in test100Results {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.containerCollection.get(id: uuid).item()!
+                    let expectedInt = counter * 10
+                    entity.sync() { container in
+                        let myStruct = container.myStruct.get().item()!
+                        myStruct.sync() { item in
+                            XCTAssertEqual (expectedInt, item.myInt)
+                            XCTAssertEqual ("\(expectedInt)", item.myString)
+                        }
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+            }
+            for testResult in test100Results {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                for uuid in testResult {
+                    let entity = persistenceObjects.containerCollection.get(id: uuid).item()!
+                    let expectedInt = counter * 10
+                    entity.sync() { container in
+                        let myStruct = container.myStruct.get().item()!
+                        myStruct.sync() { item in
+                            XCTAssertEqual (expectedInt, item.myInt)
+                            XCTAssertEqual ("\(expectedInt)", item.myString)
+                        }
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+            }
+            // Test 100a
+            persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100a", data: nil)
+            for testResult in test100aResults {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                let group = DispatchGroup()
+                for uuid in testResult {
+                    group.enter()
+                    let entity = persistenceObjects.containerCollection.get(id: uuid).item()!
+                    let expectedInt = counter * 10
+                    entity.async() { container in
+                        let myStruct = container.myStruct.get().item()!
+                        myStruct.async() { item in
+                            XCTAssertEqual (expectedInt, item.myInt)
+                            XCTAssertEqual ("\(expectedInt)", item.myString)
+                            group.leave()
+                        }
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+                group.wait()
+            }
+            for testResult in test100aResults {
+                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                var counter = 1
+                let group = DispatchGroup()
+                for uuid in testResult {
+                    group.enter()
+                    let entity = persistenceObjects.containerCollection.get(id: uuid).item()!
+                    let expectedInt = counter * 10
+                    entity.async() { container in
+                        let myStruct = container.myStruct.get().item()!
+                        myStruct.async() { item in
+                            XCTAssertEqual (expectedInt, item.myInt)
+                            XCTAssertEqual ("\(expectedInt)", item.myString)
+                            group.leave()
+                        }
+                    }
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                    counter = counter + 1
+                }
+                group.wait()
+            }
             persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             testCount = testCount + 1
         }
@@ -228,11 +412,14 @@ class ParallelTests: XCTestCase {
         init (accessor: DatabaseAccessor) {
             database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
             myStructCollection = PersistentCollection<Database, MyStruct> (database: self.database, name: "MyStructs")
+            containerCollection = ContainerCollection (database: self.database, name: "myContainerCollection")
         }
         
         let database: Database
         
         let myStructCollection: PersistentCollection<Database, MyStruct>
+        
+        let containerCollection: ContainerCollection
     }
     
     // Create
@@ -311,7 +498,6 @@ class ParallelTests: XCTestCase {
             group.leave()
         }
     }
-
 
     // Create -> Update
     private static func myStructTest3 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
@@ -478,6 +664,18 @@ class ParallelTests: XCTestCase {
         }
         return structs.ids
     }
+    
+    // MyStructContainer Create
+    private static func containerTest100 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.database.logger)
+        let containers = newContainers(persistenceObjects: persistenceObjects, structs: nil, batch: batch)
+        persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest100", message: "batch.commit()", data: nil)
+        batch.commit() {
+            persistenceObjects.database.logger?.log(level: .debug, source: self, featureName: "containerTest100", message: "group.leave()", data: nil)
+            group.leave()
+        }
+        return containers.ids
+    }
 
     private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
         var counter = 1
@@ -505,6 +703,56 @@ class ParallelTests: XCTestCase {
                 executeOnMyStruct(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
             }
         }
+    }
+    
+    private static func newContainers (persistenceObjects: ParallelTestPersistence, structs: [Entity<MyStruct>]?, batch: EventuallyConsistentBatch) -> (containers: [Entity<MyStructContainer>], ids: [UUID]) {
+        var index = 0
+        var containers: [Entity<MyStructContainer>] = []
+        containers.reserveCapacity(myStructCount)
+        var ids: [UUID] = []
+        ids.reserveCapacity(myStructCount)
+        var finalStructs: [Entity<MyStruct>]? = nil
+        if let structs = structs {
+            finalStructs = structs
+        } else {
+            finalStructs = newStructs(persistenceObjects: persistenceObjects, batch: batch).structs
+        }
+        while index < myStructCount {
+            let newContainer = persistenceObjects.containerCollection.new(batch: batch, myStruct: finalStructs![index])
+            containers.append(newContainer)
+            ids.append (newContainer.id)
+            index = index + 1
+        }
+        return (containers: containers, ids: ids)
+    }
+    
+    internal class MyStructContainer : Codable {
+        
+        init (parentData: EntityReferenceData<MyStructContainer>, myStruct: Entity<MyStruct>?) {
+            self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
+        }
+
+        init (parentData: EntityReferenceData<MyStructContainer>, structData: EntityReferenceSerializationData?) {
+            self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
+        }
+
+        let myStruct: EntityReference<MyStructContainer, MyStruct>
+    }
+    
+    internal class ContainerCollection : PersistentCollection<Database, MyStructContainer> {
+        
+        func new(batch: EventuallyConsistentBatch, myStruct: Entity<MyStruct>?) -> Entity<MyStructContainer> {
+            return new (batch: batch) { parentData in
+                return MyStructContainer (parentData: parentData, myStruct: myStruct)
+            }
+        }
+
+        func new(batch: EventuallyConsistentBatch, structData: EntityReferenceSerializationData?) -> Entity<MyStructContainer> {
+            return new (batch: batch) { parentData in
+                return MyStructContainer (parentData: parentData, structData: structData)
+            }
+        }
+
     }
 
     private static let myStructCount = 6
