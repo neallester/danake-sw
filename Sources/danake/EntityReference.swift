@@ -209,11 +209,11 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                                     } else {
                                         let errorMessage = "\(type (of: self)): Unknown id \(referenceData.id.uuidString)"
                                         finalResult = .error (errorMessage)
-                                        self.state = .retrievalError (Date() + self.retryInterval, errorMessage)
+                                        self.state = .retrievalError (Date() + collection.database.referenceRetryInterval, errorMessage)
                                     }
                                     
                                 case .error(let errorMessage):
-                                    self.state = .retrievalError (Date() + self.retryInterval, errorMessage)
+                                    self.state = .retrievalError (Date() + collection.database.referenceRetryInterval, errorMessage)
                                 }
                                 collection.database.workQueue.async {
                                     for closure in pendingClosures {
@@ -323,7 +323,6 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var state: EntityReferenceState
     private let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
-    public let retryInterval: TimeInterval = 120.0
     
     public let isEager: Bool
     

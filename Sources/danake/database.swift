@@ -115,6 +115,13 @@ class Registrar<K: Hashable, V: AnyObject> {
     let queue: DispatchQueue
     var items = Dictionary<K, WeakObject<V>>()
     
+    // For Testing only
+    internal func clear() {
+        queue.sync() {
+            items = Dictionary<K, WeakObject<V>>()
+        }
+    }
+    
 }
 
 
@@ -180,7 +187,12 @@ public class Database {
      code performing an Entity.item decode operation where it would facilitate decoding legacy JSON to the existing object structure. However,
      a mechanism for actually doing this is currently not present in the framework.
      */
-    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
+    convenience init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
+        self.init (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 120.0)
+    }
+
+    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?, referenceRetryInterval: TimeInterval) {
+        self.referenceRetryInterval = referenceRetryInterval
         self.accessor = accessor
         self.logger = logger
         self.hashValue = accessor.hashValue()
@@ -189,9 +201,11 @@ public class Database {
         if Database.registrar.register(key: hashValue, value: self) {
             logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
         } else {
+            print ("reg failed")
             logger?.log(level: .emergency, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
         }
     }
+
     
     func getAccessor() -> DatabaseAccessor {
         return accessor
@@ -201,6 +215,7 @@ public class Database {
     public let logger: Logger?
     public let schemaVersion: Int
     public let workQueue: DispatchQueue
+    public let referenceRetryInterval: TimeInterval
     private let hashValue: String
     let collectionRegistrar = Registrar<CollectionName, AnyObject>()
     
