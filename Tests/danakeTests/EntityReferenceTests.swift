@@ -1252,7 +1252,8 @@ class EntityReferenceTests: XCTestCase {
     }
     
     public func testSetReferenceDataIsEager() {
-        let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<Database, MyStruct> (database: database, name: "myCollection")
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
@@ -1280,13 +1281,30 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(0, entities.count)
         }
         // nil -> referenceData
-        let entityId = UUID()
-        let entity = Entity (collection: collection, id: entityId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
+        let semaphore = DispatchSemaphore(value: 1)
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        let entityId = UUID(uuidString: "D8691B27-C99B-4CA9-BBBE-689AEDE5464B")!
+        let entityData = "{\"id\":\"D8691B27-C99B-4CA9-BBBE-689AEDE5464B\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        let entityReferenceData = EntityReferenceSerializationData (databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId, version: 10)
+        let _ = accessor.add(name: collection.name, id: entityId, data: entityData)
         var waitFor = expectation(description: "wait1")
         reference.appendClosure() { result in
             waitFor.fulfill()
         }
-        reference.set(referenceData: entity.referenceData(), batch: batch)
+        accessor.setPreFetch() { id in
+            switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+            case .success:
+                semaphore.signal()
+            default:
+                XCTFail ("Expected .success")
+            }
+        }
+        reference.set(referenceData: entityReferenceData, batch: batch)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
@@ -1295,9 +1313,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.collection! === collection)
             switch reference.state {
             case .retrieving(let referenceData):
-                XCTAssertEqual (entity.id.uuidString, referenceData.id.uuidString)
+                XCTAssertEqual (entityId.uuidString, referenceData.id.uuidString)
             default:
-                XCTFail ("Expected .retrieving")
+                XCTFail ("Expected .retrieving but got \(reference.state)")
             }
             XCTAssertTrue (reference.isEager)
             XCTAssertEqual (2, reference.pendingEntityClosureCount)
@@ -1306,9 +1324,10 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
         }
+        semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity! === entity)
+            XCTAssertEqual (reference.entity!.id.uuidString, entityId.uuidString)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId.uuidString)
@@ -1322,11 +1341,12 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        let entity = reference.get().item()!
         // referenceData -> same referenceData
         batch = EventuallyConsistentBatch()
-        reference.set(referenceData: entity.referenceData(), batch: batch)
+        reference.set(referenceData: entityReferenceData, batch: batch)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity! === entity)
+            XCTAssertEqual (reference.entity!.id.uuidString, entityId.uuidString)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId.uuidString)
@@ -1344,14 +1364,22 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(0, entities.count)
         }
         // referenceData -> new referenceData
-        let entityId2 = UUID()
-        let entity2 = Entity (collection: collection, id: entityId2, version: 10, item: MyStruct (myInt: 30, myString: "30"))
+        let entityId2 = UUID(uuidString: "45097C35-DF05-4C13-84CC-087E72BC2D0E")!
+        let entityData2 = "{\"id\":\"45097C35-DF05-4C13-84CC-087E72BC2D0E\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        let entity2ReferenceData = EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId2, version: 10)
+        let _ = accessor.add(name: collection.name, id: entityId2, data: entityData2)
         batch = EventuallyConsistentBatch()
         waitFor = expectation(description: "wait2")
+        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
         reference.appendClosure() { result in
             waitFor.fulfill()
         }
-        reference.set(referenceData: entity2.referenceData(), batch: batch)
+        reference.set(referenceData: entity2ReferenceData, batch: batch)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
@@ -1360,7 +1388,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.collection === collection)
             switch reference.state {
             case .retrieving(let referenceData):
-                XCTAssertEqual (entity2.id.uuidString, referenceData.id.uuidString)
+                XCTAssertEqual (entityId2.uuidString, referenceData.id.uuidString)
             default:
                 XCTFail ("Expected .retrieving")
             }
@@ -1371,9 +1399,10 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
         }
+        semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity! === entity2)
+            XCTAssertEqual (reference.entity!.id.uuidString, entityId2.uuidString)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId2.uuidString)
@@ -1387,6 +1416,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        let entity2 = reference.get().item()!
         // referenceData -> nil
         batch = EventuallyConsistentBatch()
         reference.set(referenceData: nil, batch: batch)
@@ -1449,7 +1479,7 @@ class EntityReferenceTests: XCTestCase {
             case .retrieving(let referenceData):
                 XCTAssertEqual (entity2.id.uuidString, referenceData.id.uuidString)
             default:
-                XCTFail ("Expected .retrieving")
+                XCTFail ("Expected .retrieving but got \(reference.state)")
             }
             XCTAssertTrue (reference.isEager)
             XCTAssertEqual (2, reference.pendingEntityClosureCount)
@@ -1630,8 +1660,8 @@ class EntityReferenceTests: XCTestCase {
             case .retrievalError(let suspendtime, let errorMessage):
                 XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 let now = Date()
-                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + reference.retryInterval - 1.0).timeIntervalSince1970)
-                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + reference.retryInterval + 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + collection.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + collection.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
                 suspendSeconds = suspendtime.timeIntervalSince1970
             default:
                 XCTFail ("Expected .retrievalError")
@@ -1678,8 +1708,8 @@ class EntityReferenceTests: XCTestCase {
             case .retrievalError(let suspendtime, let errorMessage):
                 XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 let now = Date()
-                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + reference.retryInterval - 1.0).timeIntervalSince1970)
-                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + reference.retryInterval + 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + collection.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
+                XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + collection.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
                 suspendSeconds = suspendtime.timeIntervalSince1970
             default:
                 XCTFail ("Expected .retrievalError")
