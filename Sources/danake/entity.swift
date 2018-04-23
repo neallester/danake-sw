@@ -283,16 +283,22 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public func update (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
         queue.sync {
+            isInsertingToBatch = true
             batch.insertSync (entity: self) {
                 self.handleAction(.updateItem (closure))
             }
+            isInsertingToBatch = false
         }
     }
 
     // Not Thread Safe
     func setDirty (batch: EventuallyConsistentBatch) {
-        batch.insertSync(entity: self) {
+        if isInsertingToBatch {
             self.handleAction(.setDirty)
+        } else {
+            batch.insertSync(entity: self) {
+                self.handleAction(.setDirty)
+            }
         }
     }
     
@@ -310,9 +316,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
      */
     public func remove (batch: EventuallyConsistentBatch) {
         queue.sync {
+            self.isInsertingToBatch = true
             batch.insertSync(entity: self) {
                 self.handleAction(.remove)
             }
+            self.isInsertingToBatch = false
         }
     }
     
@@ -592,6 +600,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
+    private var isInsertingToBatch = false
 
 }
 

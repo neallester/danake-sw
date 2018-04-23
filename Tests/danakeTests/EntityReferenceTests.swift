@@ -2062,4 +2062,182 @@ class EntityReferenceTests: XCTestCase {
             XCTFail ("Expected .ok")
         }
     }
+    
+    public func testSetWithinEntity() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let structCollection = PersistentCollection<Database, MyStruct> (database: database, name: "structCollection")
+        let containerCollection = ContainerCollection (database: database, name: "containerCollection")
+        var batch = EventuallyConsistentBatch()
+        let containerEntity = containerCollection.new(batch: batch, myStruct: nil)
+        var structEntity = structCollection.new(batch: batch, item: MyStruct (myInt: 10, myString: "10"))
+        var waitFor = expectation(description: "wait1")
+        // Updating persistent reference within parent 'sync'
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch = EventuallyConsistentBatch()
+        containerEntity.sync() { container in
+            container.myStruct.set(entity: structEntity, batch: batch)
+        }
+        switch containerEntity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertNotNil (entities[containerEntity.id])
+        }
+        waitFor = expectation(description: "wait2")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        // Updating persistent reference within parent 'async'
+        structEntity = structCollection.new(batch: batch, item: MyStruct (myInt: 20, myString: "20"))
+        waitFor = expectation(description: "wait3")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch = EventuallyConsistentBatch()
+        containerEntity.async() { container in
+            container.myStruct.set(entity: structEntity, batch: batch)
+        }
+        switch containerEntity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertNotNil (entities[containerEntity.id])
+        }
+        waitFor = expectation(description: "wait4")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        // Updating persistent reference within parent 'update'
+        structEntity = structCollection.new(batch: batch, item: MyStruct (myInt: 20, myString: "20"))
+        waitFor = expectation(description: "wait5")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch = EventuallyConsistentBatch()
+        containerEntity.update(batch: batch) { container in
+            container.myStruct.set(entity: structEntity, batch: batch)
+        }
+        switch containerEntity.getPersistenceState() {
+        case .dirty:
+            break
+        default:
+            XCTFail ("Expected .dirty")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual (1, entities.count)
+            XCTAssertNotNil (entities[containerEntity.id])
+        }
+        waitFor = expectation(description: "wait6")
+        batch.commit() {
+            waitFor.fulfill()
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+        switch containerEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+        switch structEntity.getPersistenceState() {
+        case .persistent:
+            break
+        default:
+            XCTFail ("Expected .persistent")
+        }
+
+    }
 }
