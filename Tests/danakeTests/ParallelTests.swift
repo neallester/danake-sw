@@ -240,10 +240,10 @@ class ParallelTests: XCTestCase {
                 let _ = tests.remove(at: itemToRemove)
             }
             var finalTests: [() -> ()] = []
-            if let inMemoryAccessor = accessor as? InMemoryAccessor, (arc4random_uniform(5) >= 0) {
+            if let inMemoryAccessor = accessor as? InMemoryAccessor, (arc4random_uniform(10) >= 2) {
                 inMemoryAccessor.setThrowOnlyRecoverableErrors (true)
                 var errorCounter = 0
-                while errorCounter < 5 {
+                while errorCounter < 15 {
                     let newTest = {
                         let maxSleepTime = totalExecutionTime / (Double (testCount) + 1.0)
                         let sleepTime = arc4random_uniform(UInt32 ((1000000 * maxSleepTime)))
@@ -619,19 +619,6 @@ class ParallelTests: XCTestCase {
                 logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
                 logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
             }
-//            var myStructCount = 0
-//            var containerCount = 0
-//            myStructCollection.sync() { entities in
-//                myStructCount = entities.count
-//            }
-//            containerCollection.sync() { entities in
-//                containerCount = entities.count
-//                for value in entities.values {
-//                    print ("RefCount: \(CFGetRetainCount(value.item!))")
-//                }
-//            }
-//            print ("MyStructs: \(myStructCount)")
-//            print ("containers: \(containerCount)")
         }
         
         let logger: Logger?
