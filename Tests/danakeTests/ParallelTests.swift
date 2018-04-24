@@ -29,6 +29,7 @@ class ParallelTests: XCTestCase {
             var test100nResults: [[UUID]] = []
             var test100naResults: [[UUID]] = []
             var test300uResults: [(containers: [UUID], myStructs: [UUID])] = []
+            var containerRemoveExistingContainertIds: [UUID] = []
             let resultQueue = DispatchQueue (label: "results")
             let testDispatcher = DispatchQueue (label: "testDispatcher", attributes: .concurrent)
             var persistenceObjects: ParallelTestPersistence? = ParallelTestPersistence (accessor: accessor, logger: logger)
@@ -39,7 +40,6 @@ class ParallelTests: XCTestCase {
             test2Results.append (removeExisting)
             let editExisting = ParallelTests.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
             test3Results.append (editExisting)
-            var containerRemoveExistingContainertIds: [UUID] = []
             do {
                 let containerRemoveExisting = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
                 test2Results.append (containerRemoveExisting.ids)
@@ -52,7 +52,21 @@ class ParallelTests: XCTestCase {
                 }
                 test2Results.append (structIds)
             }
-            
+            var test300prInput: (containers: [UUID], newRefs: [EntityReferenceSerializationData]) = ([], [])
+            do {
+                let containers = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let newStructs = ParallelTests.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
+                var newRefs: [EntityReferenceSerializationData] = []
+                for myStruct in newStructs.structs {
+                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
+                    newRefs.append(myStruct.referenceData())
+                }
+                test300prInput = (containers: containers.ids, newRefs)
+                test300uResults.append((containers: containers.ids, myStructs: newStructs.ids))
+                for id in newStructs.ids {
+                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
+                }
+            }
             setupGroup.enter()
             setupBatch.commit() {
                 setupGroup.leave()
@@ -192,7 +206,12 @@ class ParallelTests: XCTestCase {
                     test300uResults.append(result)
                 }
             }
-            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a, test300u]
+            let test300pr = {
+                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.start", data: nil)
+                ParallelTests.containerTest300pr(persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
+                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.end", data: nil)
+            }
+            var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a, test300u, test300pr]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
                 let itemToRemove = Int (arc4random_uniform(UInt32(tests.count)))
@@ -518,6 +537,7 @@ class ParallelTests: XCTestCase {
             }
             // Test 300u
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.300u", data: nil)
+            var resultCount = 0
             for testResult in test300uResults {
                 XCTAssertEqual (ParallelTests.myStructCount, testResult.containers.count)
                 XCTAssertEqual (ParallelTests.myStructCount, testResult.myStructs.count)
@@ -527,6 +547,7 @@ class ParallelTests: XCTestCase {
                     containerEntity.sync() { container in
                         switch container.myStruct.get() {
                         case .ok (let myStruct):
+                            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
                             XCTAssertEqual (testResult.myStructs[index].uuidString, myStruct!.id.uuidString)
                             myStruct!.sync() { myStruct in
                                 let expectedInt = (index + 1) * 100
@@ -545,6 +566,7 @@ class ParallelTests: XCTestCase {
                     }
                     index = index + 1
                 }
+                resultCount = resultCount + 1
             }
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             testCount = testCount + 1
@@ -998,6 +1020,62 @@ class ParallelTests: XCTestCase {
         }
         return result
     }
+    
+    // MyContainer -> Update + Edit Struct independent in parallel
+    private static func containerTest300pr (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [EntityReferenceSerializationData]) {
+        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let workQueue = DispatchQueue (label: "300pr.work", attributes: .concurrent)
+        let internalGroup = DispatchGroup()
+        var containerIndex = 0
+        for containerId in containers {
+            
+            internalGroup.enter()
+            let structRefIndex = containerIndex
+            let closure = { (containerEntity: Entity<MyStructContainer>) in
+                containerEntity.update(batch: batch1) { container in
+                    persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "setRef", data: [(name: "structRefIndex", value: structRefIndex), (name: "refId", value: structRefs[structRefIndex].id.uuidString)])
+                    container.myStruct.set(referenceData: structRefs[structRefIndex], batch: batch1)
+                    internalGroup.leave()
+                }
+            }
+            workQueue.async {
+                usleep(arc4random_uniform(UInt32(1000)))
+                self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
+            }
+            
+            containerIndex = containerIndex + 1
+        }
+        for structRef in structRefs {
+            internalGroup.enter()
+            workQueue.async {
+                usleep(arc4random_uniform(UInt32(1000)))
+                executeOnMyStruct(persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
+                    internalGroup.enter()
+                    entity.update (batch: batch2) { item in
+                        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "updateStruct", data: [(name: "structfId", value: entity.id.uuidString)])
+                        let newInt = item.myInt * 10
+                        item.myInt = newInt
+                        item.myString = "\(newInt)"
+                        internalGroup.leave()
+                    }
+                }
+                
+            }
+        }
+        internalGroup.wait()
+        internalGroup.enter()
+        batch1.commit() {
+            internalGroup.leave()
+        }
+        internalGroup.enter()
+        batch2.commit() {
+            internalGroup.leave()
+        }
+        internalGroup.wait()
+        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "group.leave()", data: nil)
+        group.leave()
+    }
 
 
     private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
@@ -1079,35 +1157,6 @@ class ParallelTests: XCTestCase {
             index = index + 1
         }
         return (containers: containers, ids: ids)
-    }
-    
-    internal class MyStructContainer : Codable {
-        
-        init (parentData: EntityReferenceData<MyStructContainer>, myStruct: Entity<MyStruct>?) {
-            self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
-        }
-
-        init (parentData: EntityReferenceData<MyStructContainer>, structData: EntityReferenceSerializationData?) {
-            self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
-        }
-
-        let myStruct: EntityReference<MyStructContainer, MyStruct>
-    }
-    
-    internal class ContainerCollection : PersistentCollection<Database, MyStructContainer> {
-        
-        func new(batch: EventuallyConsistentBatch, myStruct: Entity<MyStruct>?) -> Entity<MyStructContainer> {
-            return new (batch: batch) { parentData in
-                return MyStructContainer (parentData: parentData, myStruct: myStruct)
-            }
-        }
-
-        func new(batch: EventuallyConsistentBatch, structData: EntityReferenceSerializationData?) -> Entity<MyStructContainer> {
-            return new (batch: batch) { parentData in
-                return MyStructContainer (parentData: parentData, structData: structData)
-            }
-        }
-
     }
 
     private static let myStructCount = 6
