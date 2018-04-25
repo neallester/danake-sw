@@ -172,6 +172,19 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         return result
     }
     
+    // id of the referenced entity, if any
+    public func entityId() -> UUID? {
+        var result: UUID? = nil
+        queue.sync {
+            if let referenceData = self.referenceData {
+                result = referenceData.id
+            } else if let entity = self.entity {
+                result = entity.id
+            }
+        }
+        return result
+    }
+    
     // Not thread safe, must be called within queue
     private func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {

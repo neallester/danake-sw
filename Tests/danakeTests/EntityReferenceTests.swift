@@ -761,6 +761,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertNil (reference.entityId())
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
         }
@@ -784,6 +785,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
@@ -806,6 +808,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
         }
@@ -826,6 +829,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (reference.entityId()!.uuidString, entity2.id.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
@@ -848,6 +852,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertNil (reference.entityId())
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertTrue (entities[parent.id] as! Entity<MyStruct> === parent)
@@ -1087,6 +1092,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertNil (reference.entityId())
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
         }
@@ -1109,6 +1115,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
@@ -1131,6 +1138,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
         }
@@ -1154,6 +1162,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (entity2.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
@@ -1180,6 +1189,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
         }
+        XCTAssertNil (reference.entityId())
         // entity -> entity.referenceData
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
         reference.set(entity: entity, batch: batch)
@@ -1200,6 +1210,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
         }
@@ -1221,6 +1232,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertFalse (reference.isEager)
             XCTAssertEqual (0, reference.pendingEntityClosureCount)
         }
+        XCTAssertEqual (entity2.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
