@@ -601,7 +601,7 @@ class ParallelTests: XCTestCase {
         init (accessor: DatabaseAccessor, logger: Logger?) {
             self.logger = logger
             let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
-            myStructCollection = PersistentCollection<Database, MyStruct> (database: database, name: "MyStructs")
+            myStructCollection = PersistentCollection<MyStruct> (database: database, name: "MyStructs")
             containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
         }
         
@@ -623,7 +623,7 @@ class ParallelTests: XCTestCase {
         
         let logger: Logger?
         
-        let myStructCollection: PersistentCollection<Database, MyStruct>
+        let myStructCollection: PersistentCollection<MyStruct>
         
         let containerCollection: ContainerCollection
     }
@@ -1151,7 +1151,7 @@ class ParallelTests: XCTestCase {
         group.leave()
     }
 
-    private static func preLoad<T> (collection: PersistentCollection<Database, T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
+    private static func preLoad<T> (collection: PersistentCollection<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
         logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "start." + label, data: nil)
         var result: [Entity<T>] = []
         var badIds: [UUID] = []

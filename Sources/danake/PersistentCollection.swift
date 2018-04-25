@@ -16,17 +16,17 @@ import Foundation
 
 public typealias CollectionName = String
 
-public class PersistentCollection<D: Database, T: Codable> {
+public class PersistentCollection<T: Codable> {
     
     typealias entityType = T
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public convenience init (database: D, name: CollectionName) {
+    public convenience init (database: Database, name: CollectionName) {
         self.init (database: database, name: name, deserializationEnvironmentClosure: nil)
     }
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public init (database: D, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?) {
+    public init (database: Database, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?) {
         self.database = database
         self.name = name
         self.deserializationEnvironmentClosure = deserializationEnvironmentClosure
@@ -64,7 +64,7 @@ public class PersistentCollection<D: Database, T: Codable> {
             result = cache[id]?.item
         }
         if (result == nil) {
-            let retrievalResult = self.database.getAccessor().get(type: Entity<T>.self, collection: self as! PersistentCollection<Database, T>, id: id)
+            let retrievalResult = self.database.getAccessor().get(type: Entity<T>.self, collection: self, id: id)
             switch retrievalResult {
             case .ok (let prospectEntity):
                 if let prospectEntity = prospectEntity {
@@ -97,7 +97,7 @@ public class PersistentCollection<D: Database, T: Codable> {
         will be included in the results
     */
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, collection: self as! PersistentCollection<Database, T>)
+        let retrievalResult = database.getAccessor().scan(type: Entity<T>.self, collection: self)
         switch retrievalResult {
         case .ok (let resultList):
             if let criteria = criteria  {
@@ -137,7 +137,7 @@ public class PersistentCollection<D: Database, T: Codable> {
 // Entity Creation
     
     public func new (batch: EventuallyConsistentBatch, item: T) -> Entity<T> {
-        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, item: item)
+        let result = Entity (collection: self, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
             self.cache[result.id] = WeakItem (item:result)
         }
@@ -154,7 +154,7 @@ public class PersistentCollection<D: Database, T: Codable> {
      let parent: EntityReference<Parent>
      */
     public func new (batch: EventuallyConsistentBatch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
-        let result = Entity (collection: self as! PersistentCollection<Database, T>, id: UUID(), version: 0, itemClosure: itemClosure)
+        let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
             self.cache[result.id] = WeakItem (item:result)
         }

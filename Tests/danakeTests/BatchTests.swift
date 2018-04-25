@@ -121,7 +121,7 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
         let batch = EventuallyConsistentBatch()
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
@@ -155,7 +155,7 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
@@ -198,7 +198,7 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
@@ -271,9 +271,9 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
         let slowCollectionName: CollectionName = "slowCollection"
-        let slowCollection = PersistentCollection<Database, SlowCodable>(database: database, name: slowCollectionName)
+        let slowCollection = PersistentCollection<SlowCodable>(database: database, name: slowCollectionName)
         let batch = EventuallyConsistentBatch(retryInterval: .microseconds(400000), timeout: .microseconds (100000), logger: logger)
         let batchDelegateId = batch.delegateId().uuidString
         let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
@@ -345,7 +345,7 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: collectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
         var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let entity1 = collection.new (batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = collection.new (batch: batch!, item: MyStruct(myInt: 20, myString: "20"))

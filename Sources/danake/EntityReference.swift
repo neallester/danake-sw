@@ -178,7 +178,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             if collection == nil {
                 if let database = Database.registrar.value(key: referenceData.databaseId) {
                     if let candidateCollection = database.collectionRegistrar.value(key: referenceData.collectionName) {
-                        if let collection = candidateCollection as? PersistentCollection<Database, T> {
+                        if let collection = candidateCollection as? PersistentCollection<T> {
                             self.collection = collection
                         } else {
                             closure (.error ("collectionName: \(referenceData.collectionName) returns wrong type: \(type (of: candidateCollection))"))
@@ -319,7 +319,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: EntityReferenceSerializationData?
-    private var collection: PersistentCollection<Database, T>?
+    private var collection: PersistentCollection<T>?
     private var state: EntityReferenceState
     private let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
@@ -360,4 +360,4 @@ internal struct ClosureContainer<T: Codable> {
     
 }
 
-internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<Database, T>?, state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)
+internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<T>?, state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)

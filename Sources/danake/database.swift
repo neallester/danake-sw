@@ -235,8 +235,8 @@ public class Database {
 
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, collection: PersistentCollection<Database, T>, id: UUID) -> RetrievalResult<Entity<T>>
-    func scan<T> (type: Entity<T>.Type, collection: PersistentCollection<Database, T>) -> DatabaseAccessListResult<Entity<T>>
+    func get<T> (type: Entity<T>.Type, collection: PersistentCollection<T>, id: UUID) -> RetrievalResult<Entity<T>>
+    func scan<T> (type: Entity<T>.Type, collection: PersistentCollection<T>) -> DatabaseAccessListResult<Entity<T>>
     
     /*
      Is the format of ** name ** a valid CollectionName in this storage medium and,

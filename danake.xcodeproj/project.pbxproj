@@ -31,6 +31,7 @@
 		08569B77205457EB0016502F /* InMemoryAccessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B76205457EB0016502F /* InMemoryAccessorTests.swift */; };
 		08569B792056CF220016502F /* EntityCommitDirtyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B782056CF220016502F /* EntityCommitDirtyTests.swift */; };
 		08569B7B205829B50016502F /* EntityCommitPendingRemovalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B7A205829B50016502F /* EntityCommitPendingRemovalTests.swift */; };
+		0866E4F6208F9B70001EB9CE /* SampleUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0866E4F5208F9B70001EB9CE /* SampleUsageTests.swift */; };
 		0875DEE82060438300D6F137 /* EntityCommitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0875DEE72060438300D6F137 /* EntityCommitTests.swift */; };
 		0877F98E201BCF68004B05B8 /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98D201BCF68004B05B8 /* EntityTests.swift */; };
 		0877F98F201BD20C004B05B8 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0877F98B201BBBB5004B05B8 /* entity.swift */; };
@@ -73,6 +74,7 @@
 		08569B76205457EB0016502F /* InMemoryAccessorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryAccessorTests.swift; sourceTree = "<group>"; };
 		08569B782056CF220016502F /* EntityCommitDirtyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCommitDirtyTests.swift; sourceTree = "<group>"; };
 		08569B7A205829B50016502F /* EntityCommitPendingRemovalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCommitPendingRemovalTests.swift; sourceTree = "<group>"; };
+		0866E4F5208F9B70001EB9CE /* SampleUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleUsageTests.swift; sourceTree = "<group>"; };
 		0875DEE72060438300D6F137 /* EntityCommitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCommitTests.swift; sourceTree = "<group>"; };
 		0877F98B201BBBB5004B05B8 /* entity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = entity.swift; sourceTree = "<group>"; };
 		0877F98D201BCF68004B05B8 /* EntityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityTests.swift; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 				0875DEE72060438300D6F137 /* EntityCommitTests.swift */,
 				08028E28206A9CFD00F8C57F /* EntityReferenceTests.swift */,
 				08827A212082A1480047387D /* ParallelTests.swift */,
+				0866E4F5208F9B70001EB9CE /* SampleUsageTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -290,6 +293,7 @@
 				08569B792056CF220016502F /* EntityCommitDirtyTests.swift in Sources */,
 				08569B7B205829B50016502F /* EntityCommitPendingRemovalTests.swift in Sources */,
 				0877F994201C0188004B05B8 /* BatchTests.swift in Sources */,
+				0866E4F6208F9B70001EB9CE /* SampleUsageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

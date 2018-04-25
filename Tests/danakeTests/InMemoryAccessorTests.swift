@@ -13,15 +13,15 @@ class InMemoryAccessorTests: XCTestCase {
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
         let uuid = UUID()
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: uuid) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: uuid) {
         case .ok (let retrievedData):
             XCTAssertNil (retrievedData)
         default:
             XCTFail("Expected data")
         }
-        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok (let retrievedData):
             XCTAssertEqual (0, retrievedData.count)
         default:
@@ -40,7 +40,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: standardCollectionName, id: id1))
         XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: id1)!, encoding: .utf8), json1)
         var retrievedEntity1: Entity<MyStruct>? = nil
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: id1) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: id1) {
         case .ok (let retrievedEntity):
             if let retrievedEntity = retrievedEntity {
                 retrievedEntity1 = retrievedEntity
@@ -67,13 +67,13 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         // Not present
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: uuid) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: uuid) {
         case .ok (let retrievedEntity):
             XCTAssertNil (retrievedEntity)
         default:
             XCTFail("Expected .ok")
         }
-        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok (let retrievedEntities):
             XCTAssertEqual (1, retrievedEntities.count)
             XCTAssertTrue (retrievedEntities[0] === retrievedEntity1)
@@ -115,7 +115,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: id2)!, encoding: .utf8), json2)
         var found1 = false
         var retrievedEntity2: Entity<MyStruct>? = nil
-        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok (let retrievedEntities):
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
@@ -150,7 +150,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (found1)
         found1 = false
         var found2 = false
-        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok (let retrievedEntities):
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
@@ -172,13 +172,13 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (found2)
         // Test get and scan throwError
         accessor.setThrowError()
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: retrievedEntity1!.id) {
         case .error (let errorMessage):
             XCTAssertEqual ("getError", errorMessage)
         default:
             XCTFail("Expected .error")
         }
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: retrievedEntity1!.id) {
         case .ok:
             break
         default:
@@ -186,14 +186,14 @@ class InMemoryAccessorTests: XCTestCase {
         }
 
         accessor.setThrowError()
-        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .error(let errorMessage):
             XCTAssertEqual ("scanError", errorMessage)
         default:
             XCTFail ("Expected .error")
 
         }
-        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok:
             break
         default:
@@ -202,13 +202,13 @@ class InMemoryAccessorTests: XCTestCase {
         // Test get and scan throwError with setThrowOnlyRecoverableErrors (true)
         accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowError()
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: retrievedEntity1!.id) {
         case .error (let errorMessage):
             XCTAssertEqual ("getError", errorMessage)
         default:
             XCTFail("Expected .error")
         }
-        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>, id: retrievedEntity1!.id) {
+        switch accessor.get(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>, id: retrievedEntity1!.id) {
         case .ok:
             break
         default:
@@ -216,14 +216,14 @@ class InMemoryAccessorTests: XCTestCase {
         }
         
         accessor.setThrowError()
-        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .error(let errorMessage):
             XCTAssertEqual ("scanError", errorMessage)
         default:
             XCTFail ("Expected .error")
             
         }
-        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan (type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok:
             break
         default:
@@ -269,7 +269,7 @@ class InMemoryAccessorTests: XCTestCase {
         found1 = false
         found2 = false
         var found3 = false
-        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<Database, MyStruct>) {
+        switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as PersistentCollection<MyStruct>) {
         case .ok (let retrievedEntities):
             XCTAssertEqual (3, retrievedEntities.count)
             for entity in retrievedEntities {
@@ -454,9 +454,9 @@ class InMemoryAccessorTests: XCTestCase {
     func testDecoder() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<Database, MyStruct>(database: database, name: standardCollectionName)
+        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
         let decoder = accessor.decoder(collection: collection)
-        XCTAssertTrue (decoder.userInfo[Database.collectionKey] as! PersistentCollection<Database, MyStruct> === collection)
+        XCTAssertTrue (decoder.userInfo[Database.collectionKey] as! PersistentCollection<MyStruct> === collection)
         switch decoder.dateDecodingStrategy {
         case .secondsSince1970:
             break
@@ -517,19 +517,19 @@ class InMemoryAccessorTests: XCTestCase {
         let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        var collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName)
+        var collection = PersistentCollection<MyStructContainer>(database: database, name: standardCollectionName)
         let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
-        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>, id: id) {
+        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<MyStructContainer>, id: id) {
         case .error(let errorMessage):
             XCTAssertEqual ("missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \"struct\"))", errorMessage)
         default:
             XCTFail ("Expected .error")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
-        collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+        collection = PersistentCollection<MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
             userInfo[MyStructContainer.structKey] = myStruct
         }
-        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>, id: id) {
+        switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<MyStructContainer>, id: id) {
         case .ok(let retrievedEntity):
             retrievedEntity?.sync() { item in
                 XCTAssertEqual (10, item.myStruct.myInt)
@@ -547,19 +547,19 @@ class InMemoryAccessorTests: XCTestCase {
         let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        var collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName)
+        var collection = PersistentCollection<MyStructContainer>(database: database, name: standardCollectionName)
         let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
-        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>) {
+        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<MyStructContainer>) {
         case .ok(let result):
             XCTAssertEqual (0, result.count)
         default:
             XCTFail ("Expected .ok")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
-        collection = PersistentCollection<Database, MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+        collection = PersistentCollection<MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
             userInfo[MyStructContainer.structKey] = myStruct
         }
-        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<Database, MyStructContainer>) {
+        switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as PersistentCollection<MyStructContainer>) {
         case .ok(let result):
             XCTAssertEqual (1, result.count)
             result[0].sync() { item in
