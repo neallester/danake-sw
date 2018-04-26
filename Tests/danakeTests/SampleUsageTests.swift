@@ -42,6 +42,10 @@ class Company : Codable {
         return employeeCollection.forCompany(self)
     }
     
+    public func employees(closure: @escaping (RetrievalResult<[Entity<Employee>]>) -> Void) {
+        employeeCollection.forCompany(self, closure: closure)
+    }
+    
     public let id: UUID
     private let employeeCollection: EmployeeCollection
     public static let employeeCollectionKey = CodingUserInfoKey.init(rawValue: "employeeCollectionKey")!
@@ -126,6 +130,7 @@ class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
             return retrievalResult
         }
     }
+    
 }
 
 class CompanyCollection : PersistentCollection<Company> {
@@ -167,6 +172,12 @@ class EmployeeCollection : PersistentCollection<Employee> {
             return .ok (employees)
         case .error(let errorMessage):
             return .error (errorMessage)
+        }
+    }
+    
+    func forCompany (_ company: Company, closure: @escaping (RetrievalResult<[Entity<Employee>]>) -> ()) {
+        database.workQueue.async {
+            closure (self.forCompany (company))
         }
     }
     
@@ -250,6 +261,7 @@ class SampleTests: XCTestCase {
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = collections.companies.new(batch: batch)
         let companyEntity2 = collections.companies.new(batch: batch)
+        let companyEntity3 = collections.companies.new(batch: batch)
         let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
         let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
@@ -266,15 +278,60 @@ class SampleTests: XCTestCase {
             XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
         }
         companyEntity2.sync() { company in
-            switch collections.employees.forCompany(company) {
-            case .ok (let company2Employees):
-                XCTAssertEqual (2, company2Employees!.count)
-            default:
-                XCTFail ("expected .ok")
-            }
+            let employees = company.employees().item()!
+            XCTAssertEqual (2, employees.count)
+        }
+        companyEntity3.sync() { company in
+            let employees = company.employees().item()!
+            XCTAssertEqual (0, employees.count)
         }
     }
-    
+
+    func testCompanyEmployeesAsync() {
+        let accessor = SampleInMemoryAccessor()
+        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let batch = EventuallyConsistentBatch()
+        let companyEntity1 = collections.companies.new(batch: batch)
+        let companyEntity2 = collections.companies.new(batch: batch)
+        let companyEntity3 = collections.companies.new(batch: batch)
+        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let waitFor1 = expectation(description: "wait1")
+        batch.commit() {
+            waitFor1.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        let waitFor2a = expectation(description: "wait2a")
+        let waitFor2b = expectation(description: "wait2b")
+        let waitFor2c = expectation(description: "wait2c")
+        companyEntity1.async() { company in
+            company.employees() { result in
+                let employees = result.item()!
+                XCTAssertEqual (2, employees.count)
+                XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
+                XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
+                waitFor2a.fulfill()
+            }
+        }
+        companyEntity2.async() { company in
+            company.employees() { result in
+                let employees = result.item()!
+                XCTAssertEqual (2, employees.count)
+                waitFor2b.fulfill()
+            }
+        }
+        companyEntity3.async() { company in
+            company.employees() { result in
+                let employees = result.item()!
+                XCTAssertEqual (0, employees.count)
+                waitFor2c.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 10.0, handler: nil)
+    }
+
     func testCompanyCollectionNew() {
         let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
@@ -356,6 +413,7 @@ class SampleTests: XCTestCase {
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = collections.companies.new(batch: batch)
         let companyEntity2 = collections.companies.new(batch: batch)
+        let companyEntity3 = collections.companies.new(batch: batch)
         let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
         let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
@@ -381,6 +439,14 @@ class SampleTests: XCTestCase {
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
+            default:
+                XCTFail ("expected .ok")
+            }
+        }
+        companyEntity3.sync() { company in
+            switch accessor.employeesForCompany(collection: collections.employees, company: company) {
+            case .ok (let company3Employees):
+                XCTAssertEqual (0, company3Employees.count)
             default:
                 XCTFail ("expected .ok")
             }
@@ -422,6 +488,52 @@ class SampleTests: XCTestCase {
                 XCTFail ("expected .ok")
             }
         }
+    }
+
+    func testEmployeeCollectionForCompanyAsync() {
+        let accessor = SampleInMemoryAccessor()
+        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let batch = EventuallyConsistentBatch()
+        let companyEntity1 = collections.companies.new(batch: batch)
+        let companyEntity2 = collections.companies.new(batch: batch)
+        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let waitFor1 = expectation(description: "wait1")
+        batch.commit() {
+            waitFor1.fulfill()
+        }
+        waitForExpectations(timeout: 10, handler: nil)
+        let waitFor2a = expectation(description: "wait2a")
+        let waitFor2b = expectation(description: "wait2b")
+        companyEntity1.sync() { company in
+            collections.employees.forCompany(company) { result in
+                switch result {
+                case .ok (let company1Employees):
+                    XCTAssertEqual (2, company1Employees!.count)
+                    XCTAssertTrue (company1Employees![0] === employeeEntity1 || company1Employees![0] === employeeEntity2)
+                    XCTAssertTrue (company1Employees![1] === employeeEntity1 || company1Employees![1] === employeeEntity2)
+                default:
+                    XCTFail ("expected .ok")
+                }
+                waitFor2a.fulfill()
+            }
+        }
+        companyEntity2.sync() { company in
+            collections.employees.forCompany(company) { result in
+                switch result {
+                case .ok (let company2Employees):
+                    XCTAssertEqual (2, company2Employees!.count)
+                    XCTAssertTrue (company2Employees![0] === employeeEntity3 || company2Employees![0] === employeeEntity4)
+                    XCTAssertTrue (company2Employees![1] === employeeEntity3 || company2Employees![1] === employeeEntity4)
+                default:
+                    XCTFail ("expected .ok")
+                }
+                waitFor2b.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 10, handler: nil)
     }
 
     
