@@ -9,7 +9,6 @@ import XCTest
 @testable import danake
 
 /*
- 
         This sample assumes you have read the framework introduction in README.md
         https://github.com/neallester/danake-sw#introduction
  
@@ -99,8 +98,6 @@ class Employee : Codable {
     
 }
 
-
-
 struct Address : Codable {
     
     init (street: String, city: String, state: String, zipCode: String) {
@@ -118,7 +115,6 @@ struct Address : Codable {
 }
 
 /*
- 
     The Persistence System
  
     protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each supported media).
@@ -152,9 +148,7 @@ struct Address : Codable {
  
     class SampleCollections:        An application specific convenience class for organizing all of the PersistentCollection objects associated with the
                                     SampleDatabase. Declare objects of this type using `let' within a scope with process lifetime
- 
 */
-
 
 class SampleDatabase : Database {
     
@@ -272,6 +266,26 @@ class SampleCollections {
 }
 
 class SampleTests: XCTestCase {
+    
+    // Execute the `runSample' test using the SampleInMemoryAccessor
+    public func testInMemorySample() {
+        let accessor = SampleInMemoryAccessor()
+        let logger: Logger? = nil
+//        let logger = InMemoryLogger()
+//        let logger = ConsoleLogger()
+        SampleTests.runSample (accessor: accessor, logger: logger)
+    }
+    
+/*
+     Test intended to demonstrate usage within application code
+*/
+
+    static func runSample (accessor: SampleAccessor, logger: Logger?) {
+        // Declare SampleCollections with `let'
+        // See class Database header comment for explanation of `schemaVersion'
+        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: logger)
+        let _ = collections.employees // TODO Remove
+    }
     
 /*
      Test Basic Functionality of Model and Persistence System

@@ -187,9 +187,8 @@ public class Database {
      The current ** schemaVersion ** is stored as metadata with every Entity when it is stored in the database. The value of ** schemaVersion **
      should be incremented whenever an Decodable incompatible change is made to any Entity.item stored in the database. That is, increment
      ** schemaVersion ** if an Entity.item (anywhere in the database) is no longer capable of decoding data stored under a previous
-     ** schemaVersion **. The intention is that the ** schemaVersion ** at the time an Entity.item was stored will be made available to the
-     code performing an Entity.item decode operation where it would facilitate decoding legacy JSON to the existing object structure. However,
-     a mechanism for actually doing this is currently not present in the framework.
+     ** schemaVersion **. The ** schemaVersion ** at the time an Entity.item was stored is available to the model object's deserialization
+     routine via the EntityReferenceData stored in userInfo[Database.parentKeyData] (see Entity.init (from decoder:)
 */
     convenience init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
         self.init (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 120.0)

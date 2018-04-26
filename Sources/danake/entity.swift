@@ -494,6 +494,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
+    // Model objects requiring access to the enclosing entities id or schemaVersion may obtain
+    // it from the EntityReferenceData stored in userInfo[Database.parentKeyData]
     public required init (from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         let collection = decoder.userInfo[Database.collectionKey] as? PersistentCollection<T>
