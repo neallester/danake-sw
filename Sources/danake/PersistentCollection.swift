@@ -16,6 +16,15 @@ import Foundation
 
 public typealias CollectionName = String
 
+/*
+ 
+    Access to the persisted instances of a single type or a polymorphically related set of types (use polymorism if indexed queries
+    based on attributes shared by all of the types are required). Each PersistentCollection must be associated with exactly one
+    database. Declare PersistentCollection attributes with `let' within a scope with process lifetime. Re-creating a
+    PersistentCollection object is not currently supported.
+ 
+*/
+
 public class PersistentCollection<T: Codable> {
     
     typealias entityType = T

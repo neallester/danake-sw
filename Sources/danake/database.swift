@@ -181,7 +181,8 @@ public class Database {
     
 /*
      Only one instance of the Database object associated with any particular persistent storage media (database) may be present in system.
-     Declare Database objects as let constants, re-creating the Database object associated with an attribute is not currently well supported.
+     Declare Database objects as let constants  within a scope with process lifetime, re-creating the Database object associated with
+     an attribute is not currently supported.
      
      The current ** schemaVersion ** is stored as metadata with every Entity when it is stored in the database. The value of ** schemaVersion **
      should be incremented whenever an Decodable incompatible change is made to any Entity.item stored in the database. That is, increment
