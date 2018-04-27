@@ -19,10 +19,11 @@ import XCTest
                         Property `employeeCollection' demonstrates how to deserialize a property whose value
                         comes from the environment rather than the the serialized representation of the instance.
  
-                        property `id' demnstrates how to give a model object a UUID value which is taken from the
-                        id of the enclosing Entity.
+                        property `id' demonstrates how to create a model object with an attribute of type UUID
+                        value which is taken from the id of the enclosing Entity at creation and deserialization
+                        time.
  
-                        The functions `employees()' demnstrate functions whose results are obtained via queries to
+                        The functions `employees()' demonstrate functions whose results are obtained via queries to
                         the persistent media.
  
         class Employee: An employee is associated with zero or one companies, and has zero or one addresses.
@@ -34,30 +35,32 @@ import XCTest
 
 class Company : Codable {
     
-    enum CodingKeys: String, CodingKey {
-        case id
-    }
+    enum CodingKeys: CodingKey {}
     
     init (employeeCollection: EmployeeCollection, id: UUID) {
         self.id = id
         self.employeeCollection = employeeCollection
     }
     
-    // Custom decoder sets the `employeeCollection' during deserialization
+    // Custom decoder sets the `employeeCollection' and `id' during deserialization
     public required init (from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        id = try values.decode(UUID.self, forKey: .id)
         // employeeCollection set by persistence system. See CompanyCollection.init()
         if let employeeCollection = decoder.userInfo[Company.employeeCollectionKey] as? EmployeeCollection {
             self.employeeCollection = employeeCollection
         } else {
             throw EntityDeserializationError<Company>.missingUserInfoValue(Company.employeeCollectionKey)
         }
+        // Use the enclosing entities value of `id'
+        // Same method may be used to obtain schemaVersion at time of last save
+        if let parentReferenceData = decoder.userInfo[Database.parentDataKey] as? EntityReferenceData<Company> {
+            self.id = parentReferenceData.id
+        } else {
+            throw EntityDeserializationError<Company>.missingUserInfoValue(Database.parentDataKey)
+        }
     }
     
     func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode (id, forKey: .id)
+        var _ = encoder.container(keyedBy: CodingKeys.self)
     }
     
     // With this design the results of the `employees' function will not include any newly
@@ -299,20 +302,11 @@ class SampleTests: XCTestCase {
     }
     
     func testCompanyEncodeDecode() {
-        var json = "{}"
+        let json = "{}"
         var jsonData = json.data(using: .utf8)!
         let decoder = JSONDecoder()
-        // Missing id
-        do {
-            let _ = try decoder.decode(Company.self, from: jsonData)
-            XCTFail("Expected error")
-        } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
-        }
-        json = "{\"id\":\"30288A21-4798-4134-9F35-6195BEC7F352\"}"
         jsonData = json.data(using: .utf8)!
-        print (UUID().uuidString)
-        // Decoding With no collection
+        // Decoding With no collection or parentData
         do {
             let _ = try decoder.decode(Company.self, from: jsonData)
             XCTFail("Expected error")
@@ -322,14 +316,26 @@ class SampleTests: XCTestCase {
             XCTFail("Expected missingUserInfoValue")
         }
         let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        // Decoding with collection
+        // Decoding with collection and no parent data
         decoder.userInfo[Company.employeeCollectionKey] = collections.employees
         do {
+            let _ = try decoder.decode(Company.self, from: jsonData)
+            XCTFail("Expected error")
+        } catch EntityDeserializationError<Company>.missingUserInfoValue (let error) {
+            XCTAssertEqual ("CodingUserInfoKey(rawValue: \"parentData\")", "\(error)")
+        } catch {
+            XCTFail("Expected missingUserInfoValue")
+        }
+        // Decoding with collection and parentdata
+        let uuid = UUID (uuidString: "30288A21-4798-4134-9F35-6195BEC7F352")!
+        let parentData = EntityReferenceData<Company>(collection: collections.companies, id: uuid, version: 1)
+        decoder.userInfo[Database.parentDataKey] = parentData
+        do {
             let company = try decoder.decode(Company.self, from: jsonData)
-            XCTAssertNotNil(company)
+            XCTAssertEqual ("30288A21-4798-4134-9F35-6195BEC7F352", company.id.uuidString)
             let encoder = JSONEncoder()
             let encodedData = try encoder.encode(company)
-            XCTAssertEqual ("{\"id\":\"30288A21-4798-4134-9F35-6195BEC7F352\"}", String (data: encodedData, encoding: .utf8)!)
+            XCTAssertEqual (json, String (data: encodedData, encoding: .utf8)!)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
