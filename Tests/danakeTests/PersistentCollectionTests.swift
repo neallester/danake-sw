@@ -565,6 +565,8 @@ class PersistentCollectionTests: XCTestCase {
             let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
             var retrievedEntities = collection.scan(criteria: nil).item()!
             XCTAssertEqual (0, retrievedEntities.count)
+            retrievedEntities = collection.scan().item()!
+            XCTAssertEqual (0, retrievedEntities.count)
             retrievedEntities = (collection.scan() { myStruct in
                 return (myStruct.myInt == 20)
             }).item()!
@@ -690,6 +692,66 @@ class PersistentCollectionTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
             }
+            collection.scan().item()!
+            retrievedEntity1 = nil
+            retrievedEntity2 = nil
+            retrievedEntity3 = nil
+            retrievedEntity4 = nil
+            for retrievedEntity in retrievedEntities {
+                XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
+                switch retrievedEntity.getPersistenceState() {
+                case .persistent:
+                    break
+                default:
+                    XCTFail ("Expected .persistent")
+                }
+                if retrievedEntity.id.uuidString == entity1.id.uuidString {
+                    XCTAssertNil (retrievedEntity1)
+                    retrievedEntity1 = retrievedEntity
+                } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
+                    XCTAssertNil (retrievedEntity2)
+                    retrievedEntity2 = retrievedEntity
+                } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
+                    XCTAssertNil (retrievedEntity3)
+                    retrievedEntity3 = retrievedEntity
+                } else if retrievedEntity.id.uuidString == entity4.id.uuidString {
+                    XCTAssertNil (retrievedEntity4)
+                    retrievedEntity4 = retrievedEntity
+                } else {
+                    XCTFail("Unknown Converted Entity")
+                }
+            }
+            XCTAssertEqual (4, retrievedEntities.count)
+            XCTAssertEqual (entity1.id.uuidString, retrievedEntity1!.id.uuidString)
+            XCTAssertTrue (entity1 !== retrievedEntity1)
+            entity1.sync() { item1 in
+                retrievedEntity1!.sync() { retrievedItem1 in
+                    XCTAssertEqual (item1.myInt, retrievedItem1.myInt)
+                    XCTAssertEqual (item1.myString, retrievedItem1.myString)
+                }
+            }
+            XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
+            entity2.sync() { item2 in
+                retrievedEntity2!.sync() { retrievedItem2 in
+                    XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
+                    XCTAssertEqual (item2.myString, retrievedItem2.myString)
+                }
+            }
+            XCTAssertEqual (entity3.id.uuidString, retrievedEntity3!.id.uuidString)
+            XCTAssertTrue (entity3 === retrievedEntity3!)
+            XCTAssertEqual (entity4.id.uuidString, retrievedEntity4!.id.uuidString)
+            XCTAssertTrue (entity4 === retrievedEntity4!)
+            collection.sync() { cache in
+                XCTAssertEqual (4, cache.count)
+                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity1!)
+                XCTAssertTrue (cache[entity2.id]!.item! === retrievedEntity2!)
+                XCTAssertTrue (cache[entity3.id]!.item! === retrievedEntity3!)
+                XCTAssertTrue (cache[entity4.id]!.item! === retrievedEntity4!)
+            }
+            logger.sync() { entries in
+                XCTAssertEqual (0, entries.count)
+            }
+            
             // With criteria
             var retrievalResult = collection.scan() { myStruct in
                 return (myStruct.myInt == 20)
@@ -970,9 +1032,18 @@ class PersistentCollectionTests: XCTestCase {
             default:
                 XCTFail("Expected .error")
             }
+            accessor.setThrowError()
+            switch collection.scan() {
+            case .error (let errorMessage):
+                XCTAssertEqual ("scanError", errorMessage)
+            default:
+                XCTFail("Expected .error")
+            }
             logger.sync() { entries in
-                XCTAssertEqual (1, entries.count)
-                let entry = entries[0].asTestString()
+                XCTAssertEqual (2, entries.count)
+                var entry = entries[0].asTestString()
+                XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
+                entry = entries[1].asTestString()
                 XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
             }
         }
@@ -982,7 +1053,7 @@ class PersistentCollectionTests: XCTestCase {
         var counter = 0
         while counter < 100 {
             var orderCode = 0
-            while orderCode < 4 {
+            while orderCode < 8 {
                 let accessor = InMemoryAccessor()
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
@@ -1044,8 +1115,62 @@ class PersistentCollectionTests: XCTestCase {
                 default:
                     XCTFail ("Expected .ok")
                 }
-                let test1 = {
+                let test1a = {
                     collection.scan(criteria: nil) { retrievalResult in
+                        let retrievedEntities = retrievalResult.item()!
+                        var retrievedEntity1: Entity<MyStruct>? = nil
+                        var retrievedEntity2: Entity<MyStruct>? = nil
+                        var retrievedEntity3: Entity<MyStruct>? = nil
+                        var retrievedEntity4: Entity<MyStruct>? = nil
+                        for retrievedEntity in retrievedEntities {
+                            XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
+                            let persistenceState = retrievedEntity.getPersistenceState()
+                            switch persistenceState {
+                            case .persistent:
+                                break
+                            default:
+                                XCTFail ("Expected .persistent but got \(persistenceState)")
+                            }
+                            if retrievedEntity.id.uuidString == entity1.id.uuidString {
+                                XCTAssertNil (retrievedEntity1)
+                                retrievedEntity1 = retrievedEntity
+                            } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
+                                XCTAssertNil (retrievedEntity2)
+                                retrievedEntity2 = retrievedEntity
+                            } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
+                                XCTAssertNil (retrievedEntity3)
+                                retrievedEntity3 = retrievedEntity
+                            } else if retrievedEntity.id.uuidString == entity4.id.uuidString {
+                                XCTAssertNil (retrievedEntity4)
+                                retrievedEntity4 = retrievedEntity
+                            } else {
+                                XCTFail("Unknown Converted Entity")
+                            }
+                        }
+                        XCTAssertEqual (4, retrievedEntities.count)
+                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity1?.id.uuidString)
+                        entity1.sync() { item1 in
+                            retrievedEntity1!.sync() { retrievedItem1 in
+                                XCTAssertEqual (item1.myInt, retrievedItem1.myInt)
+                                XCTAssertEqual (item1.myString, retrievedItem1.myString)
+                            }
+                        }
+                        XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
+                        entity2.sync() { item2 in
+                            retrievedEntity2!.sync() { retrievedItem2 in
+                                XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
+                                XCTAssertEqual (item2.myString, retrievedItem2.myString)
+                            }
+                        }
+                        XCTAssertEqual (entity3.id.uuidString, retrievedEntity3?.id.uuidString)
+                        XCTAssertTrue (entity3 === retrievedEntity3!)
+                        XCTAssertEqual (entity4.id.uuidString, retrievedEntity4?.id.uuidString)
+                        XCTAssertTrue (entity4 === retrievedEntity4!)
+                        dispatchGroup.leave()
+                    }
+                }
+                let test1b = {
+                    collection.scan() { retrievalResult in
                         let retrievedEntities = retrievalResult.item()!
                         var retrievedEntity1: Entity<MyStruct>? = nil
                         var retrievedEntity2: Entity<MyStruct>? = nil
@@ -1139,13 +1264,21 @@ class PersistentCollectionTests: XCTestCase {
                 var jobs: [() -> ()] = []
                 switch orderCode {
                 case 0:
-                    jobs = [test1, test2, test3]
+                    jobs = [test1a, test2, test3]
                 case 1:
-                    jobs = [test2, test1, test3]
+                    jobs = [test2, test1a, test3]
                 case 2:
-                    jobs = [test1, test3, test2]
+                    jobs = [test1a, test3, test2]
                 case 3:
-                    jobs = [test3, test2, test1]
+                    jobs = [test3, test2, test1a]
+                case 4:
+                    jobs = [test1b, test2, test3]
+                case 5:
+                    jobs = [test2, test1b, test3]
+                case 6:
+                    jobs = [test1b, test3, test2]
+                case 7:
+                    jobs = [test3, test2, test1b]
                 default:
                     XCTFail ("Unexpected Case")
                 }

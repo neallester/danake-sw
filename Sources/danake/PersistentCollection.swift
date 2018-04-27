@@ -130,6 +130,10 @@ public class PersistentCollection<T: Codable> {
         }
     }
     
+    public func scan () -> RetrievalResult<[Entity<T>]> {
+        return scan (criteria: nil)
+    }
+    
     /*
      Asynchronous access to all Entities from this collection in the persistent media
      New objects which have not yet been persisted are not included in the results
@@ -142,7 +146,11 @@ public class PersistentCollection<T: Codable> {
             closure (self.scan (criteria: criteria))
         }
     }
+    public func scan (closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
+        self.scan (criteria: nil, closure: closure)
+    }
 
+    
 // Entity Creation
     
     public func new (batch: EventuallyConsistentBatch, item: T) -> Entity<T> {
