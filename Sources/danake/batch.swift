@@ -63,7 +63,7 @@ public class EventuallyConsistentBatch {
         self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: nil)
     }
     
-    convenience init(logger: Logger) {
+    convenience init(logger: Logger?) {
         self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: logger)
     }
     
