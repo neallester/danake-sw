@@ -89,6 +89,7 @@ public class EventuallyConsistentBatch {
         commit (completionHandler: nil)
     }
     
+    // See https://github.com/neallester/danake-sw/issues/5
     public func commit (completionHandler: (() -> ())?) {
         queue.sync {
             let oldDelegate = delegate
