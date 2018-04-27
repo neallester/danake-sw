@@ -97,6 +97,16 @@ public class EventuallyConsistentBatch {
         }
     }
     
+    // Waits until batch processing has completed
+    public func commitSync() {
+        let group = DispatchGroup()
+        group.enter()
+        commit() {
+            group.leave()
+        }
+        group.wait()
+    }
+    
     private func commit (delegate: BatchDelegate, completionHandler: (() -> ())?) {
         delegate.commit (retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
     }

@@ -365,6 +365,19 @@ class BatchTests: XCTestCase {
         }
     }
     
+    func testCommitSync() {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let collectionName: CollectionName = "myCollection"
+        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        let _ = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let _ = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
+        batch.commitSync()
+        XCTAssertEqual (2, accessor.count(name: collectionName))
+    }
+    
 /*
      The following test verifies that a DispatchQueue declared as a local will fire even if
      the local has been collected. It emits the following output:
