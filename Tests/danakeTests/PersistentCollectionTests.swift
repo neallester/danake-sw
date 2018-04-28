@@ -692,7 +692,7 @@ class PersistentCollectionTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
             }
-            collection.scan().item()!
+            retrievedEntities = collection.scan().item()!
             retrievedEntity1 = nil
             retrievedEntity2 = nil
             retrievedEntity3 = nil
