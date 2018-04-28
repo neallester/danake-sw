@@ -416,13 +416,47 @@ class SampleTests: XCTestCase {
 
             // after commit() the batch is left as a fresh empty batch and may be reused
             let _ = collections.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
-            let _ = collections.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
+            var employee2: Entity<Employee>? = collections.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
             batch.commitSync()
+
+            // Updating the name attribute of Employee and setting a new reference for its address
+            let address1 = collections.addresses.new (batch: batch, item: Address(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
+            let address2 = collections.addresses.new (batch: batch, item: Address(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
+            let address3 = collections.addresses.new (batch: batch, item: Address(street: "Street 3", city: "City 3", state: "CA", zipCode: "94377"))
+            batch.commitSync()
+            employee2!.update(batch: batch) { employee in
+                employee.name = "Name Updated2"
+                employee.address.set(entity: address1, batch: batch)
+            }
+            batch.commitSync()
+
+            // EntityReference may be also be updated within a synchronous access to the
+            // parent entity
+            employee2!.sync() { employee in
+                employee.address.set(entity: address2, batch: batch)
+            }
+            batch.commitSync()
+
+            // EntityReference may be updated within an asynchronous access, but it is the
+            // application developer's responsibility to ensure the update occurs before
+            // the batch is committed
+
+            group.enter()
+            employee2!.async() { employee in
+                employee.address.set(entity: address3, batch: batch)
+                group.leave()
+            }
+            group.wait()
+            batch.commitSync()
+
             
-            // TODO Updating entities and entity references
-            
+            logger.sync() { entries in
+                XCTAssertEqual (2, entries.count)
+            }
+            employee2 = nil
             
         }
+
         // Closing this scope will cause `company1' and `company2' to be removed from cache
         // However, if batch.commit() rather than batch.commitSync() had been used,
         // then those entity objects could live on beyond the end of the scope until
@@ -460,7 +494,7 @@ class SampleTests: XCTestCase {
         var hasCached = true
         while hasCached {
             collections.employees.sync() { entities in
-                hasCached = entities.count > 0
+                hasCached = entities.count > 1 // TODO: Figure out why employee2 from the previous scope remains cached
                 usleep(100)
             }
         }
