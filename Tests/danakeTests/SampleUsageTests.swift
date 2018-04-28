@@ -9,28 +9,26 @@ import XCTest
 @testable import danake
 
 /*
-        This sample assumes you have read the framework introduction in README.md
-        https://github.com/neallester/danake-sw#introduction
+    This sample assumes you have read the framework introduction in README.md
+    https://github.com/neallester/danake-sw#introduction
  
-        The Application Model
+    The Application Model
  
-        class Company:  A Company is associated with zero or more Employees.
+    class Company:  A Company is associated with zero or more Employees. Demonstrates:
+                    - Property `employeeCollection' demonstrates how to deserialize a property whose value
+                      comes from the environment rather than the the serialized representation of the instance.
+                    - property `id' demonstrates how to create a model object with an attribute of type UUID
+                      value which is taken from the id of the enclosing Entity at creation and deserialization
+                      time.
+                    - The functions `employees()' demonstrate functions whose results are obtained via queries to
+                      the persistent media.
  
-                        Property `employeeCollection' demonstrates how to deserialize a property whose value
-                        comes from the environment rather than the the serialized representation of the instance.
- 
-                        property `id' demonstrates how to create a model object with an attribute of type UUID
-                        value which is taken from the id of the enclosing Entity at creation and deserialization
-                        time.
- 
-                        The functions `employees()' demonstrate functions whose results are obtained via queries to
-                        the persistent media.
- 
-        class Employee: An employee is associated with zero or one companies, and has zero or one addresses.
- 
-                        Properties `company' and `address' demonstrate the usage of EntityReference<PARENT, TYPE>
+    class Employee: An employee is associated with zero or one companies, and has zero or one addresses. Demonstrates
+                    - Properties `company' and `address' demonstrate the usage of EntityReference<PARENT, TYPE>
+                    - company attribute demonstrates eager retrieval
 
-        class Address:  Demonstrates the use of a struct as a reference.
+    class Address:  Demonstrates the use of a struct as a reference.
+ 
  */
 
 class Company : Codable {
@@ -52,7 +50,7 @@ class Company : Codable {
         }
         // Use the enclosing entities value of `id'
         // Same method may be used to obtain schemaVersion at time of last save
-        if let parentReferenceData = decoder.userInfo[Database.parentDataKey] as? EntityReferenceData<Company> {
+        if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentReferenceData = container.data as? EntityReferenceData<Company> {
             self.id = parentReferenceData.id
         } else {
             throw EntityDeserializationError<Company>.missingUserInfoValue(Database.parentDataKey)
@@ -88,7 +86,8 @@ class Employee : Codable {
     
     init (selfReference: EntityReferenceData<Employee>, company: Entity<Company>, name: String, address: Entity<Address>?) {
         self.name = name
-        self.company = EntityReference<Employee, Company> (parent: selfReference, entity: company)
+        // company reference is created with eager retrieval
+        self.company = EntityReference<Employee, Company> (parent: selfReference, entity: company, isEager: true)
         self.address = EntityReference<Employee, Address> (parent: selfReference, entity: address)
     }
 
@@ -273,21 +272,360 @@ class SampleTests: XCTestCase {
     // Execute the `runSample' test using the SampleInMemoryAccessor
     public func testInMemorySample() {
         let accessor = SampleInMemoryAccessor()
-        let logger: Logger? = nil
-//        let logger = InMemoryLogger()
-//        let logger = ConsoleLogger()
-        SampleTests.runSample (accessor: accessor, logger: logger)
+        
+        SampleTests.runSample (accessor: accessor)
     }
     
 /*
      Test intended to demonstrate usage within application code
 */
 
-    static func runSample (accessor: SampleAccessor, logger: Logger?) {
+    static func runSample (accessor: SampleAccessor) {
+        // Application code can run with any DatabaseAccessor implementing SampleAccessor
+        
         // Declare SampleCollections with `let'
         // See class Database header comment for explanation of `schemaVersion'
+        let logger = InMemoryLogger()
         let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: logger)
-        let _ = collections.employees // TODO Remove
+        
+        // Creating a database logs INFO
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.getAccessor().hashValue())", entries[0].asTestString())
+        }
+
+        // Start test in known state by ensuring persistent media is empty
+        removeAll(collections: collections)
+        
+        // Setup an arbitrary scope for illustration purposes
+        
+        var company1id: UUID?
+        var company2id: UUID?
+        
+        do {
+            
+            // batch may be declared with `let' or `var'
+            // However, do not recreate batches which contain uncommitted updates
+            // batch retry and timeout intervals are also settable; see
+            // EventuallyConsistentBatch class header comment for these and other details
+            // In application code always create batches with a logger
+            let batch = EventuallyConsistentBatch(logger: collections.logger)
+            
+            let company1 = collections.companies.new(batch: batch)
+            company1id = company1.id
+            let company2 = collections.companies.new(batch: batch)
+            company2id = company2.id
+            
+            // new objects are not available in persistent media until batch is committed
+            if let companies = collections.companies.scan().item() {
+                XCTAssertEqual (0, companies.count)
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid item")
+            }
+            
+            let group = DispatchGroup()
+            group.enter()
+            
+            // Batch.commit() is asyncrhonous
+            // use Batch.commitSync() to wait for batch processing
+            batch.commit() {
+                group.leave()
+            }
+            group.wait()
+            
+            // After commit our companies are in the persistent media
+            if let companies = collections.companies.scan().item() {
+                XCTAssertEqual (2, companies.count)
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid item")
+            }
+            
+            // There is only one instance representing any particular persistent Entity
+            // `get' queries will return cached entities (if available) before hitting persistent media.
+            // However, `scan' queries retrieving already cached entities are
+            // still expensive as they still go persistent media (cache normalization for scans does
+            // not occur until after the persistent objects are retrieved and partially deserialized)
+            if let entity = collections.companies.get(id: company1.id).item() {
+                XCTAssertTrue (company1 === entity)
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid item")
+            }
+            
+            // Because PersistentCollection.get may touch slow persistent media, use asynchronous
+            // version when possible
+            group.enter()
+            collections.companies.get(id: company2.id) { retrievalResult in
+                if let company = retrievalResult.item() {
+                    XCTAssertTrue (company === company2)
+                } else {
+                    // Retrieval error
+                    XCTFail ("Expected valid item")
+                }
+                group.leave()
+            }
+            group.wait()
+
+            // If our successful query may return nil, explicitly use retrievialResult
+            group.enter()
+            let badId = UUID()
+            collections.companies.get(id: badId) { retrievalResult in
+                switch retrievalResult {
+                case .ok (let company):
+                    XCTAssertNil (company)
+                default:
+                    // Retrieval error
+                    XCTFail ("Expected .ok")
+                }
+                group.leave()
+            }
+            group.wait()
+            
+            // An unsuccessful PersistentCollection.get logs a WARNING
+            logger.sync() { entries in
+                XCTAssertEqual (2, entries.count)
+                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.getAccessor().hashValue());collection=company;id=\(badId.uuidString)", entries[1].asTestString())
+            }
+
+            // Retrieving persisted objects by criteria
+            let scanResult = collections.companies.scan() { company in
+                company.id.uuidString == company2.id.uuidString
+            }
+            if let companies = scanResult.item() {
+                XCTAssertEqual (1, companies.count)
+                XCTAssertEqual (companies[0].id.uuidString, company2.id.uuidString)
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid item")
+            }
+
+            // after commit() the batch is left as a fresh empty batch and may be reused
+            let _ = collections.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
+            let _ = collections.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
+            batch.commitSync()
+            
+            // TODO Updating entities and entity references
+            
+            
+        }
+        // Closing this scope will cause `company1' and `company2' to be removed from cache
+        // However, if batch.commit() rather than batch.commitSync() had been used,
+        // then those entity objects could live on beyond the end of the scope until
+        // the batch (processing asynchronously) was finished them
+        
+        // Application developers must always commit batches
+        // Updates to an Entity will be lost (and ERROR logged) if both the batch and entity go out of
+        // scope before the batch is committed
+        var lostChangesEmployeeUuidString = ""
+        do {
+            let batch = EventuallyConsistentBatch (logger: logger)
+            if let companyEntity = collections.companies.get (id: company1id!).item() {
+                companyEntity.sync() { company in
+                    if let employeeEntity = company.employees().item()?[0] {
+                        lostChangesEmployeeUuidString = employeeEntity.id.uuidString
+                        employeeEntity.update(batch: batch) { employee in
+                            employee.name = "Name Updated1"
+                            XCTAssertEqual ("Name Updated1", employee.name)
+                        }
+                    } else {
+                        // Retrieval error
+                        XCTFail ("Expected valid")
+                    }
+                }
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid")
+            }
+        }
+        // Batch cleanup occurs asynchronously
+        // For demonstration purposes only wait for it to complete using the internal
+        // function PersistentCollection.sync()
+        // In application code waiting like this should never be necessary because
+        // batches should always be committed before they go out of scope
+        var hasCached = true
+        while hasCached {
+            collections.employees.sync() { entities in
+                hasCached = entities.count > 0
+                usleep(100)
+            }
+        }
+        // An error has indeed been logged and the update has indeed been lost
+        logger.sync() { entries in
+            XCTAssertEqual (3, entries.count)
+            XCTAssertEqual ("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
+        }
+        do {
+            if let companyEntity = collections.companies.get (id: company1id!).item() {
+                companyEntity.sync() { company in
+                    if let employeeEntity = company.employees().item()?[0] {
+                        employeeEntity.sync() { employee in
+                            XCTAssertEqual ("Name One", employee.name)
+                        }
+                    } else {
+                        // Retrieval error
+                        XCTFail ("Expected valid")
+                    }
+                }
+            } else {
+                // Retrieval error
+                XCTFail ("Expected valid")
+            }
+        }
+
+        if let inMemoryAccessor = accessor as? InMemoryAccessor {
+
+            // Use InMemoryAccessor.setError() to simulate persistent media errors for testing
+            inMemoryAccessor.setThrowError()
+            switch collections.companies.get(id: company1id!) {
+            case .error(let errorMessage):
+                XCTAssertEqual ("getError", errorMessage)
+                logger.sync() { entries in
+                    XCTAssertEqual (4, entries.count)
+                    XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.getAccessor().hashValue());collection=company;id=\(company1id!.uuidString);errorMessage=getError", entries[3].asTestString())
+                }
+            default:
+                XCTFail ("Expected .error")
+            }
+            
+            // Only one error will be thrown; subsequent operations will succeed
+            switch collections.companies.get(id: company1id!) {
+            case .ok (let company):
+                XCTAssertEqual (company!.id.uuidString, company1id!.uuidString)
+                logger.sync() { entries in
+                    XCTAssertEqual (4, entries.count)
+                }
+            default:
+                XCTFail ("Expected .ok")
+            }
+
+            // Use InMemoryAccessor.setPrefetch to control the timing of
+            // persistent media operations for testing
+            let semaphore = DispatchSemaphore (value: 1)
+            semaphore.wait()
+            let preFetch = { (uuid: UUID) in
+                if (uuid.uuidString == company1id!.uuidString) {
+                    semaphore.wait()
+                    semaphore.signal()
+                }
+            }
+            inMemoryAccessor.setPreFetch(preFetch)
+            var retrievedCompany: Entity<Company>? = nil
+            let group = DispatchGroup()
+            group.enter()
+            collections.companies.get(id: company2id!) { retrievalResult in
+                switch retrievalResult {
+                case .ok (let company):
+                    XCTAssertEqual (company!.id.uuidString, company2id!.uuidString)
+                    retrievedCompany = company
+                default:
+                    XCTFail ("Expected .ok")
+                }
+                group.leave()
+            }
+            XCTAssertNil (retrievedCompany)
+            semaphore.signal()
+            group.wait()
+            XCTAssertEqual (retrievedCompany!.id.uuidString, company2id!.uuidString)
+            logger.sync() { entries in
+                XCTAssertEqual (4, entries.count)
+            }
+            
+            // Entity updates require 2 calls to the DatabaseAccessor:
+            // 1) Serialization (fast)
+            // 2) Writing to persistent media (slow)
+            // Errors during serialization are considered unrecoverable
+            // Unrecoverable errors are logged ERROR but not retried
+            // This demonstrates how to throw an unrecoverable serialization error
+            do {
+                let batch = EventuallyConsistentBatch (logger: logger)
+                let batchIdString = batch.delegateId().uuidString
+                if let employeeEntity = collections.employees.get(id: UUID (uuidString: lostChangesEmployeeUuidString)!).item() {
+                    employeeEntity.update(batch: batch) { employee in
+                        employee.name = "Name Updated1"
+                        XCTAssertEqual ("Name Updated1", employee.name)
+                    }
+                }
+                // Using setThrowError() before an update will throw an unrecoverable serialization error
+                inMemoryAccessor.setThrowError()
+                batch.commitSync()
+                logger.sync() { entries in
+                    XCTAssertEqual (5, entries.count)
+                    XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);batchId=\(batchIdString)", entries[4].asTestString())
+                }
+            }
+            do {
+                if let companyEntity = collections.companies.get (id: company1id!).item() {
+                    companyEntity.sync() { company in
+                        if let employeeEntity = company.employees().item()?[0] {
+                            employeeEntity.sync() { employee in
+                                XCTAssertEqual ("Name One", employee.name)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Errors during the persistent media write are considered recoverable
+            // They are logged EMERGENCY and retried until completion
+            // The following demonstrates how to throw a single recoverable error
+            // which will be logged and will then succeed on the retry
+            do {
+                let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
+                let batchIdString = batch.delegateId().uuidString
+                if let employeeEntity = collections.employees.get(id: UUID (uuidString: lostChangesEmployeeUuidString)!).item() {
+                    employeeEntity.update(batch: batch) { employee in
+                        employee.name = "Name Updated1"
+                        XCTAssertEqual ("Name Updated1", employee.name)
+                    }
+                }
+                var preFetchCount = 0
+                let prefetch: (UUID) -> () = { id in
+                    if preFetchCount == 1 {
+                        // The prefetch ignores the first call to the accessor
+                        // Set the attribute directly (do not call setThrowError())
+                        inMemoryAccessor.throwError = true
+                    }
+                    preFetchCount = preFetchCount + 1
+                }
+                inMemoryAccessor.setPreFetch(prefetch)
+                batch.commitSync()
+                logger.sync() { entries in
+                    XCTAssertEqual (6, entries.count)
+                    XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);batchId=\(batchIdString)", entries[5].asTestString())
+                }
+            }
+            inMemoryAccessor.setPreFetch(nil)
+            do {
+                if let companyEntity = collections.companies.get (id: company1id!).item() {
+                    companyEntity.sync() { company in
+                        if let employeeEntity = company.employees().item()?[0] {
+                            employeeEntity.sync() { employee in
+                                XCTAssertEqual ("Name Updated1", employee.name)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Clean up
+        removeAll(collections: collections)
+    }
+    
+    static func removeAll (collections: SampleCollections) {
+        let batch = EventuallyConsistentBatch()
+        for entity in collections.companies.scan(criteria: nil).item()! {
+            entity.remove(batch: batch)
+        }
+        for entity in collections.employees.scan(criteria: nil).item()! {
+            entity.remove(batch: batch)
+        }
+        for entity in collections.addresses.scan(criteria: nil).item()! {
+            entity.remove(batch: batch)
+        }
+        batch.commitSync()
     }
     
 /*
@@ -329,7 +667,9 @@ class SampleTests: XCTestCase {
         // Decoding with collection and parentdata
         let uuid = UUID (uuidString: "30288A21-4798-4134-9F35-6195BEC7F352")!
         let parentData = EntityReferenceData<Company>(collection: collections.companies, id: uuid, version: 1)
-        decoder.userInfo[Database.parentDataKey] = parentData
+        let container = DataContainer ()
+        container.data = parentData
+        decoder.userInfo[Database.parentDataKey] = container
         do {
             let company = try decoder.decode(Company.self, from: jsonData)
             XCTAssertEqual ("30288A21-4798-4134-9F35-6195BEC7F352", company.id.uuidString)
@@ -622,5 +962,40 @@ class SampleTests: XCTestCase {
         waitForExpectations(timeout: 10, handler: nil)
     }
 
+    func testRemoveAll() {
+        let accessor = SampleInMemoryAccessor()
+        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let batch = EventuallyConsistentBatch()
+        let companyEntity1 = collections.companies.new(batch: batch)
+        let companyEntity2 = collections.companies.new(batch: batch)
+        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let address1 = collections.addresses.new(batch: batch, item: Address(street: "S1", city: "C1", state: "St1", zipCode: "Z1"))
+        let address2 = collections.addresses.new(batch: batch, item: Address(street: "S2", city: "C2", state: "St2", zipCode: "Z2"))
+        let address3 = collections.addresses.new(batch: batch, item: Address(street: "S3", city: "C3", state: "St3", zipCode: "Z3"))
+        let address4 = collections.addresses.new(batch: batch, item: Address(street: "S4", city: "C4", state: "St4", zipCode: "Z4"))
+        employeeEntity1.update(batch: batch) { employee in
+            employee.address.set(entity: address1, batch: batch)
+        }
+        employeeEntity2.update(batch: batch) { employee in
+            employee.address.set(entity: address2, batch: batch)
+        }
+        employeeEntity3.update(batch: batch) { employee in
+            employee.address.set(entity: address3, batch: batch)
+        }
+        employeeEntity4.update(batch: batch) { employee in
+            employee.address.set(entity: address4, batch: batch)
+        }
+        batch.commitSync()
+        XCTAssertEqual (2, collections.companies.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (4, collections.employees.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (4, collections.addresses.scan(criteria: nil).item()!.count)
+        SampleTests.removeAll(collections: collections)
+        XCTAssertEqual (0, collections.companies.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (0, collections.employees.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (0, collections.addresses.scan(criteria: nil).item()!.count)
+    }
     
 }
