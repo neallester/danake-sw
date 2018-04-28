@@ -354,15 +354,28 @@ class SampleTests: XCTestCase {
                 XCTFail ("Expected valid item")
             }
             
-            // Because PersistentCollection.get may touch slow persistent media, use asynchronous
-            // version when possible
+            // Because PersistentCollection.get()
+            // use asynchronous version when possible
             group.enter()
             collections.companies.get(id: company2.id) { retrievalResult in
                 if let company = retrievalResult.item() {
                     XCTAssertTrue (company === company2)
                 } else {
                     // Retrieval error
-                    XCTFail ("Expected valid item")
+                    XCTFail ("Expected valid")
+                }
+                group.leave()
+            }
+            group.wait()
+            
+            // Asynchronous version is also preferred for PersistentCollection.scan()
+            group.enter()
+            collections.companies.scan() { retrievalResult in
+                if let companies = retrievalResult.item() {
+                    XCTAssertEqual (2, companies.count)
+                } else {
+                    // Retrieval error
+                    XCTFail ("Expected valid")
                 }
                 group.leave()
             }
