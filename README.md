@@ -12,6 +12,10 @@ Data updates are collected into batches which are submitted manually by the appl
 
 Please see the [SampleUsageTests](https://github.com/neallester/danake-sw/blob/master/Tests/danakeTests/SampleUsageTests.swift) for more detail about incorporating the Danake framework into application code.
 
+## Status
+
+This is library is currently in alpha testing on OSX.
+
 ## Long Term Aspirations
 * Mismatch correction for persistent data structure changes
 * Compile time identification of persistent data structure changes which may be incompatible with existing stored data
