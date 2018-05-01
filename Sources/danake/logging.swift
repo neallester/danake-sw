@@ -88,7 +88,7 @@ struct LogEntry {
     
 }
 
-class ThreadSafeLogger : Logger {
+public class ThreadSafeLogger : Logger {
 
     init() {
         level = .debug
@@ -98,7 +98,7 @@ class ThreadSafeLogger : Logger {
         self.level = level
     }
     
-    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+    public func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         if (level >= self.level) {
             queue.async () {
                 self.logImplementation(level: level, source: source, featureName: featureName, message: message, data: data)
@@ -113,7 +113,7 @@ class ThreadSafeLogger : Logger {
     fileprivate let queue = DispatchQueue (label: UUID().uuidString)
 }
 
-class InMemoryLogger : ThreadSafeLogger {
+public class InMemoryLogger : ThreadSafeLogger {
     
     override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
@@ -129,7 +129,7 @@ class InMemoryLogger : ThreadSafeLogger {
     
 }
 
-class ConsoleLogger : ThreadSafeLogger {
+public class ConsoleLogger : ThreadSafeLogger {
     
     override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         print (LogEntry (level: level, source: source, featureName: featureName, message: message, data: data).asTestString())
