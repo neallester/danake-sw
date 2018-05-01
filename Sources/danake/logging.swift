@@ -90,11 +90,11 @@ struct LogEntry {
 
 public class ThreadSafeLogger : Logger {
 
-    init() {
+    public init() {
         level = .debug
     }
     
-    init (level: LogLevel) {
+    public init (level: LogLevel) {
         self.level = level
     }
     
