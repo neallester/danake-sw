@@ -16,6 +16,11 @@ Please see the [SampleUsageTests](https://github.com/neallester/danake-sw/blob/m
 
 This is library is currently in alpha testing on OSX.
 
+## Gotchas
+
+* Removing Entities (Entity.remove(batch:)) which are referenced by other Entities from persistent storage will generate errors when the remaining references are used. 
+* Application developers are responsible for removing Entities ((Entity.remove(batch:)) which are not needed as persistent media entry points and which are not referenced by any other Entities from persistent media.
+
 ## Long Term Aspirations
 * Mismatch correction for persistent data structure changes
 * Compile time identification of persistent data structure changes which may be incompatible with existing stored data
