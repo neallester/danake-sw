@@ -25,7 +25,7 @@ This is library is currently in alpha testing on OSX.
 1. Install [sourcery](https://github.com/krzysztofzablocki/Sourcery)
 1. Create a file named sourcery.sh in the project root directory (the directory which contains README.md). This file name is entered in .gitignore so it will not be checked in. This file should contain:
 
-   ⋅⋅⋅/path/to/binary/sourcery --sources Tests/ --templates sourcery/LinuxMain.stencil --args testimports='@testable import danakeTests' --output Tests
+   /path/to/binary/sourcery --sources Tests/ --templates sourcery/LinuxMain.stencil --args testimports='@testable import danakeTests' --output Tests
 1. chmod +x sourcery.sh
 
 ## Long Term Aspirations
