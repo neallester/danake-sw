@@ -21,6 +21,12 @@ This is library is currently in alpha testing on OSX.
 * Removing Entities (Entity.remove(batch:)) which are referenced by other Entities from persistent storage will generate errors when the remaining references are used. 
 * Application developers are responsible for removing Entities ((Entity.remove(batch:)) which are not needed as persistent media entry points and which are not referenced by any other Entities from persistent media.
 
+## Setup Development Environment on OSX
+1. Install [sourcery](https://github.com/krzysztofzablocki/Sourcery)
+1. Create a file named sourcery.sh in the project root directory (the directory which contains README.md). This file name is entered in .gitignore so it will not be checked in. This file should contain:
+.../path/to/binary/sourcery --sources Tests/ --templates sourcery/LinuxMain.stencil --args testimports='@testable import danakeTests' --output Tests
+1. chmod +x sourcery.sh
+
 ## Long Term Aspirations
 * Mismatch correction for persistent data structure changes
 * Compile time identification of persistent data structure changes which may be incompatible with existing stored data
