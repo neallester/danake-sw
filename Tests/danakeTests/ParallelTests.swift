@@ -235,18 +235,18 @@ class ParallelTests: XCTestCase {
             var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a, test300u, test300pr, test300prpl]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
-                let itemToRemove = Int (arc4random_uniform(UInt32(tests.count)))
+                let itemToRemove = Int (ParallelTests.randomInteger(maxValue: tests.count))
                 randomTests.append (tests[itemToRemove])
                 let _ = tests.remove(at: itemToRemove)
             }
             var finalTests: [() -> ()] = []
-            if let inMemoryAccessor = accessor as? InMemoryAccessor, (arc4random_uniform(10) >= 2) {
+            if let inMemoryAccessor = accessor as? InMemoryAccessor, (ParallelTests.randomInteger(maxValue:10) >= 2) {
                 inMemoryAccessor.setThrowOnlyRecoverableErrors (true)
                 var errorCounter = 0
                 while errorCounter < 15 {
                     let newTest = {
                         let maxSleepTime = totalExecutionTime / (Double (testCount) + 1.0)
-                        let sleepTime = arc4random_uniform(UInt32 ((1000000 * maxSleepTime)))
+                        let sleepTime = UInt32 (ParallelTests.randomInteger(maxValue:Int ((1000000 * maxSleepTime))))
                         persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
                         usleep (sleepTime)
                         persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: nil)
@@ -700,7 +700,7 @@ class ParallelTests: XCTestCase {
             executeOnMyStruct(persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest2r") { entity in
                 entity.remove(batch: batch)
             }
-            usleep(arc4random_uniform (500))
+            usleep(UInt32 (ParallelTests.randomInteger(maxValue: 500)))
             counter = counter + 1
             
         }
@@ -787,7 +787,7 @@ class ParallelTests: XCTestCase {
 
                 }
             }
-            usleep(arc4random_uniform (500))
+            usleep(UInt32 (ParallelTests.randomInteger(maxValue:500)))
             counter = counter + 1
 
         }
@@ -813,7 +813,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(arc4random_uniform (10))
+                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
                     myStruct.update(batch: batch2) { item in
                         let newInt = item.myInt * 10
                         item.myInt = newInt
@@ -827,7 +827,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(arc4random_uniform (10))
+                    usleep(UInt32 ( ParallelTests.randomInteger(maxValue: 10)))
                     myStruct.remove(batch: batch2)
                     counter = counter + 1
                 }
@@ -859,7 +859,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(arc4random_uniform (10))
+                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
                     myStruct.update(batch: batch2) { item in
                         let newInt = item.myInt * 10
                         item.myInt = newInt
@@ -873,7 +873,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(arc4random_uniform (10))
+                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
                     myStruct.remove(batch: batch3)
                     counter = counter + 1
                 }
@@ -948,7 +948,7 @@ class ParallelTests: XCTestCase {
                 }
                 entity.remove(batch: batch)
             }
-            usleep(arc4random_uniform (500))
+            usleep(UInt32 (ParallelTests.randomInteger(maxValue: 500)))
         }
         internalGroup.wait()
         persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "batch.commit()", data: nil)
@@ -1050,7 +1050,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             workQueue.async {
-                usleep(arc4random_uniform(UInt32(1000)))
+                usleep(UInt32 (ParallelTests.randomInteger(maxValue: 1000)))
                 self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
@@ -1059,7 +1059,7 @@ class ParallelTests: XCTestCase {
         for structRef in structRefs {
             internalGroup.enter()
             workQueue.async {
-                usleep(arc4random_uniform(UInt32(1000)))
+                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
                 executeOnMyStruct(persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
@@ -1114,7 +1114,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             workQueue.async {
-                usleep(arc4random_uniform(UInt32(1000)))
+                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
                 self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
@@ -1123,7 +1123,7 @@ class ParallelTests: XCTestCase {
         for structRef in structRefs {
             internalGroup.enter()
             workQueue.async {
-                usleep(arc4random_uniform(UInt32(1000)))
+                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
                 executeOnMyStruct(persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
@@ -1253,6 +1253,15 @@ class ParallelTests: XCTestCase {
             index = index + 1
         }
         return (containers: containers, ids: ids)
+    }
+    
+    private static func randomInteger (maxValue: Int) -> Int {
+        #if os(Linux)
+            srandom(UInt32(time(nil)))
+            return Int(random() % maxValue)
+        #else
+            return Int (arc4random_uniform(UInt32(maxValue)))
+        #endif
     }
 
     private static let myStructCount = 6
