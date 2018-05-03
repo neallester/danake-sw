@@ -659,6 +659,9 @@ class SampleTests: XCTestCase {
                     preFetchCount = preFetchCount + 1
                 }
                 inMemoryAccessor.setPreFetch(prefetch)
+                logger.sync() { entries in
+                    XCTAssertEqual (5, entries.count)
+                }
                 batch.commitSync()
                 logger.sync() { entries in
                     XCTAssertEqual (6, entries.count)
