@@ -603,17 +603,25 @@ class SampleTests: XCTestCase {
                 }
             }
             do {
+                collections.employees.sync() { entities in
+                    XCTAssertNil (entities[UUID (uuidString: lostChangesEmployeeUuidString)!]?.item)
+                }
+                var foundEmployee = false
                 if let companyEntity = collections.companies.get (id: company1id!).item() {
                     companyEntity.sync() { company in
                         if let employeeEntity = company.employees().item()?[0] {
                             employeeEntity.sync() { employee in
                                 XCTAssertEqual ("Name One", employee.name)
+                                foundEmployee = true
                             }
                         }
                     }
                 }
+                XCTAssertTrue (foundEmployee)
             }
-
+            logger.sync() { entries in
+                XCTAssertEqual (5, entries.count)
+            }
             // Errors during the persistent media write are considered recoverable
             // They are logged EMERGENCY and retried until completion
             // The following demonstrates how to throw a single recoverable error
@@ -645,15 +653,18 @@ class SampleTests: XCTestCase {
             }
             inMemoryAccessor.setPreFetch(nil)
             do {
+                var foundEmployee = false
                 if let companyEntity = collections.companies.get (id: company1id!).item() {
                     companyEntity.sync() { company in
                         if let employeeEntity = company.employees().item()?[0] {
                             employeeEntity.sync() { employee in
                                 XCTAssertEqual ("Name Updated1", employee.name)
+                                foundEmployee = true
                             }
                         }
                     }
                 }
+                XCTAssertTrue (foundEmployee)
             }
         }
         
