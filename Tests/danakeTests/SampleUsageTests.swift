@@ -633,6 +633,16 @@ class SampleTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (5, entries.count)
             }
+            // Wait for objects associated with previous batch to be deallocated in order to
+            // Demonstrate that the employee.name remained unchanged in the persistent media
+            group.enter()
+            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
+            switch group.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail ("Expected .success")
+            }
             // Errors during the persistent media write are considered recoverable
             // They are logged EMERGENCY and retried until completion
             // The following demonstrates how to throw a single recoverable error
