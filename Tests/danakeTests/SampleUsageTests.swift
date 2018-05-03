@@ -679,6 +679,16 @@ class SampleTests: XCTestCase {
                 }
             }
             inMemoryAccessor.setPreFetch(nil)
+            // Wait for objects associated with previous batch to be deallocated in order to
+            // Demonstrate that the employee.name was updated in the persistent media
+            group.enter()
+            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
+            switch group.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail ("Expected .success")
+            }
             do {
                 var foundEmployee = false
                 if let companyEntity = collections.companies.get (id: company1id!).item() {

@@ -198,19 +198,19 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
     
     public func setThrowError() {
-        queue.async {
+        queue.sync {
             self.throwError = true
         }
     }
     
     public func setThrowError(_ throwError: Bool) {
-        queue.async {
+        queue.sync {
             self.throwError = throwError
         }
     }
     
     public func setThrowOnlyRecoverableErrors (_ throwRecoverableErrors: Bool) {
-        queue.async {
+        queue.sync {
             self.throwOnlyRecoverableErrors = throwRecoverableErrors
         }
         
