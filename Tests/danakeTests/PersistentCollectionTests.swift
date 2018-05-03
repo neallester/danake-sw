@@ -523,11 +523,7 @@ class PersistentCollectionTests: XCTestCase {
             }
             switch result2! {
             case .error (let errorMessage):
-                #if os(Linux)
-                    XCTAssertEqual ("The operation could not be completed", errorMessage)
-                #else
-                    XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", errorMessage)
-                #endif
+                XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
