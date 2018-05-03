@@ -521,6 +521,28 @@ class SampleTests: XCTestCase {
             }
         }
 
+        // Wait for objects associated with previous batch to be deallocated in order to
+        // Demonstrate that the employee.name remained unchanged in the persistent media
+        do {
+            let group = DispatchGroup()
+            group.enter()
+            waitForDeallocation(collection: collections.employees, group: group, uuidString: company1id!.uuidString)
+            switch group.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail ("Expected .success")
+            }
+            group.enter()
+            waitForDeallocation(collection: collections.employees, group: group, uuidString: company2id!.uuidString)
+            switch group.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail ("Expected .success")
+            }
+        }
+
         if let inMemoryAccessor = accessor as? InMemoryAccessor {
 
             // Use InMemoryAccessor.setError() to simulate persistent media errors for testing
