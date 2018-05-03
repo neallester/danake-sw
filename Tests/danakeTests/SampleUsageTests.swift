@@ -602,6 +602,17 @@ class SampleTests: XCTestCase {
                     XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);batchId=\(batchIdString)", entries[4].asTestString())
                 }
             }
+            // Wait for objects associated with previous batch to be deallocated in order to
+            // Demonstrate that the employee.name remained unchanged in the persistent media
+            group.enter()
+            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
+            switch group.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail ("Expected .success")
+            }
+            // Demonstrate that the previous changes were lost due to the reported unrecoverable error
             do {
                 collections.employees.sync() { entities in
                     XCTAssertNil (entities[UUID (uuidString: lostChangesEmployeeUuidString)!]?.item)
@@ -687,6 +698,19 @@ class SampleTests: XCTestCase {
             entity.remove(batch: batch)
         }
         batch.commitSync()
+    }
+    
+    static func waitForDeallocation<T>(collection: PersistentCollection<T>, group: DispatchGroup, uuidString: String) {
+        usleep(10)
+        collection.database.workQueue.async {
+            collection.sync() { entities in
+                if let _ = entities[UUID (uuidString: uuidString)!]?.item {
+                    waitForDeallocation (collection: collection, group: group, uuidString: uuidString)
+                } else {
+                    group.leave()
+                }
+            }
+        }
     }
     
 /*
