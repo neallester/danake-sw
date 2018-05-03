@@ -226,7 +226,9 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     
     func setPreFetch (_ preFetch: ((UUID) -> Void)?) {
-        self.preFetch = preFetch
+        queue.sync {
+            self.preFetch = preFetch
+        }        
     }
     
     func sync (closure: (Dictionary<CollectionName, Dictionary<UUID, Data>>) -> Void) {
