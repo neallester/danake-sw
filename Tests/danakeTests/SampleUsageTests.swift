@@ -629,11 +629,14 @@ class SampleTests: XCTestCase {
             do {
                 let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
                 let batchIdString = batch.delegateId().uuidString
+                XCTAssertFalse (inMemoryAccessor.isThrowError())
                 if let employeeEntity = collections.employees.get(id: UUID (uuidString: lostChangesEmployeeUuidString)!).item() {
                     employeeEntity.update(batch: batch) { employee in
                         employee.name = "Name Updated1"
                         XCTAssertEqual ("Name Updated1", employee.name)
                     }
+                } else {
+                    XCTFail("Expected employeeEntity")
                 }
                 var preFetchCount = 0
                 let prefetch: (UUID) -> () = { id in
