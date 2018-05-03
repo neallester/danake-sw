@@ -526,7 +526,7 @@ class SampleTests: XCTestCase {
         do {
             let group = DispatchGroup()
             group.enter()
-            waitForDeallocation(collection: collections.employees, group: group, uuidString: company1id!.uuidString)
+            waitForDeallocation(collection: collections.companies, group: group, uuidString: company1id!.uuidString)
             switch group.wait(timeout: DispatchTime.now() + 10) {
             case .success:
                 break
@@ -534,7 +534,7 @@ class SampleTests: XCTestCase {
                 XCTFail ("Expected .success")
             }
             group.enter()
-            waitForDeallocation(collection: collections.employees, group: group, uuidString: company2id!.uuidString)
+            waitForDeallocation(collection: collections.companies, group: group, uuidString: company2id!.uuidString)
             switch group.wait(timeout: DispatchTime.now() + 10) {
             case .success:
                 break
