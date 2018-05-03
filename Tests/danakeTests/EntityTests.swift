@@ -661,7 +661,7 @@ class EntityTests: XCTestCase {
             XCTFail("Expected Exception")
         } catch {
             #if os(Linux)
-                try XCTAssertEqual ("The operation could not be completed", "\(error)")
+                XCTAssertEqual ("The operation could not be completed", "\(error)")
             #else
                 XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
             #endif
