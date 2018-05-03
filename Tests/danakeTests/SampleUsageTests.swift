@@ -655,6 +655,8 @@ class SampleTests: XCTestCase {
                     employeeEntity.update(batch: batch) { employee in
                         employee.name = "Name Updated1"
                         XCTAssertEqual ("Name Updated1", employee.name)
+                        // employee.company is eager retrieval, so we need to wait for it to load before proceeding
+                        let _ = employee.company.get()
                     }
                 } else {
                     XCTFail("Expected employeeEntity")
