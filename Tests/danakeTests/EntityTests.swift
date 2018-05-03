@@ -525,7 +525,11 @@ class EntityTests: XCTestCase {
         } catch EntityDeserializationError<MyStruct>.alreadyCached(let cachedEntity) {
             XCTAssertTrue (entity1 === cachedEntity)
         }
-        try XCTAssertEqual ("{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}", String (data: accessor.encoder.encode(entity1), encoding: .utf8)!)
+        #if os(Linux)
+            try XCTAssertEqual ("{\"id\":\"\(id1.uuidString)\",\"item\":{\"myString\":\"A \\\"Quoted\\\" String\",\"myInt\":100},\"version\":10,\"schemaVersion\":5,\"persistenceState\":\"new\",\"created\":\(creationDateString1)}", String (data: accessor.encoder.encode(entity1), encoding: .utf8)!)
+        #else
+            try XCTAssertEqual ("{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}", String (data: accessor.encoder.encode(entity1), encoding: .utf8)!)
+        #endif
         // No Id
         json = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         json = "{\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -655,7 +659,11 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
+            #if os(Linux)
+                try XCTAssertEqual ("The operation could not be completed", "\(error)")
+            #else
+                XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
+            #endif
         }
         // With illegal saved
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"saved\":\"AAA\",\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -686,7 +694,13 @@ class EntityTests: XCTestCase {
             }
             try XCTAssertEqual (jsonEncodedDate (date: entity4.created)!, creationDateString1)
             try XCTAssertEqual (jsonEncodedDate (date: entity4.getSaved()!)!, savedDateString)
-            try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(id4.uuidString)\",\"saved\":\(savedDateString),\"created\":\(creationDateString1),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)
+            #if os(Linux)
+                try XCTAssertEqual ("{\"id\":\"C900C042-C5F4-4587-BDF5-7E9D5528ACF2\",\"item\":{\"myString\":\"A \\\"Quoted\\\" String\",\"myInt\":100},\"version\":10,\"persistenceState\":\"persistent\",\"created\":1525362891.76052,\"saved\":1525362891.76724,\"schemaVersion\":5}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)
+            #else
+                try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(id4.uuidString)\",\"saved\":\(savedDateString),\"created\":\(creationDateString1),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)
+            #endif
+
+            
         }
     }
     
