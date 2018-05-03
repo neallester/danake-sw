@@ -226,7 +226,6 @@ class PersistentCollectionTests: XCTestCase {
             let entry = entries[1].asTestString()
             #if os(Linux)
                 XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=The operation could not be completed", entry)
-                XCTAssertEqual ("", errorMessage)
             #else
                 XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
             #endif
