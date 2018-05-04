@@ -9,10 +9,12 @@ import XCTest
 @testable import danake
 
 /*
+    =====================
+    The Application Model
+    =====================
+ 
     This sample assumes you have read the framework introduction in README.md
     https://github.com/neallester/danake-sw#introduction
- 
-    The Application Model
  
     class Company:  A Company is associated with zero or more Employees. Demonstrates:
                     - Property `employeeCollection' demonstrates how to deserialize a property whose value
@@ -117,14 +119,18 @@ struct Address : Codable {
 }
 
 /*
+    ======================
     The Persistence System
+    ======================
  
     protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each supported media).
                                     Lookup by Entity.id and collection scan (with optional selection criteria) are included.
  
     protocol SampleAccessor:        Application specific extension to DatabaseAccessor which adds specialized queries (e.g. lookups based on indexed criteria).
                                     In this case it includes selecting employees by the id of their associated company. A media specific implementation
-                                    (e.g. SampleInMemoryAccessor) must be provided for each supported persistent media.
+                                    (e.g. SampleInMemoryAccessor) must be provided for each supported persistent media. The application specific DatabaseAccessor
+                                    protocol is where application developers should place the application interface to specialized queries which rely on
+                                    indexing capabilities in the underlying persistent media.
 
     class Database:                 Representation of a specific persistent media in the application. Only one instance of the Database object associated with any
                                     particular persistent storage media (database) may be present in system. Declare Database objects as let constants within a scope
@@ -197,7 +203,7 @@ class CompanyCollection : PersistentCollection<Company> {
     init (database: SampleDatabase, employeeCollection: EmployeeCollection) {
         self.employeeCollection = employeeCollection
         // The following closure is fired on the decoders userInfo property before deserialization
-        // setting the employeeCollection object which will be assigned to the apprpriate property
+        // setting the employeeCollection object which will be assigned to the appropriate property
         // during deserialization (see Company.init (decoder:)
         super.init (database: database, name: "company") { userInfo in
             userInfo[Company.employeeCollectionKey] = employeeCollection
@@ -277,9 +283,9 @@ class SampleTests: XCTestCase {
     }
     
 /*
-     ==========================================================
-     Test intended to demonstrate usage within application code
-     ==========================================================
+     ================================================
+     Test demonstrating usage within application code
+     ================================================
 */
 
     static func runSample (accessor: SampleAccessor) {
@@ -299,12 +305,10 @@ class SampleTests: XCTestCase {
         // Start test in known state by ensuring persistent media is empty
         removeAll(collections: collections)
         
-        // Setup an arbitrary scope for illustration purposes
-        
         var company1id: UUID?
-        
+
+        // Setup an arbitrary scope for illustration purposes
         do {
-            
             // batch may be declared with `let' or `var'
             // However, do not recreate batches which contain uncommitted updates
             // batch retry and timeout intervals are also settable; see
@@ -354,7 +358,7 @@ class SampleTests: XCTestCase {
                 XCTFail ("Expected valid item")
             }
             
-            // Because PersistentCollection.get()
+            // Because PersistentCollection.get() can be expensive,
             // use asynchronous version when possible
             group.enter()
             collections.companies.get(id: company2.id) { retrievalResult in
@@ -381,7 +385,7 @@ class SampleTests: XCTestCase {
             }
             group.wait()
 
-            // If our successful query may return nil, explicitly use retrievialResult
+            // If a successful query may return nil, explicitly use retrievialResult instead of .item()
             group.enter()
             let badId = UUID()
             collections.companies.get(id: badId) { retrievalResult in
@@ -403,6 +407,8 @@ class SampleTests: XCTestCase {
             }
 
             // Retrieving persisted objects by criteria
+            // The default implementation retrieves and deserializes all entries in a collection/table
+            // before filtering the results.
             let scanResult = collections.companies.scan() { company in
                 company.id.uuidString == company2.id.uuidString
             }
@@ -457,8 +463,8 @@ class SampleTests: XCTestCase {
         }
 
         // Closing the previous scope will cause `company1' and `company2' to be removed from cache
-        // However, if batch.commit() rather than batch.commitSync() had been used,
-        // then those entity objects could live on beyond the end of the scope until
+        // when they are deallocated. However, if batch.commit() rather than batch.commitSync() had
+        // been used, then those entity objects could live on beyond the end of the scope until
         // the batch (processing asynchronously) was finished them
         
         // Application developers must always commit batches
@@ -532,11 +538,10 @@ class SampleTests: XCTestCase {
     }
     
 /*
-     ==========================================================
-     Test intended to demonstrate usage within application code
-     ==========================================================
-     
-     Use InMemoryAccessor.setError() to simulate persistent media errors for testing
+     ===========================================================
+     Tests demonstrating deliberate generation of errors by
+     InMemoryAccessor to test error handling in application code
+     ===========================================================
 */
     public func testDemonstrateThrowError() {
         let inMemoryAccessor = SampleInMemoryAccessor()
@@ -551,7 +556,7 @@ class SampleTests: XCTestCase {
         default:
             XCTFail ("Expected .ok")
         }
-        // Call .setThrowError here
+        // Use InMemoryAccessor.setThrowError() to simulate persistent media errors for testing
         inMemoryAccessor.setThrowError()
         switch collections.companies.get(id: companyId) {
         case .error(let errorMessage):
@@ -729,9 +734,9 @@ class SampleTests: XCTestCase {
     }
     
 /*
-     ========================================================
-     Test Basic Functionality of Model and Persistence System
-     ========================================================
+     ===================================================================================
+     Tests of the  basic functionality of the sample model and sample persistence system
+     ===================================================================================
 */
     
     func testCompanyCreation() {
