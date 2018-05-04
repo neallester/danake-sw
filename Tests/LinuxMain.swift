@@ -189,6 +189,9 @@ extension PersistentCollectionTests {
 extension SampleTests {
   static var allTests = [
     ("testInMemorySample", testInMemorySample),
+    ("testDemonstrateThrowError", testDemonstrateThrowError),
+    ("testDemonstratePrefetchWithGet ", testDemonstratePrefetchWithGet ),
+    ("testDemonstrateUpdateErrors ", testDemonstrateUpdateErrors ),
     ("testCompanyCreation", testCompanyCreation),
     ("testCompanyEncodeDecode", testCompanyEncodeDecode),
     ("testCompanyEmployees", testCompanyEmployees),

@@ -277,7 +277,9 @@ class SampleTests: XCTestCase {
     }
     
 /*
+     ==========================================================
      Test intended to demonstrate usage within application code
+     ==========================================================
 */
 
     static func runSample (accessor: SampleAccessor) {
@@ -300,7 +302,6 @@ class SampleTests: XCTestCase {
         // Setup an arbitrary scope for illustration purposes
         
         var company1id: UUID?
-        var company2id: UUID?
         
         do {
             
@@ -314,7 +315,6 @@ class SampleTests: XCTestCase {
             let company1 = collections.companies.new(batch: batch)
             company1id = company1.id
             let company2 = collections.companies.new(batch: batch)
-            company2id = company2.id
             
             // new objects are not available in persistent media until batch is committed
             if let companies = collections.companies.scan().item() {
@@ -418,7 +418,6 @@ class SampleTests: XCTestCase {
             let _ = collections.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
             var employee2: Entity<Employee>? = collections.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
             batch.commitSync()
-
             // Updating the name attribute of Employee and setting a new reference for its address
             let address1 = collections.addresses.new (batch: batch, item: Address(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
             let address2 = collections.addresses.new (batch: batch, item: Address(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
@@ -457,7 +456,7 @@ class SampleTests: XCTestCase {
             
         }
 
-        // Closing this scope will cause `company1' and `company2' to be removed from cache
+        // Closing the previous scope will cause `company1' and `company2' to be removed from cache
         // However, if batch.commit() rather than batch.commitSync() had been used,
         // then those entity objects could live on beyond the end of the scope until
         // the batch (processing asynchronously) was finished them
@@ -469,6 +468,8 @@ class SampleTests: XCTestCase {
         do {
             let batch = EventuallyConsistentBatch (logger: logger)
             if let companyEntity = collections.companies.get (id: company1id!).item() {
+                
+                
                 companyEntity.sync() { company in
                     if let employeeEntity = company.employees().item()?[0] {
                         lostChangesEmployeeUuidString = employeeEntity.id.uuidString
@@ -486,18 +487,21 @@ class SampleTests: XCTestCase {
                 XCTFail ("Expected valid")
             }
         }
+        
         // Batch cleanup occurs asynchronously
         // For demonstration purposes only wait for it to complete using the internal
         // function PersistentCollection.sync()
         // In application code waiting like this should never be necessary because
         // batches should always be committed before they go out of scope
         var hasCached = true
+        let lostChangesEmployeeUUID = UUID(uuidString: lostChangesEmployeeUuidString)!
         while hasCached {
             collections.employees.sync() { entities in
-                hasCached = entities.count > 1 // TODO: Figure out why employee2 from the previous scope remains cached
+                hasCached = entities[lostChangesEmployeeUUID]?.item != nil
                 usleep(100)
             }
         }
+        
         // An error has indeed been logged and the update has indeed been lost
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
@@ -507,6 +511,8 @@ class SampleTests: XCTestCase {
             if let companyEntity = collections.companies.get (id: company1id!).item() {
                 companyEntity.sync() { company in
                     if let employeeEntity = company.employees().item()?[0] {
+                        
+                        
                         employeeEntity.sync() { employee in
                             XCTAssertEqual ("Name One", employee.name)
                         }
@@ -521,218 +527,193 @@ class SampleTests: XCTestCase {
             }
         }
 
-        // Wait for objects associated with previous batch to be deallocated in order to
-        // Demonstrate that the employee.name remained unchanged in the persistent media
-        do {
-            let group = DispatchGroup()
-            group.enter()
-            waitForDeallocation(collection: collections.companies, group: group, uuidString: company1id!.uuidString)
-            switch group.wait(timeout: DispatchTime.now() + 10) {
-            case .success:
-                break
-            default:
-                XCTFail ("Expected .success")
-            }
-            group.enter()
-            waitForDeallocation(collection: collections.companies, group: group, uuidString: company2id!.uuidString)
-            switch group.wait(timeout: DispatchTime.now() + 10) {
-            case .success:
-                break
-            default:
-                XCTFail ("Expected .success")
-            }
-        }
-
-        if let inMemoryAccessor = accessor as? InMemoryAccessor {
-
-            // Use InMemoryAccessor.setError() to simulate persistent media errors for testing
-            inMemoryAccessor.setThrowError()
-            switch collections.companies.get(id: company1id!) {
-            case .error(let errorMessage):
-                XCTAssertEqual ("getError", errorMessage)
-                logger.sync() { entries in
-                    XCTAssertEqual (4, entries.count)
-                    XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.getAccessor().hashValue());collection=company;id=\(company1id!.uuidString);errorMessage=getError", entries[3].asTestString())
-                }
-            default:
-                XCTFail ("Expected .error")
-            }
-            
-            // Only one error will be thrown; subsequent operations will succeed
-            switch collections.companies.get(id: company1id!) {
-            case .ok (let company):
-                XCTAssertEqual (company!.id.uuidString, company1id!.uuidString)
-                logger.sync() { entries in
-                    XCTAssertEqual (4, entries.count)
-                }
-            default:
-                XCTFail ("Expected .ok")
-            }
-
-            // Use InMemoryAccessor.setPrefetch to control the timing of
-            // persistent media operations for testing
-            let semaphore = DispatchSemaphore (value: 1)
-            semaphore.wait()
-            let preFetch = { (uuid: UUID) in
-                if (uuid.uuidString == company1id!.uuidString) {
-                    semaphore.wait()
-                    semaphore.signal()
-                }
-            }
-            inMemoryAccessor.setPreFetch(preFetch)
-            var retrievedCompany: Entity<Company>? = nil
-            let group = DispatchGroup()
-            group.enter()
-            collections.companies.get(id: company2id!) { retrievalResult in
-                switch retrievalResult {
-                case .ok (let company):
-                    XCTAssertEqual (company!.id.uuidString, company2id!.uuidString)
-                    retrievedCompany = company
-                default:
-                    XCTFail ("Expected .ok")
-                }
-                group.leave()
-            }
-            XCTAssertNil (retrievedCompany)
-            semaphore.signal()
-            group.wait()
-            XCTAssertEqual (retrievedCompany!.id.uuidString, company2id!.uuidString)
-            logger.sync() { entries in
-                XCTAssertEqual (4, entries.count)
-            }
-            
-            // Entity updates require 2 calls to the DatabaseAccessor:
-            // 1) Serialization (fast)
-            // 2) Writing to persistent media (slow)
-            // Errors during serialization are considered unrecoverable
-            // Unrecoverable errors are logged ERROR but not retried
-            // This demonstrates how to throw an unrecoverable serialization error
-            do {
-                let batch = EventuallyConsistentBatch (logger: logger)
-                let batchIdString = batch.delegateId().uuidString
-                if let employeeEntity = collections.employees.get(id: UUID (uuidString: lostChangesEmployeeUuidString)!).item() {
-                    employeeEntity.update(batch: batch) { employee in
-                        employee.name = "Name Updated1"
-                        XCTAssertEqual ("Name Updated1", employee.name)
-                    }
-                }
-                // Using setThrowError() before an update will throw an unrecoverable serialization error
-                inMemoryAccessor.setThrowError()
-                batch.commitSync()
-                logger.sync() { entries in
-                    XCTAssertEqual (5, entries.count)
-                    XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);batchId=\(batchIdString)", entries[4].asTestString())
-                }
-            }
-            // Wait for objects associated with previous batch to be deallocated in order to
-            // Demonstrate that the employee.name remained unchanged in the persistent media
-            group.enter()
-            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
-            switch group.wait(timeout: DispatchTime.now() + 10) {
-            case .success:
-                break
-            default:
-                XCTFail ("Expected .success")
-            }
-            // Demonstrate that the previous changes were lost due to the reported unrecoverable error
-            do {
-                collections.employees.sync() { entities in
-                    XCTAssertNil (entities[UUID (uuidString: lostChangesEmployeeUuidString)!]?.item)
-                }
-                var foundEmployee = false
-                if let companyEntity = collections.companies.get (id: company1id!).item() {
-                    companyEntity.sync() { company in
-                        if let employeeEntity = company.employees().item()?[0] {
-                            employeeEntity.sync() { employee in
-                                XCTAssertEqual ("Name One", employee.name)
-                                foundEmployee = true
-                            }
-                        }
-                    }
-                }
-                XCTAssertTrue (foundEmployee)
-            }
-            logger.sync() { entries in
-                XCTAssertEqual (5, entries.count)
-            }
-            // Wait for objects associated with previous batch to be deallocated in order to
-            // Demonstrate that the employee.name remained unchanged in the persistent media
-            group.enter()
-            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
-            switch group.wait(timeout: DispatchTime.now() + 10) {
-            case .success:
-                break
-            default:
-                XCTFail ("Expected .success")
-            }
-            // Errors during the persistent media write are considered recoverable
-            // They are logged EMERGENCY and retried until completion
-            // The following demonstrates how to throw a single recoverable error
-            // which will be logged and will then succeed on the retry
-            do {
-                let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
-                let batchIdString = batch.delegateId().uuidString
-                XCTAssertFalse (inMemoryAccessor.isThrowError())
-                if let employeeEntity = collections.employees.get(id: UUID (uuidString: lostChangesEmployeeUuidString)!).item() {
-                    employeeEntity.update(batch: batch) { employee in
-                        employee.name = "Name Updated1"
-                        XCTAssertEqual ("Name Updated1", employee.name)
-                        // employee.company is eager retrieval, so we need to wait for it to load before proceeding
-                        let _ = employee.company.get()
-                    }
-                } else {
-                    XCTFail("Expected employeeEntity")
-                }
-                var preFetchCount = 0
-                let prefetch: (UUID) -> () = { id in
-                    if preFetchCount == 1 {
-                        // The prefetch ignores the first call to the accessor
-                        // Set the attribute directly (do not call setThrowError())
-                        inMemoryAccessor.throwError = true
-                    }
-                    preFetchCount = preFetchCount + 1
-                }
-                inMemoryAccessor.setPreFetch(prefetch)
-                logger.sync() { entries in
-                    XCTAssertEqual (5, entries.count)
-                }
-                batch.commitSync()
-                logger.sync() { entries in
-                    XCTAssertEqual (6, entries.count)
-                    XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);batchId=\(batchIdString)", entries[5].asTestString())
-                }
-            }
-            inMemoryAccessor.setPreFetch(nil)
-            // Wait for objects associated with previous batch to be deallocated in order to
-            // Demonstrate that the employee.name was updated in the persistent media
-            group.enter()
-            waitForDeallocation(collection: collections.employees, group: group, uuidString: lostChangesEmployeeUuidString)
-            switch group.wait(timeout: DispatchTime.now() + 10) {
-            case .success:
-                break
-            default:
-                XCTFail ("Expected .success")
-            }
-            do {
-                var foundEmployee = false
-                if let companyEntity = collections.companies.get (id: company1id!).item() {
-                    companyEntity.sync() { company in
-                        if let employeeEntity = company.employees().item()?[0] {
-                            employeeEntity.sync() { employee in
-                                XCTAssertEqual ("Name Updated1", employee.name)
-                                foundEmployee = true
-                            }
-                        }
-                    }
-                }
-                XCTAssertTrue (foundEmployee)
-            }
-        }
-        
         // Clean up
         removeAll(collections: collections)
     }
     
+/*
+     ==========================================================
+     Test intended to demonstrate usage within application code
+     ==========================================================
+     
+     Use InMemoryAccessor.setError() to simulate persistent media errors for testing
+*/
+    public func testDemonstrateThrowError() {
+        let inMemoryAccessor = SampleInMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        // For testing purposes: create and preload data into the database bypassing the persistence system
+        let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
+        let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
+        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        // Call .setThrowError here
+        inMemoryAccessor.setThrowError()
+        switch collections.companies.get(id: companyId) {
+        case .error(let errorMessage):
+            XCTAssertEqual ("getError", errorMessage)
+            logger.sync() { entries in
+                XCTAssertEqual (1, entries.count)
+                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.getAccessor().hashValue());collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+            }
+        default:
+            XCTFail ("Expected .error")
+        }
+        // Only one error will be thrown; subsequent operations will succeed
+        switch collections.companies.get(id: companyId) {
+        case .ok (let company):
+            XCTAssertEqual (company!.id.uuidString, companyId.uuidString)
+            logger.sync() { entries in
+                XCTAssertEqual (1, entries.count)
+            }
+        default:
+            XCTFail ("Expected .ok")
+        }
+    }
+
+    /*
+        Use InMemoryAccessor.prefetch to control the timing of persistent media operations
+     */
+    public func testDemonstratePrefetchWithGet () {
+        let inMemoryAccessor = SampleInMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        // For testing purposes: create and preload data into the database bypassing the persistence system
+        let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
+        let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
+        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let semaphore = DispatchSemaphore (value: 1)
+        semaphore.wait()
+        // This preset will cause the persistent media to wait until the main test thread signals the semaphore
+        let preFetch = { (uuid: UUID) in
+            if (uuid.uuidString == companyId.uuidString) {
+                semaphore.wait()
+                semaphore.signal()
+            }
+        }
+        inMemoryAccessor.setPreFetch(preFetch)
+        var retrievedCompany: Entity<Company>? = nil
+        let group = DispatchGroup()
+        group.enter()
+        collections.companies.get(id: companyId) { retrievalResult in
+            switch retrievalResult {
+            case .ok (let company):
+                XCTAssertEqual (company!.id.uuidString, companyId.uuidString)
+                retrievedCompany = company
+            default:
+                XCTFail ("Expected .ok")
+            }
+            group.leave()
+        }
+        // Company has not yet been retrieved
+        XCTAssertNil (retrievedCompany)
+        semaphore.signal()
+        group.wait()
+        // Company has now been retrieved
+        XCTAssertEqual (retrievedCompany!.id.uuidString, companyId.uuidString)
+        logger.sync() { entries in
+            XCTAssertEqual (0, entries.count)
+        }
+    }
+
+/*
+     Entity updates require 2 calls to the DatabaseAccessor:
+     1) Serialization (fast)
+     2) Writing to persistent media (slow)
+     Errors during serialization are considered unrecoverable
+     Unrecoverable errors are logged ERROR but not retried
+     Recoverable errors are logged EMERGENCY and retried until completion
+     Both kinds of errors may be simulated by InMemoryAccessor
+*/
+    public func testDemonstrateUpdateErrors () {
+        let inMemoryAccessor = SampleInMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        // For testing purposes: create and preload data into the database bypassing the persistence system
+        let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
+        let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
+        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
+        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"created\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue())\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"collectionName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
+        switch inMemoryAccessor.add(name: collections.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
+        case .ok:
+            break
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
+        var batchIdString = batch.delegateId().uuidString
+        
+        if let employeeEntity = collections.employees.get(id: employeeId).item() {
+            // Update employee name
+            employeeEntity.update(batch: batch) { employee in
+                employee.name = "Name Updated1"
+                XCTAssertEqual ("Name Updated1", employee.name)
+            }
+
+            // Using setThrowError() before committing an update will throw an unrecoverable serialization error
+            inMemoryAccessor.setThrowError()
+            batch.commitSync()
+            logger.sync() { entries in
+                XCTAssertEqual (1, entries.count)
+                XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<Employee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
+            }
+            
+            // Demonstrate that the previous changes were lost due to the reported unrecoverable error
+            #if os(Linux)
+                // Json attributes don't always deserialize in same order on Linux
+            #else
+                XCTAssertEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
+            #endif
+            XCTAssertFalse (inMemoryAccessor.isThrowError())
+
+            // Modify the employee again so that it is again added to the batch
+            employeeEntity.update(batch: batch) { employee in
+                employee.name = "Name Updated2"
+                XCTAssertEqual ("Name Updated2", employee.name)
+            }
+            
+            // Use preFetch to setup a recoverable update error
+            var preFetchCount = 0
+            let prefetch: (UUID) -> () = { id in
+                // The prefetch ignores the first call to the accessor
+                if preFetchCount == 1 {
+                    // Set the throwError attribute directly (do not call setThrowError())
+                    inMemoryAccessor.throwError = true
+                }
+                preFetchCount = preFetchCount + 1
+            }
+            inMemoryAccessor.setPreFetch(prefetch)
+                        batchIdString = batch.delegateId().uuidString
+            batch.commitSync()
+            logger.sync() { entries in
+                XCTAssertEqual (2, entries.count)
+                XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<Employee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
+            }
+            
+            // Demonstrate that the data was updated in persistent media
+            #if os(Linux)
+                // Json attributes don't always deserialize in same order on Linux
+            #else
+                XCTAssertNotEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
+            #endif
+        }
+    }
+
     static func removeAll (collections: SampleCollections) {
         let batch = EventuallyConsistentBatch()
         for entity in collections.companies.scan(criteria: nil).item()! {
@@ -747,21 +728,10 @@ class SampleTests: XCTestCase {
         batch.commitSync()
     }
     
-    static func waitForDeallocation<T>(collection: PersistentCollection<T>, group: DispatchGroup, uuidString: String) {
-        usleep(10)
-        collection.database.workQueue.async {
-            collection.sync() { entities in
-                if let _ = entities[UUID (uuidString: uuidString)!]?.item {
-                    waitForDeallocation (collection: collection, group: group, uuidString: uuidString)
-                } else {
-                    group.leave()
-                }
-            }
-        }
-    }
-    
 /*
+     ========================================================
      Test Basic Functionality of Model and Persistence System
+     ========================================================
 */
     
     func testCompanyCreation() {
