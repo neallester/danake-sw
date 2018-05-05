@@ -526,6 +526,8 @@ class EntityReferenceTests: XCTestCase {
                 default:
                     XCTFail ("Expected .success")
                 }
+            } else {
+                print ("Prefetch 3 failed")
             }
         }
         switch semaphore.wait(timeout: DispatchTime.now() + 10) {
