@@ -144,6 +144,12 @@ class EntityReferenceTests: XCTestCase {
                 }
             }
         }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child2ReferenceData, isEager: true) { result in
             waitFor.fulfill()
         }
