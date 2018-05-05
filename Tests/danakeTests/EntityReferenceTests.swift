@@ -522,6 +522,7 @@ class EntityReferenceTests: XCTestCase {
             if id.uuidString == childId3.uuidString {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
+                    print ("Prefetch signalling")
                     semaphore.signal()
                 default:
                     XCTFail ("Expected .success")
