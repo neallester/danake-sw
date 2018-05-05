@@ -204,7 +204,6 @@ public class Database {
         if Database.registrar.register(key: hashValue, value: self) {
             logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
         } else {
-            print ("reg failed")
             logger?.log(level: .emergency, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
         }
     }
