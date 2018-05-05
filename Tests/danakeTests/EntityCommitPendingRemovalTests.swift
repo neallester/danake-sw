@@ -2534,6 +2534,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
         entity.timeoutSemaphore.signal()
+        semaphore.signal()
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending remove
