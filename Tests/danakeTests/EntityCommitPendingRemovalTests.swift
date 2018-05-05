@@ -2433,15 +2433,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertNil (entity.getPendingAction())
         preFetchCount = 0
         prefetch = { id in
-            if preFetchCount == 1 {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    break
-                default:
-                    XCTFail ("Expected Success")
-                }
-                semaphore.signal()
-            } else if preFetchCount == 3 {
+            if preFetchCount == 3 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
                     break
