@@ -51,7 +51,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         self.init (parent: parent, referenceData: referenceData, isEager: false)
     }
 
-    init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
+    init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool, initialOnRetrieve: ((RetrievalResult<Entity<T>>) -> ())?) {
         self.parentData = parent
         self.referenceData = referenceData
         if let _ = referenceData {
@@ -61,11 +61,18 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         }        
         self.isEager = isEager
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        if let initialOnRetrieve = initialOnRetrieve {
+            pendingEntityClosures.append(initialOnRetrieve)
+        }
         if self.isEager {
             queue.async {
                 self.retrieve() { result in}
             }
         }
+    }
+
+    convenience init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
+        self.init(parent: parent, referenceData: referenceData, isEager: isEager, initialOnRetrieve: nil)
     }
 
     public required init (from decoder: Decoder) throws {
@@ -219,6 +226,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                                     if let retrievedEntity = retrievedEntity {
                                         self.entity = retrievedEntity
                                         self.state = .loaded
+                                        self.referenceData = nil
                                     } else {
                                         let errorMessage = "\(type (of: self)): Unknown id \(referenceData.id.uuidString)"
                                         finalResult = .error (errorMessage)
