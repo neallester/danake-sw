@@ -452,15 +452,39 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        let childId3a = UUID()
+        let child3aData = "{\"id\":\"\(childId3a.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        switch accessor.add(name: collection.name, id: childId3a, data: child3aData) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        accessor.setPreFetch() { id in
+            if id.uuidString == childId3a.uuidString {
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    semaphore.signal()
+                default:
+                    XCTFail ("Expected .success")
+                }
+            }
+        }
+        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
         waitFor = expectation(description: "wait2")
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData(), isEager: true) { result in
+        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: childId3a, version: 10), isEager: true) { result in
             waitFor.fulfill()
         }
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (child.referenceData(), reference.referenceData!)
+            XCTAssertEqual (childId3a.uuidString, reference.referenceData!.id.uuidString)
             XCTAssertTrue (reference.collection === child.collection)
             switch reference.state {
             case .retrieving (let referenceData):
@@ -470,9 +494,10 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
+            XCTAssertEqual (reference.entity!.id.uuidString, childId3a.uuidString)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
