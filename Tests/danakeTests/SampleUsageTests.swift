@@ -123,39 +123,45 @@ struct Address : Codable {
     The Persistence System
     ======================
  
-    protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each supported media).
-                                    Lookup by Entity.id and collection scan (with optional selection criteria) are included.
+    protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each
+                                    supported media). Lookup by Entity.id and collection scan (with optional selection criteria) are
+                                    included.
  
-    protocol SampleAccessor:        Application specific extension to DatabaseAccessor which adds specialized queries (e.g. lookups based on indexed criteria).
-                                    In this case it includes selecting employees by the id of their associated company. A media specific implementation
-                                    (e.g. SampleInMemoryAccessor) must be provided for each supported persistent media. The application specific DatabaseAccessor
-                                    protocol is where application developers should place the application interface to specialized queries which rely on
+    protocol SampleAccessor:        Application specific extension to DatabaseAccessor which adds specialized queries (e.g. lookups
+                                    based on indexed criteria). In this case it includes selecting employees by the id of their
+                                    associated company. A media specific implementation (e.g. SampleInMemoryAccessor) must be provided
+                                    for each supported persistent media. The application specific DatabaseAccessor protocol is where
+                                    application developers should place the application interface to specialized queries which rely on
                                     indexing capabilities in the underlying persistent media.
 
-    class Database:                 Representation of a specific persistent media in the application. Only one instance of the Database object associated with any
-                                    particular persistent storage media (database) may be present in system. Declare Database objects as let constants within a scope
-                                    with process lifetime. Re-creating a Database object is not currently supported.
+    class Database:                 Representation of a specific persistent media in the application. Only one instance of the
+                                    Database object associated with any particular persistent storage media (database) may be present
+                                    in system. Declare Database objects as let constants within a scope with process lifetime.
+                                    Re-creating a Database object is not currently supported.
  
-    class SampleDatabase:           Provides PersistentCollections with access to the applicatio specific SampleAccessor. Only required for applications
-                                    which include an application specific DatabaseAccessor.
+    class SampleDatabase:           Provides PersistentCollections with access to the applicatio specific SampleAccessor. Only
+                                    required for applications which include an application specific DatabaseAccessor.
  
-    class PersistentCollection<T>:  Access to the persisted instances of a single type or a polymorphically related set of types (use polymorism if indexed queries
-                                    based on attributes shared by all of the types are required). Each PersistentCollection must be associated with exactly one
-                                    database. Declare PersistentCollection attributes with `let' within a scope with process lifetime. Re-creating a PersistentCollection
+    class PersistentCollection<T>:  Access to the persisted instances of a single type or a polymorphically related set of types (use
+                                    polymorism if indexed queries based on attributes shared by all of the types are required). Each
+                                    PersistentCollection must be associated with exactly one database. Declare PersistentCollection
+                                    attributes with `let' within a scope with process lifetime. Re-creating a PersistentCollection
                                     object is not currently supported.
  
     class CompanyCollection:        Access to persistent Company objects. Demonstrates:
-                                    - creation of model objects which include an id whose value matches the id of their enclosing Entity
-                                    - setup of a PersistentCollection to support deserialization of objects which include properties which are populated from
-                                      the environment rather than the serialized data.
+                                    - creation of model objects which include an id whose value matches the id of their enclosing
+                                      Entity
+                                    - setup of a PersistentCollection to support deserialization of objects which include properties
+                                      which are populated from the environment rather than the serialized data.
                                     - custom `new' function for creating new Entity<Company> objects
  
     class EmployeeCollection:       Access to persistent Employee objects. Demonstrates:
                                     - deserialization of objects which include EntityReference properties
                                     - custom synchronous and asynchronous retrieval functions
  
-    class SampleCollections:        An application specific convenience class for organizing all of the PersistentCollection objects associated with the
-                                    SampleDatabase. Declare objects of this type using `let' within a scope with process lifetime
+    class SampleCollections:        An application specific convenience class for organizing all of the PersistentCollection objects
+                                    associated with the SampleDatabase. Declare objects of this type using `let' within a scope with
+                                    process lifetime
 */
 
 class SampleDatabase : Database {
