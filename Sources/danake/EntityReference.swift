@@ -51,7 +51,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         self.init (parent: parent, referenceData: referenceData, isEager: false)
     }
 
-    init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool, initialOnRetrieve: ((RetrievalResult<Entity<T>>) -> ())?) {
+    init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
         self.parentData = parent
         self.referenceData = referenceData
         if let _ = referenceData {
@@ -61,18 +61,11 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         }        
         self.isEager = isEager
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
-        if let initialOnRetrieve = initialOnRetrieve {
-            pendingEntityClosures.append(initialOnRetrieve)
-        }
         if self.isEager {
             queue.async {
                 self.retrieve() { result in}
             }
         }
-    }
-
-    convenience init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
-        self.init(parent: parent, referenceData: referenceData, isEager: isEager, initialOnRetrieve: nil)
     }
 
     public required init (from decoder: Decoder) throws {
@@ -96,9 +89,6 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                     throw EntityReferenceSerializationError.illegalId(idString)
                 }
                 state = .decoded
-            }
-            if let closureContainer = decoder.userInfo[Database.initialClosureKey] as? ClosureContainer<T> {
-                pendingEntityClosures.append(closureContainer.closure)
             }
             if self.isEager {
                 queue.async {
@@ -193,7 +183,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     }
     
     // Not thread safe, must be called within queue
-    private func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
+    internal func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {
             if collection == nil {
                 if let database = Database.registrar.value(key: referenceData.databaseId) {
@@ -213,6 +203,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             if let collection = collection {
                 pendingEntityClosures.append(closure)
                 self.state = .retrieving (referenceData)
+                self.retrievalGetHook()
                 collection.get(id: referenceData.id) { retrievalResult in
                     self.queue.async {
                         switch self.state {
@@ -335,6 +326,9 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         }
 
     }
+    
+    // Used for testing by descendents
+    internal func retrievalGetHook() {}
 
     private var entity: Entity<T>?
     private var parent: EntityManagement?
@@ -342,7 +336,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var referenceData: EntityReferenceSerializationData?
     private var collection: PersistentCollection<T>?
     private var state: EntityReferenceState
-    private let queue: DispatchQueue
+    internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
     
     public let isEager: Bool
@@ -351,9 +345,14 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         return "EntityReference.parent: " + collectionName
     }
     
+    // Not Thread Safe
+    internal func contents() -> EntityReferenceContents<P, T> {
+        return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
+    }
+    
     internal func sync (closure: (EntityReferenceContents<P, T>) -> ()) {
         queue.sync {
-            closure ((entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count))
+            closure (contents())
         }
     }
     

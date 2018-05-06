@@ -122,54 +122,90 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
-        // Creation with referenceData
+        // Creation with referenceData for a cached object
         var waitFor = expectation(description: "wait1")
-        let childId2 = UUID()
-        let child2Data = "{\"id\":\"\(childId2.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let child2ReferenceData = EntityReferenceSerializationData (databaseId: accessor.hashValue(), collectionName: collection.name, id: childId2, version: 10)
-        switch accessor.add(name: collection.name, id: childId2, data: child2Data) {
-        case .ok:
-            break
-        default:
-            XCTFail("Expected .ok")
-        }
-        let semaphore = DispatchSemaphore (value: 1)
-        accessor.setPreFetch() { id in
-            if id.uuidString == childId2.uuidString {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    semaphore.signal()
-                default:
-                    XCTFail ("Expected .success")
-                }
-            }
-        }
-        switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+        var testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData(), isEager: true)
+        reference = testReference
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child2ReferenceData, isEager: true) { result in
-            waitFor.fulfill()
-        }
-        reference.sync() { reference in
+        if let reference = testReference.contents {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (reference.referenceData!.id.uuidString, childId2.uuidString)
+            XCTAssertEqual (reference.referenceData!.id.uuidString, child.id.uuidString)
             switch reference.state {
             case .retrieving (let referenceData):
                 XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
             default:
-                XCTFail ("Expected .retrieving")
+                XCTFail ("Expected .retrieving but got \(reference.state)")
+            }
+            XCTAssertTrue (reference.isEager)
+        } else {
+            XCTFail ("Expected testReference.contents")
+        }
+        reference.appendClosure() { result in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
+        waitForExpectations(timeout: 10, handler: nil)
+        reference.sync() { reference in
+            XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
+            XCTAssertNil (reference.parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertNil (reference.referenceData)
+            XCTAssertTrue (collection === reference.collection)
+            switch reference.state {
+            case .loaded:
+                break
+            default:
+                XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
         }
-        semaphore.signal()
+        // Creation with referenceData for a uncached object
+        let persistentChildId1 = UUID()
+        let persistentChildData1 = "{\"id\":\"\(persistentChildId1.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":100,\"myString\":\"100\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        switch accessor.add(name: collection.name, id: persistentChildId1, data: persistentChildData1) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        waitFor = expectation(description: "wait1a")
+        testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: persistentChildId1, version: 10), isEager: true)
+        reference = testReference
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        if let reference = testReference.contents {
+            XCTAssertNil (reference.entity)
+            XCTAssertNil (reference.parent)
+            XCTAssertTrue (parentData == reference.parentData)
+            XCTAssertEqual (reference.referenceData!.id.uuidString, persistentChildId1.uuidString)
+            switch reference.state {
+            case .retrieving (let referenceData):
+                XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
+            default:
+                XCTFail ("Expected .retrieving but got \(reference.state)")
+            }
+            XCTAssertTrue (reference.isEager)
+        } else {
+            XCTFail("Expected .contents")
+        }
+        reference.appendClosure() { result in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity!.id.uuidString == childId2.uuidString)
+            XCTAssertTrue (reference.entity!.id.uuidString == persistentChildId1.uuidString)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
@@ -202,7 +238,7 @@ class EntityReferenceTests: XCTestCase {
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         var json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -238,7 +274,7 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -274,7 +310,7 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -309,17 +345,16 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
-        #if os(Linux)
-            // Json Comparisons are unreliable on Linux
-        #else
-            try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
-        #endif
         waitFor = expectation(description: "wait1")
-        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
-            waitFor.fulfill()
+        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = testReference
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
         }
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.sync() { reference in
+        if let reference = testReference.contents {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
@@ -332,9 +367,14 @@ class EntityReferenceTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
             XCTAssertTrue (reference.isEager)
+        } else {
+            XCTFail("Expected .contents")
         }
+        reference.appendClosure() { retrievalResult in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
-        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
             XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
             XCTAssertNil (reference.parent)
@@ -349,6 +389,11 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        #if os(Linux)
+        // JSON String Generated on Linux is not always consistent
+        #else
+            try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
+        #endif
         // Creation with EntityReferenceSerializationData
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         reference.sync() { reference in
@@ -367,7 +412,7 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -403,7 +448,7 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -439,7 +484,7 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         #if os(Linux)
-            // Json Comparisons are unreliable on Linux
+            // JSON String Generated on Linux is not always consistent
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -458,99 +503,29 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
-        let childId3a = UUID()
-        let child3aData = "{\"id\":\"\(childId3a.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        switch accessor.add(name: collection.name, id: childId3a, data: child3aData) {
+        let persistentChildId2 = UUID()
+        let persistentChildData2 = "{\"id\":\"\(persistentChildId2.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":200,\"myString\":\"200\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        switch accessor.add(name: collection.name, id: persistentChildId2, data: persistentChildData2) {
         case .ok:
             break
         default:
             XCTFail("Expected .ok")
         }
-        accessor.setPreFetch() { id in
-            if id.uuidString == childId3a.uuidString {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    semaphore.signal()
-                default:
-                    XCTFail ("Expected .success")
-                }
-            }
-        }
-        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected .success")
-        }
-        waitFor = expectation(description: "wait2")
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: childId3a, version: 10), isEager: true) { result in
-            waitFor.fulfill()
-        }
-        reference.sync() { reference in
-            XCTAssertNil (reference.entity)
-            XCTAssertNil (reference.parent)
-            XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (childId3a.uuidString, reference.referenceData!.id.uuidString)
-            XCTAssertTrue (reference.collection === child.collection)
-            switch reference.state {
-            case .retrieving (let referenceData):
-                XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
-            default:
-                XCTFail ("Expected .retrieving")
-            }
-            XCTAssertTrue (reference.isEager)
-        }
-        semaphore.signal()
-        waitForExpectations(timeout: 10, handler: nil)
-        reference.sync() { reference in
-            XCTAssertEqual (reference.entity!.id.uuidString, childId3a.uuidString)
-            XCTAssertNil (reference.parent)
-            XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
-            switch reference.state {
-            case .loaded:
-                break
-            default:
-                XCTFail ("Expected .loaded")
-            }
-            XCTAssertTrue (reference.isEager)
-        }
-        let childId3 = UUID()
-        let child3Data = "{\"id\":\"\(childId3.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        switch accessor.add(name: collection.name, id: childId3, data: child3Data) {
-        case .ok:
-            break
-        default:
-            XCTFail("Expected .ok")
-        }
-        accessor.setPreFetch() { id in
-            if id.uuidString == childId3.uuidString {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    semaphore.signal()
-                default:
-                    XCTFail ("Expected .success")
-                }
-            }
-        }
-        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected .success")
-        }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(childId3.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait3")
-        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
-            waitFor.fulfill()
+        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = testReference
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail("Expected .success")
         }
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.sync() { reference in
+        if let reference = testReference.contents {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (childId3.uuidString, reference.referenceData!.id.uuidString)
+            XCTAssertEqual (persistentChildId2.uuidString, reference.referenceData!.id.uuidString)
             XCTAssertTrue (reference.collection === child.collection)
             switch reference.state {
             case .retrieving (let referenceData):
@@ -559,12 +534,16 @@ class EntityReferenceTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
             XCTAssertTrue (reference.isEager)
+        } else {
+            XCTFail ("Expected .contents")
         }
-        semaphore.signal()
+        reference.appendClosure() { RetrievalResult in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
-        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity!.id.uuidString == childId3.uuidString)
+            XCTAssertTrue (reference.entity!.id.uuidString == persistentChildId2.uuidString)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
@@ -577,45 +556,28 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
-        accessor.setPreFetch(nil)
+        #if os(Linux)
+            // JSON String Generated on Linux is not always consistent
+        #else
+            try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
+        #endif
         // Decoding with isNil:false
-        let childId4 = UUID()
-        let child4Data = "{\"id\":\"\(childId4.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        switch accessor.add(name: collection.name, id: childId4, data: child4Data) {
-        case .ok:
-            break
-        default:
-            XCTFail("Expected .ok")
-        }
-        accessor.setPreFetch() { id in
-            if id.uuidString == childId4.uuidString {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
-                case .success:
-                    semaphore.signal()
-                default:
-                    XCTFail ("Expected .success")
-                }
-            }
-        }
-        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
+        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        waitFor = expectation(description: "wait1")
+        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = testReference
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
-
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(childId4.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
-        waitFor = expectation(description: "wait4")
-        decoder.userInfo [Database.initialClosureKey] = ClosureContainer<MyStruct>() { result in
-            waitFor.fulfill()
-        }
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-        reference.sync() { reference in
+        if let reference = testReference.contents {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (childId4.uuidString, reference.referenceData!.id.uuidString)
-            XCTAssertTrue (reference.collection === child.collection)
+            XCTAssertEqual (child.referenceData(), reference.referenceData)
+            XCTAssertTrue (collection === reference.collection)
             switch reference.state {
             case .retrieving (let referenceData):
                 XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
@@ -623,12 +585,16 @@ class EntityReferenceTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
             XCTAssertTrue (reference.isEager)
+        } else {
+            XCTFail("Expected .contents")
         }
-        semaphore.signal()
+        reference.appendClosure() { retrievalResult in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
-        decoder.userInfo [Database.initialClosureKey] = nil
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity!.id.uuidString == childId4.uuidString)
+            XCTAssertTrue (reference.entity!.id.uuidString == child.id.uuidString)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
@@ -1581,7 +1547,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
         }
         // entity -> entity.referenceData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        let testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        reference = testReference
         reference.set(entity: entity, batch: batch)
         batch = EventuallyConsistentBatch()
         reference.set (referenceData: entity.referenceData(), batch: batch)
@@ -1604,38 +1571,24 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual(0, entities.count)
         }
         // entity -> new referenceData
+        let entityId3 = UUID()
+        let entityData3 = "{\"id\":\"\(entityId3.uuidString)\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        let entity3ReferenceData = EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId3, version: 10)
+        let _ = accessor.add(name: collection.name, id: entityId3, data: entityData3)
+
         batch = EventuallyConsistentBatch()
         waitFor = expectation(description: "wait2")
-        reference.appendClosure() { result in
-            waitFor.fulfill()
+        let workQueue = DispatchQueue(label: "workQueue")
+        workQueue.async() {
+            reference.set (referenceData: entity3ReferenceData, batch: batch)
         }
-        let entityId3 = UUID()
-        let entity3json = "{\"id\":\"\(entityId3.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.4106,\"saved\":1524347318.9366,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}"
-        switch accessor.add(name: collection.name, id: entityId3, data: entity3json.data(using: .utf8)!) {
-        case .ok:
-            break
-        default:
-            XCTFail ("Expected .ok")
-        }
-        switch semaphore.wait(timeout: DispatchTime.now() + 10) {
+        switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
         case .success:
             break
         default:
             XCTFail("Expected .success")
         }
-        let prefetch: (UUID) -> Void = { uuid in
-            if uuid.uuidString == entityId3.uuidString {
-                switch semaphore.wait(timeout: DispatchTime.now() + 10) {
-                case .success:
-                    semaphore.signal()
-                default:
-                    XCTFail ("Expected .success")
-                }
-            }
-        }
-        accessor.setPreFetch(prefetch)
-        reference.set (referenceData: EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId3, version: 10), batch: batch)
-        reference.sync() { reference in
+        if let reference = testReference.contents {
             XCTAssertNil (reference.entity)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
@@ -1648,16 +1601,22 @@ class EntityReferenceTests: XCTestCase {
                 XCTFail ("Expected .retrieving but got \(reference.state)")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (2, reference.pendingEntityClosureCount)
+
+            XCTAssertEqual (1, reference.pendingEntityClosureCount)
+        } else {
+            XCTFail("Expected .contents")
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
             XCTAssertEqual (entities[parentId]?.referenceData().id.uuidString, parentId.uuidString)
         }
-        semaphore.signal()
+        reference.appendClosure() { result in
+            waitFor.fulfill()
+        }
+        testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
         reference.sync() { reference in
-            XCTAssertTrue (reference.entity!.id == entityId3)
+            XCTAssertEqual (reference.entity!.id.uuidString, entityId3.uuidString)
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
@@ -2407,4 +2366,62 @@ class EntityReferenceTests: XCTestCase {
         }
 
     }
+}
+
+// function retrieve() waits until the thread which created the reference
+// signals the semaphore
+class RetrieveControlledEntityReference<P: Codable, T: Codable> : EntityReference<P, T> {
+    
+    override init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool) {
+        switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        contentsReadyGroup.enter()
+        super.init (parent: parent, entity: entity, isEager: isEager)
+    }
+    
+    override init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
+        switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        contentsReadyGroup.enter()
+        super.init (parent: parent, referenceData: referenceData, isEager: isEager)
+    }
+    
+    public required init (from decoder: Decoder) throws {
+        switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
+        contentsReadyGroup.enter()
+        try super.init (from: decoder)
+    }
+    
+    // Not Thread safe, must be called within queue
+    override internal func retrievalGetHook() {
+        contents = contents()
+        contentsReadyGroup.leave()
+        switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
+        case .success:
+            self.semaphore.signal()
+        default:
+            XCTFail ("Expected .success")
+        }
+    }
+
+    var contents: EntityReferenceContents<P, T>? = nil
+    
+    // Not thread safe, intended for use when waiting on retrievalGetHook()
+
+    internal let contentsReadyGroup = DispatchGroup()
+    internal let semaphore = DispatchSemaphore (value: 1)
+    
 }
