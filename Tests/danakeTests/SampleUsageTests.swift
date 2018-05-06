@@ -9,23 +9,36 @@ import XCTest
 @testable import danake
 
 /*
-    =====================
-    The Application Model
-    =====================
+    ========
+    Contents
+    ========
+ 
+        1. The Sample Application Model
+        2. The Sample Persistence System
+        3. Test demonstrating usage within application code
+        4. Tests demonstrating deliberate generation of errors by InMemoryAccessor to test error handling in
+           application code
+        5. Tests of the basic functionality of the sample model and sample persistence system
+
+    ============================
+    The Sample Application Model
+    ============================
  
     This sample assumes you have read the framework introduction in README.md
     https://github.com/neallester/danake-sw#introduction
  
-    class Company:  A Company is associated with zero or more Employees. Demonstrates:
+    These classes demonstrate how to incorporate Danake into an application object model.
+ 
+    class Company:  A Company is associated with zero or more Employees.
                     - Property `employeeCollection' demonstrates how to deserialize a property whose value
                       comes from the environment rather than the the serialized representation of the instance.
                     - property `id' demonstrates how to create a model object with an attribute of type UUID
                       value which is taken from the id of the enclosing Entity at creation and deserialization
                       time.
-                    - The functions `employees()' demonstrate functions whose results are obtained via queries to
+                    - The function `employees()' demonstrate functions whose results are obtained via queries to
                       the persistent media.
  
-    class Employee: An employee is associated with zero or one companies, and has zero or one addresses. Demonstrates
+    class Employee: An employee is associated with zero or one companies, and has zero or one addresses.
                     - Properties `company' and `address' demonstrate the usage of EntityReference<PARENT, TYPE>
                     - company attribute demonstrates eager retrieval
 
@@ -119,9 +132,11 @@ struct Address : Codable {
 }
 
 /*
-    ======================
-    The Persistence System
-    ======================
+    =============================
+    The Sample Persistence System
+    =============================
+ 
+    These classes demonstrate the persistence system implementing persistence for the previously introduced sample model.
  
     protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each
                                     supported media). Lookup by Entity.id and collection scan (with optional selection criteria) are
