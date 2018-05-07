@@ -1705,6 +1705,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -1723,6 +1724,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -1735,6 +1737,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -1810,6 +1813,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected .success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2452,6 +2461,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 3 {
@@ -2463,6 +2473,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -2475,6 +2486,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -2539,6 +2551,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2858,7 +2876,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2966,7 +2983,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3227,6 +3243,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
         entity.timeoutSemaphore.signal()
+        semaphore.signal()
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.dirty state with 2 pending removes
@@ -3558,7 +3575,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3673,7 +3689,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -4290,7 +4305,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
