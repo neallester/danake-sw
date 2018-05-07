@@ -221,10 +221,6 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
             XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
-//            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.get|Illegal Data|databaseHashValue=", entry.prefix(82))
-//            XCTAssertEqual (";collection=myCollection;id=", entry[entry.index(entry.startIndex, offsetBy: 118)..<entry.index(entry.startIndex, offsetBy: 146)])
-//            XCTAssertEqual (";data={};error=keyNotFound(danake.Entity<danakeTests.MyStruct>.CodingKeys.id, Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key id (\\\"id\\\").\", underlyingError: nil))", entries[1].asTestString().suffix(207))
-//            XCTAssertEqual (389, entries[1].asTestString().count)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -249,19 +245,18 @@ class PersistentCollectionTests: XCTestCase {
         while counter < 100 {
             let accessor = InMemoryAccessor()
             let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-            let entity1 = newTestEntity(myInt: 10, myString: "A String1")
-    
-            let data1 = try accessor.encoder.encode(entity1)
-            let entity2 = newTestEntity(myInt: 20, myString: "A String2")
-            let data2 = try accessor.encoder.encode(entity2)
+            let id1 = UUID()
+            let data1 = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":1525732114.0374,\"saved\":1525732132.8645,\"item\":{\"myInt\":10,\"myString\":\"A String1\"},\"persistenceState\":\"persistent\",\"version\":10}".data(using: .utf8)!
+            let id2 = UUID()
+            let data2 = "{\"id\":\"\(id2.uuidString)\",\"schemaVersion\":5,\"created\":1525732227.0376,\"saved\":1525732315.7534,\"item\":{\"myInt\":20,\"myString\":\"A String2\"},\"persistenceState\":\"persistent\",\"version\":20}".data(using: .utf8)!
             let dispatchGroup = DispatchGroup()
-            let _ = accessor.add(name: standardCollectionName, id: entity1.id, data: data1)
-            let _ = accessor.add(name: standardCollectionName, id: entity2.id, data: data2)
+            let _ = accessor.add(name: standardCollectionName, id: id1, data: data1)
+            let _ = accessor.add(name: standardCollectionName, id: id2, data: data2)
             let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
-                if uuid == entity1.id {
+                if uuid == id1 {
                     startSempaphore.wait()
                     startSempaphore.signal()
                 }
@@ -273,16 +268,16 @@ class PersistentCollectionTests: XCTestCase {
             let workQueue = DispatchQueue (label: "WorkQueue", attributes: .concurrent)
             dispatchGroup.enter()
             workQueue.async {
-                result1a = collection.get(id: entity1.id)
+                result1a = collection.get(id: id1)
                 dispatchGroup.leave()
             }
             dispatchGroup.enter()
             workQueue.async {
-                result1b = collection.get(id: entity1.id)
+                result1b = collection.get(id: id1)
                 dispatchGroup.leave()
             }
             workQueue.async {
-                result2 = collection.get(id: entity2.id)
+                result2 = collection.get(id: id2)
                 waitFor1.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
@@ -290,10 +285,20 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertNil (result1b)
             switch result2! {
             case .ok (let retrievedEntity):
-                XCTAssertEqual (entity2.id, retrievedEntity!.id)
-                XCTAssertEqual (entity2.getVersion(), retrievedEntity!.getVersion())
-                XCTAssertEqual ((entity2.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity!.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-                XCTAssertNil (retrievedEntity!.getSaved ())
+                XCTAssertEqual (id2.uuidString, retrievedEntity!.id.uuidString)
+                XCTAssertEqual (20, retrievedEntity!.getVersion())
+                XCTAssertEqual (1525732227.0376, retrievedEntity!.created.timeIntervalSince1970)
+                XCTAssertEqual (1525732315.7534, retrievedEntity!.getSaved()!.timeIntervalSince1970)
+                switch retrievedEntity!.getPersistenceState() {
+                case .persistent:
+                    break
+                default:
+                    XCTFail("Expected .persistent")
+                }
+                retrievedEntity!.sync() { myStruct in
+                    XCTAssertEqual (20, myStruct.myInt)
+                    XCTAssertEqual ("A String2", myStruct.myString)
+                }
             default:
                 XCTFail("Expected data2")
             }
@@ -321,6 +326,20 @@ class PersistentCollectionTests: XCTestCase {
             XCTAssertNotNil(retrievedEntity1a)
             XCTAssertNotNil(retrievedEntity1b)
             XCTAssertTrue (retrievedEntity1a! === retrievedEntity1b!)
+            XCTAssertEqual (id1.uuidString, retrievedEntity1a!.id.uuidString)
+            XCTAssertEqual (10, retrievedEntity1a!.getVersion())
+            XCTAssertEqual (1525732114.0374, retrievedEntity1a!.created.timeIntervalSince1970)
+            XCTAssertEqual (1525732132.8645, retrievedEntity1a!.getSaved()!.timeIntervalSince1970)
+            switch retrievedEntity1a!.getPersistenceState() {
+            case .persistent:
+                break
+            default:
+                XCTFail("Expected .persistent")
+            }
+            retrievedEntity1a!.sync() { myStruct in
+                XCTAssertEqual (10, myStruct.myInt)
+                XCTAssertEqual ("A String1", myStruct.myString)
+            }
             counter = counter + 1
         }
     }
