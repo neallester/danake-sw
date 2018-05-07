@@ -2298,7 +2298,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let prefetchGroup = DispatchGroup()
         preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
@@ -2318,7 +2317,6 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
-                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
 
@@ -2331,7 +2329,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
-        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -2396,12 +2393,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break

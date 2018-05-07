@@ -1743,7 +1743,6 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertEqual ("40", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -1762,7 +1761,6 @@ class EntityCommitDirtyTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
-                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -1775,7 +1773,6 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
-        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -1843,12 +1840,6 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -4605,7 +4596,6 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected .dirty")
         }
         XCTAssertNil (entity.getPendingAction())
-        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -4624,7 +4614,6 @@ class EntityCommitDirtyTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
-                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -4637,7 +4626,6 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
-        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -4702,19 +4690,17 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail ("Expected Success")
-        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
         default:
             XCTFail ("Expected Success")
         }
-        try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        #if os(Linux)
+            XCTAssertNotNil(accessor.getData(name: collectionName, id: id))
+        #else
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+        #endif
         entity.timeoutSemaphore.signal()
     }
 
