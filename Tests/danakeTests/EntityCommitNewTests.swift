@@ -180,6 +180,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
+        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -189,12 +190,14 @@ class EntityCommitNewTests: XCTestCase {
                     XCTFail ("Expected Success")
                 }
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
         }
         preFetchCount = 0
         accessor.setPreFetch (prefetch)
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds (1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -235,6 +238,12 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -759,7 +768,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -908,6 +916,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         preFetchCount = 0
+        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -926,6 +935,7 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -938,6 +948,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -995,6 +1006,12 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1446,7 +1463,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1593,6 +1609,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
@@ -1612,6 +1629,7 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -1624,6 +1642,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -1691,6 +1710,12 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2130,7 +2155,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .update")
         }
         semaphore.signal()
-
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2274,6 +2298,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
@@ -2293,6 +2318,7 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
 
@@ -2305,6 +2331,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -2369,6 +2396,12 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2661,7 +2694,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2772,7 +2804,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2911,6 +2942,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         preFetchCount = 0
         prefetch = { id in
             if preFetchCount == 1 {
@@ -2930,6 +2962,7 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -2942,6 +2975,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -2990,8 +3024,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         entity.timeoutSemaphore.signal()
-
-
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2999,6 +3031,12 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3054,7 +3092,6 @@ class EntityCommitNewTests: XCTestCase {
                 semaphore.signal()
             }
             preFetchCount = preFetchCount + 1
-            
         }
         accessor.setPreFetch (prefetch)
         group.enter()
@@ -3312,7 +3349,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3430,7 +3466,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3576,6 +3611,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
+        let prefetchGroup = DispatchGroup()
         prefetch = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -3594,6 +3630,7 @@ class EntityCommitNewTests: XCTestCase {
                 }
                 accessor.throwError = true
                 semaphore.signal()
+                prefetchGroup.leave()
             }
             preFetchCount = preFetchCount + 1
             
@@ -3606,6 +3643,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        prefetchGroup.enter()
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -3667,6 +3705,12 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
+        switch prefetchGroup.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail ("Expected Success")
+        }
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3988,7 +4032,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -4109,7 +4152,6 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected .remove")
         }
         semaphore.signal()
-        
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
