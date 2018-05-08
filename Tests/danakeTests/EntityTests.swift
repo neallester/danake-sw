@@ -530,7 +530,9 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (json.contains("{\"id\":\"\(id1.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
             XCTAssertTrue (json.contains("\"created\":\(creationDateString1)"))
-            XCTAssertTrue (json.contains("\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":100"))
+            XCTAssertTrue (json.contains("\"myString\":\"A \\\"Quoted\\\" String\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"new\""))
             XCTAssertTrue (json.contains("\"version\":10"))
         #else
@@ -707,7 +709,9 @@ class EntityTests: XCTestCase {
                 XCTAssertTrue (json.contains("\"saved\":\(savedDateString)"))
                 XCTAssertTrue (json.contains("\"created\":\(creationDateString1)"))
                 XCTAssertTrue (json.contains("\"version\":10"))
-                XCTAssertTrue (json.contains("\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}"))
+                XCTAssertTrue (json.contains("\"item\":{"))
+                XCTAssertTrue (json.contains("\"myInt\":100"))
+                XCTAssertTrue (json.contains("\"myString\":\"A \\\"Quoted\\\" String\""))
                 XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\"}"))
             #else
                 try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(id4.uuidString)\",\"saved\":\(savedDateString),\"created\":\(creationDateString1),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)

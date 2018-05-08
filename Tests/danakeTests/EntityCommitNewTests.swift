@@ -663,7 +663,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         #if os(Linux)
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains ("{\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains ("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains ("\"schemaVersion\":5"))
             try XCTAssertTrue (json.contains ("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains ("\"item\":{"))
@@ -1764,7 +1764,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         #if os(Linux)
             let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("{\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
             try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
@@ -2223,7 +2223,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
             try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":30,"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
             XCTAssertTrue (json.contains("\"myString\":\"30\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
@@ -3141,7 +3141,7 @@ class EntityCommitNewTests: XCTestCase {
             try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":10"))
-            XCTAssertTrue (json.contains(",\"myString\":\"10\""))
+            XCTAssertTrue (json.contains("\"myString\":\"10\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":1"))
         #else
