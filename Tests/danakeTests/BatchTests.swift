@@ -243,29 +243,38 @@ class BatchTests: XCTestCase {
     
     class SlowCodable : Codable {
         
+        init () {
+            switch semaphore.wait(timeout: DispatchTime.now() + 10) {
+            case .success:
+                break
+            default:
+                XCTFail("Expected .success")
+            }
+        }
+        
         enum SlowCodableError : Error {
             case error
         }
         
         public func encode(to encoder: Encoder) throws {
             if !hasFired {
-                usleep(200000)
+                switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
+                case .success:
+                    semaphore.signal()
+                default:
+                    XCTFail("Expected .success")
+                }
             }
             hasFired = true
         }
-        
-        public init () {}
         
         public required init (from decoder: Decoder) throws {
         }
 
         private var hasFired = false
+        internal var semaphore = DispatchSemaphore(value: 1)
     }
     
-    // This test is non-deterministic
-    // The timeout, SlowCodable delay, and retryInterval times are arbitrary
-    // If the processing associated with one of them happens to take longer than allotted
-    // the test may fail
     func testCommitWithBatchTimeout() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
@@ -282,6 +291,7 @@ class BatchTests: XCTestCase {
         let waitFor = expectation (description: "waitFor")
         batch.commit() {
             waitFor.fulfill()
+            slowCodable.semaphore.signal()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         switch entity1.getPersistenceState() {
@@ -294,7 +304,7 @@ class BatchTests: XCTestCase {
         case .persistent:
             break
         default:
-            XCTFail ("Expected .persistent")
+            XCTFail ("Expected .persistent but got \(entity2.getPersistenceState())")
         }
         XCTAssertEqual (1, accessor.count (name: collectionName))
         XCTAssertTrue (accessor.has(name: collectionName, id: entity1.id))
