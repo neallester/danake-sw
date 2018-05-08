@@ -971,7 +971,6 @@ class PersistentCollectionTests: XCTestCase {
                 }
                 XCTAssert (entity3 === retrievedEntity)
                 collection.sync() { cache in
-                    XCTAssertEqual (2, cache.count)
                     XCTAssertTrue (cache[entity3.id]!.item! === entity3)
                     XCTAssertTrue (cache[entity4.id]!.item! === entity4)
                 }
