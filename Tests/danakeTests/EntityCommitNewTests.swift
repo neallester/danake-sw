@@ -667,7 +667,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertTrue (json.contains ("\"schemaVersion\":5"))
             try XCTAssertTrue (json.contains ("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains ("\"item\":{"))
-            XCTAssertTrue (json.contains (\"myInt\":20"))
+            XCTAssertTrue (json.contains ("\"myInt\":20"))
             XCTAssertTrue (json.contains ("\"myString\":\"20\""))
             XCTAssertTrue (json.contains ("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains ("\"version\":1"))
