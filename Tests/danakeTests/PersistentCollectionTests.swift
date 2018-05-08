@@ -1083,23 +1083,17 @@ class PersistentCollectionTests: XCTestCase {
                 let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
                 let dispatchGroup = DispatchGroup()
                 // entity1, entity2: Data in accessor
-                let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
-        
-                entity1.setPersistenceState (.persistent)
-                entity1.setSaved (Date())
-                let data1 = try accessor.encoder.encode(entity1)
-                switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
+                let id1 = UUID()
+                let data1 = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":1525735252.2328,\"saved\":1525735368.8345,\"item\":{\"myInt\":10,\"myString\":\"A String 1\"},\"persistenceState\":\"persistent\",\"version\":1}".data(using: .utf8)!
+                switch accessor.add(name: standardCollectionName, id: id1, data: data1) {
                 case .ok:
                     break
                 default:
                     XCTFail ("Expected .ok")
                 }
-                let entity2 = newTestEntity(myInt: 20, myString: "A String 2")
-        
-                entity2.setPersistenceState (.persistent)
-                entity2.setSaved (Date())
-                let data2 = try accessor.encoder.encode(entity2)
-                switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
+                let id2 = UUID()
+                let data2 = "{\"id\":\"\(id2.uuidString)\",\"schemaVersion\":5,\"created\":1525735262.2330,\"saved\":1525735311.3375,\"item\":{\"myInt\":20,\"myString\":\"A String 2\"},\"persistenceState\":\"persistent\",\"version\":2}".data(using: .utf8)!
+                switch accessor.add(name: standardCollectionName, id: id2, data: data2) {
                 case .ok:
                     break
                 default:
@@ -1154,10 +1148,10 @@ class PersistentCollectionTests: XCTestCase {
                             default:
                                 XCTFail ("Expected .persistent but got \(persistenceState)")
                             }
-                            if retrievedEntity.id.uuidString == entity1.id.uuidString {
+                            if retrievedEntity.id.uuidString == id1.uuidString {
                                 XCTAssertNil (retrievedEntity1)
                                 retrievedEntity1 = retrievedEntity
-                            } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
+                            } else if retrievedEntity.id.uuidString == id2.uuidString {
                                 XCTAssertNil (retrievedEntity2)
                                 retrievedEntity2 = retrievedEntity
                             } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
@@ -1171,19 +1165,15 @@ class PersistentCollectionTests: XCTestCase {
                             }
                         }
                         XCTAssertEqual (4, retrievedEntities.count)
-                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity1?.id.uuidString)
-                        entity1.sync() { item1 in
-                            retrievedEntity1!.sync() { retrievedItem1 in
-                                XCTAssertEqual (item1.myInt, retrievedItem1.myInt)
-                                XCTAssertEqual (item1.myString, retrievedItem1.myString)
-                            }
+                        XCTAssertEqual (id1.uuidString, retrievedEntity1?.id.uuidString)
+                        retrievedEntity1!.sync() { retrievedItem1 in
+                            XCTAssertEqual (10, retrievedItem1.myInt)
+                            XCTAssertEqual ("A String 1", retrievedItem1.myString)
                         }
-                        XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
-                        entity2.sync() { item2 in
-                            retrievedEntity2!.sync() { retrievedItem2 in
-                                XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
-                                XCTAssertEqual (item2.myString, retrievedItem2.myString)
-                            }
+                        XCTAssertEqual (id2.uuidString, retrievedEntity2?.id.uuidString)
+                        retrievedEntity2!.sync() { retrievedItem2 in
+                            XCTAssertEqual (20, retrievedItem2.myInt)
+                            XCTAssertEqual ("A String 2", retrievedItem2.myString)
                         }
                         XCTAssertEqual (entity3.id.uuidString, retrievedEntity3?.id.uuidString)
                         XCTAssertTrue (entity3 === retrievedEntity3!)
@@ -1208,10 +1198,10 @@ class PersistentCollectionTests: XCTestCase {
                             default:
                                 XCTFail ("Expected .persistent but got \(persistenceState)")
                             }
-                            if retrievedEntity.id.uuidString == entity1.id.uuidString {
+                            if retrievedEntity.id.uuidString == id1.uuidString {
                                 XCTAssertNil (retrievedEntity1)
                                 retrievedEntity1 = retrievedEntity
-                            } else if retrievedEntity.id.uuidString == entity2.id.uuidString {
+                            } else if retrievedEntity.id.uuidString == id2.uuidString {
                                 XCTAssertNil (retrievedEntity2)
                                 retrievedEntity2 = retrievedEntity
                             } else if retrievedEntity.id.uuidString == entity3.id.uuidString {
@@ -1225,19 +1215,15 @@ class PersistentCollectionTests: XCTestCase {
                             }
                         }
                         XCTAssertEqual (4, retrievedEntities.count)
-                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity1?.id.uuidString)
-                        entity1.sync() { item1 in
-                            retrievedEntity1!.sync() { retrievedItem1 in
-                                XCTAssertEqual (item1.myInt, retrievedItem1.myInt)
-                                XCTAssertEqual (item1.myString, retrievedItem1.myString)
-                            }
+                        XCTAssertEqual (id1.uuidString, retrievedEntity1?.id.uuidString)
+                        retrievedEntity1!.sync() { retrievedItem1 in
+                            XCTAssertEqual (10, retrievedItem1.myInt)
+                            XCTAssertEqual ("A String 1", retrievedItem1.myString)
                         }
-                        XCTAssertEqual (entity2.id.uuidString, retrievedEntity2?.id.uuidString)
-                        entity2.sync() { item2 in
-                            retrievedEntity2!.sync() { retrievedItem2 in
-                                XCTAssertEqual (item2.myInt, retrievedItem2.myInt)
-                                XCTAssertEqual (item2.myString, retrievedItem2.myString)
-                            }
+                        XCTAssertEqual (id2.uuidString, retrievedEntity2?.id.uuidString)
+                        retrievedEntity2!.sync() { retrievedItem2 in
+                            XCTAssertEqual (20, retrievedItem2.myInt)
+                            XCTAssertEqual ("A String 2", retrievedItem2.myString)
                         }
                         XCTAssertEqual (entity3.id.uuidString, retrievedEntity3?.id.uuidString)
                         XCTAssertTrue (entity3 === retrievedEntity3!)
@@ -1258,12 +1244,10 @@ class PersistentCollectionTests: XCTestCase {
                         default:
                             XCTFail ("Expected .persistent")
                         }
-                        XCTAssertEqual (entity1.id.uuidString, retrievedEntity.id.uuidString)
-                        entity1.sync() { item1 in
-                            retrievedEntity.sync() { retrievedItem in
-                                XCTAssertEqual (item1.myInt, retrievedItem.myInt)
-                                XCTAssertEqual (item1.myString, retrievedItem.myString)
-                            }
+                        XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
+                        retrievedEntity.sync() { retrievedItem in
+                            XCTAssertEqual (10, retrievedItem.myInt)
+                            XCTAssertEqual ("A String 1", retrievedItem.myString)
                         }
                         dispatchGroup.leave()
                     }
