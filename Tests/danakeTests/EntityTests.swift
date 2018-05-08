@@ -526,8 +526,13 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (entity1 === cachedEntity)
         }
         #if os(Linux)
-            // TODO Implement
-            // JSON String Generated on Linux is not always consistent
+            json = try String (data: accessor.encoder.encode(entity1), encoding: .utf8)!
+            XCTAssertTrue (json.contains("{\"id\":\"\(id1.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            XCTAssertTrue (json.contains("\"created\":\(creationDateString1)"))
+            XCTAssertTrue (json.contains("\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}"))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"new\""))
+            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}", String (data: accessor.encoder.encode(entity1), encoding: .utf8)!)
         #endif
@@ -696,13 +701,17 @@ class EntityTests: XCTestCase {
             try XCTAssertEqual (jsonEncodedDate (date: entity4.created)!, creationDateString1)
             try XCTAssertEqual (jsonEncodedDate (date: entity4.getSaved()!)!, savedDateString)
             #if os(Linux)
-                // TODO Implement
-                // JSON String Generated on Linux is not always consistent
+                json = try String (data: accessor.encoder.encode(entity4), encoding: .utf8)!
+                XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+                XCTAssertTrue (json.contains("\"id\":\"\(id4.uuidString)\""))
+                XCTAssertTrue (json.contains("\"saved\":\(savedDateString)"))
+                XCTAssertTrue (json.contains("\"created\":\(creationDateString1)"))
+                XCTAssertTrue (json.contains("\"version\":10"))
+                XCTAssertTrue (json.contains("\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"}"))
+                XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\"}"))
             #else
                 try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(id4.uuidString)\",\"saved\":\(savedDateString),\"created\":\(creationDateString1),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)
             #endif
-
-            
         }
     }
     

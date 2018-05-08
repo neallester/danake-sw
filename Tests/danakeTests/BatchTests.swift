@@ -268,9 +268,8 @@ class BatchTests: XCTestCase {
             hasFired = true
         }
         
-        public required init (from decoder: Decoder) throws {
-        }
-
+        public required init (from decoder: Decoder) throws {}
+        
         private var hasFired = false
         internal var semaphore = DispatchSemaphore(value: 1)
     }

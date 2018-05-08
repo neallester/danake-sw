@@ -11,9 +11,7 @@ import XCTest
 class PersistentCollectionTests: XCTestCase {
     
     func testCreation() {
-        
         let myKey: CodingUserInfoKey = CodingUserInfoKey(rawValue: "myKey")!
-        
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
