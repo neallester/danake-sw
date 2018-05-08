@@ -527,7 +527,7 @@ class EntityTests: XCTestCase {
         }
         #if os(Linux)
             json = try String (data: accessor.encoder.encode(entity1), encoding: .utf8)!
-            XCTAssertTrue (json.contains("{\"id\":\"\(id1.uuidString)\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(id1.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
             XCTAssertTrue (json.contains("\"created\":\(creationDateString1)"))
             XCTAssertTrue (json.contains("\"item\":{"))
@@ -712,7 +712,7 @@ class EntityTests: XCTestCase {
                 XCTAssertTrue (json.contains("\"item\":{"))
                 XCTAssertTrue (json.contains("\"myInt\":100"))
                 XCTAssertTrue (json.contains("\"myString\":\"A \\\"Quoted\\\" String\""))
-                XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\"}"))
+                XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             #else
                 try XCTAssertEqual ("{\"schemaVersion\":5,\"id\":\"\(id4.uuidString)\",\"saved\":\(savedDateString),\"created\":\(creationDateString1),\"version\":10,\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\"}", String (data: accessor.encoder.encode(entity4), encoding: .utf8)!)
             #endif
