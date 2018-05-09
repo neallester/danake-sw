@@ -674,7 +674,7 @@ class SampleTests: XCTestCase {
             XCTFail ("Expected .ok")
         }
         let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
-        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"created\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue())\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"collectionName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
+        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue())\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"collectionName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
         switch inMemoryAccessor.add(name: collections.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
         case .ok:
             break
@@ -701,7 +701,23 @@ class SampleTests: XCTestCase {
             
             // Demonstrate that the previous changes were lost due to the reported unrecoverable error
             #if os(Linux)
-                // Json attributes don't always deserialize in same order on Linux
+                // The order of attributes on serialized JSON is not always consistent on Linux
+                XCTAssertTrue (employeeJson.contains("\"id\":\"\(employeeId.uuidString)\""))
+                XCTAssertTrue (employeeJson.contains("\"schemaVersion\":1"))
+                XCTAssertTrue (employeeJson.contains("\"created\":1525459064.9665"))
+                XCTAssertTrue (employeeJson.contains("\"saved\":1525459184.5832"))
+                XCTAssertTrue (employeeJson.contains("\"item\":{"))
+                XCTAssertTrue (employeeJson.contains("\"name\":\"Name Two\""))
+                XCTAssertTrue (employeeJson.contains("\"company\":{"))
+                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue())\""))
+                XCTAssertTrue (employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
+                XCTAssertTrue (employeeJson.contains("\"isEager\":true"))
+                XCTAssertTrue (employeeJson.contains("\"collectionName\":\"company\",\"version\":1}"))
+                XCTAssertTrue (employeeJson.contains("\"version\":1}"))
+                XCTAssertTrue (employeeJson.contains("\"address\":{"))
+                XCTAssertTrue (employeeJson.contains("\"isEager\":false"))
+                XCTAssertTrue (employeeJson.contains("\"isNil\":true"))
+                XCTAssertTrue (employeeJson.contains("\"persistenceState\":\"persistent\""))
             #else
                 XCTAssertEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
             #endif
@@ -730,10 +746,25 @@ class SampleTests: XCTestCase {
                 XCTAssertEqual (2, entries.count)
                 XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<Employee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
             }
-            
             // Demonstrate that the data was updated in persistent media
             #if os(Linux)
-                // Json attributes don't always deserialize in same order on Linux
+                // The order of attributes on serialized JSON is not always consistent on Linux
+                XCTAssertTrue (employeeJson.contains("\"id\":\"\(employeeId.uuidString)\""))
+                XCTAssertTrue (employeeJson.contains("\"schemaVersion\":1"))
+                XCTAssertTrue (employeeJson.contains("\"created\":1525459064.9665"))
+                XCTAssertTrue (employeeJson.contains("\"saved\":1525459184.5832"))
+                XCTAssertTrue (employeeJson.contains("\"item\":{"))
+                XCTAssertTrue (employeeJson.contains("\"name\":\"Name Two\""))
+                XCTAssertTrue (employeeJson.contains("\"company\":{"))
+                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue())\""))
+                XCTAssertTrue (employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
+                XCTAssertTrue (employeeJson.contains("\"isEager\":true"))
+                XCTAssertTrue (employeeJson.contains("\"collectionName\":\"company\",\"version\":1}"))
+                XCTAssertTrue (employeeJson.contains("\"version\":1}"))
+                XCTAssertTrue (employeeJson.contains("\"address\":{"))
+                XCTAssertTrue (employeeJson.contains("\"isEager\":false"))
+                XCTAssertTrue (employeeJson.contains("\"isNil\":true"))
+                XCTAssertTrue (employeeJson.contains("\"persistenceState\":\"persistent\""))
             #else
                 XCTAssertNotEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
             #endif
