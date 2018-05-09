@@ -734,7 +734,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -838,7 +846,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":3"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collection.name, id: entity.id)!, encoding: .utf8)!)
         #endif
@@ -1097,7 +1113,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -1473,7 +1497,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -2216,7 +2248,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -2315,7 +2355,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"0\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":3"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -2572,7 +2620,15 @@ class EntityCommitDirtyTests: XCTestCase {
         }
         semaphore.signal()
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -2913,7 +2969,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -3006,7 +3070,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":3"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -3262,7 +3334,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":20"))
+            XCTAssertTrue (json.contains("\"myString\":\"20\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -3619,7 +3699,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -3719,7 +3807,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":3"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -3984,7 +4080,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":30"))
+            XCTAssertTrue (json.contains("\"myString\":\"30\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -4341,7 +4445,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":2"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":2}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
@@ -4440,7 +4552,15 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            // Json attributes don't always deserialize in same order on Linux
+            json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            XCTAssertTrue (json.contains("\"item\":{"))
+            XCTAssertTrue (json.contains("\"myInt\":40"))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
+            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
+            XCTAssertTrue (json.contains("\"version\":3"))
         #else
             try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
