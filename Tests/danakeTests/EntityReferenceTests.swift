@@ -238,7 +238,8 @@ class EntityReferenceTests: XCTestCase {
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         var json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue(json.contains("\"isEager\":false"))
+            XCTAssertTrue(json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -274,7 +275,8 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue(json.contains("\"isEager\":true"))
+            XCTAssertTrue(json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -310,7 +312,11 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"isEager\":false"))
+            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
+            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -390,7 +396,11 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         #if os(Linux)
-        // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"isEager\":true"))
+            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
+            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -412,7 +422,8 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"isEager\":false"))
+            XCTAssertTrue (json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -448,7 +459,8 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"isEager\":true"))
+            XCTAssertTrue (json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -484,7 +496,11 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
+            XCTAssertTrue (json.contains("\"isEager\":false"))
+            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
+            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -557,7 +573,11 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         #if os(Linux)
-            // JSON String Generated on Linux is not always consistent
+            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"id\":\"\(persistentChildId2.uuidString)\""))
+            XCTAssertTrue (json.contains("\"isEager\":true"))
+            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
+            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
