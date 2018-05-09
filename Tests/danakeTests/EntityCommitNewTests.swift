@@ -3455,7 +3455,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         #if os(Linux)
-            var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
+            let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
             try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
