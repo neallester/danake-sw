@@ -15,6 +15,7 @@ extension BatchTests {
     ("testDispatchTimeIntervalExtension", testDispatchTimeIntervalExtension),
     ("testNoCommitLogging", testNoCommitLogging),
     ("testCommitSync", testCommitSync),
+    ("testRandomTimeout", testRandomTimeout),
   ]
 }
 

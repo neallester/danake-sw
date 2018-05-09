@@ -387,6 +387,90 @@ class BatchTests: XCTestCase {
         XCTAssertEqual (2, accessor.count(name: collectionName))
     }
     
+    // Random timeouts in commit
+    public func testRandomTimeout() {
+        var testCount = 0
+        var totalExecutionTime = 0.0
+        var delay = 0.0
+        var timeout = BatchDefaults.timeout
+        var batchTimeoutCount = 0
+        var entityTimeoutCount = 0
+        var succeededEventuallyCount = 0
+        var noTimeoutCount = 0
+        while testCount < 1000 {
+            let logger = InMemoryLogger(level: .warning)
+            let accessor = InMemoryAccessor()
+            var needsDelay = true
+            var startTime = Date()
+            if testCount > 0 {
+                delay = totalExecutionTime / Double (testCount)
+                let delayAt = ParallelTests.randomInteger(maxValue: Int (1000000 * delay))
+                timeout = .microseconds(Int (delay * 600000.0))
+                accessor.setPreFetch() { uuid in
+                    if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
+                        usleep(UInt32 (delay * 1000000.0))
+                        needsDelay = false
+                    }
+                }
+            }
+            let persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
+            startTime = Date()
+            let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
+            let structs = ParallelTests.newStructs (persistenceObjects: persistenceObjects, batch: batch)
+            let result = structs.ids
+            batch.commitSync()
+            let endTime = Date()
+            totalExecutionTime = totalExecutionTime + endTime.timeIntervalSince1970 - startTime.timeIntervalSince1970 - delay
+            var counter = 1
+            var batchTimedOut = false
+            var entityTimedOut = false
+            logger.sync() { entries in
+                for entry in entries {
+                    batchTimedOut = batchTimedOut || entry.message.contains ("batchTimeout")
+                    entityTimedOut = entityTimedOut || entry.message.contains ("Entity.commit():timedOut")
+                }
+            }
+            if batchTimedOut {
+                batchTimeoutCount = batchTimeoutCount + 1
+            }
+            if entityTimedOut {
+                entityTimeoutCount = entityTimeoutCount + 1
+                if !batchTimedOut {
+                    succeededEventuallyCount = succeededEventuallyCount + 1
+                }
+            }
+            if !batchTimedOut && !entityTimedOut {
+                noTimeoutCount = noTimeoutCount + 1
+            }
+            for uuid in result {
+                let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
+                entity.sync { myStruct in
+                    let expectedInt = counter * 10
+                    XCTAssertEqual (expectedInt, myStruct.myInt)
+                    XCTAssertEqual ("\(expectedInt)", myStruct.myString)
+                }
+                if !batchTimedOut {
+                    switch entity.getPersistenceState() {
+                    case .persistent:
+                        break
+                    default:
+                        XCTFail ("Expected .persistent")
+                    }
+                }
+                counter = counter + 1
+            }
+            testCount = testCount + 1
+        }
+        // Technically speaking the occurrence of each scenario is dependent on factors which are randomized in the
+        // Test so it is conceivable one of the following assertions could fail simply due to a random occurrence
+        XCTAssertTrue (batchTimeoutCount > 0)
+        XCTAssertTrue (entityTimeoutCount > 0)
+        XCTAssertTrue (succeededEventuallyCount > 0)
+        XCTAssertTrue (noTimeoutCount > 0)
+    }
+    
+
+    
 /*
      The following test verifies that a DispatchQueue declared as a local will fire even if
      the local has been collected. It emits the following output:

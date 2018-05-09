@@ -92,7 +92,7 @@ class ParallelTests: XCTestCase {
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             let test1 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
-                let result = ParallelTests.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTests.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.end", data: nil)
                 resultQueue.async {
                     test1Results.append (result)
@@ -596,41 +596,9 @@ class ParallelTests: XCTestCase {
         }
     }
     
-    fileprivate class ParallelTestPersistence {
-        
-        init (accessor: DatabaseAccessor, logger: Logger?) {
-            self.logger = logger
-            let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
-            myStructCollection = PersistentCollection<MyStruct> (database: database, name: "MyStructs")
-            containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
-        }
-        
-        deinit {
-            if let logger = logger {
-                logger.log(level: .debug, source: "", featureName: "deinit", message: "start", data: nil)
-                var myStructCount = 0
-                var containerCount = 0
-                myStructCollection.sync() { entities in
-                    myStructCount = entities.count
-                }
-                containerCollection.sync() { entities in
-                    containerCount = entities.count
-                }
-                logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
-                logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
-            }
-        }
-        
-        let logger: Logger?
-        
-        let myStructCollection: PersistentCollection<MyStruct>
-        
-        let containerCollection: ContainerCollection
-    }
-    
     // Create
-    private static func myStructTest1 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+    private static func myStructTest1 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, timeout: DispatchTimeInterval) -> [UUID] {
+        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
         var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch)
         let result = structs.ids
         persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest1", message: "batch.commit()", data: nil)
@@ -1174,7 +1142,7 @@ class ParallelTests: XCTestCase {
     }
 
 
-    private static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
+    internal static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
         var counter = 1
         var structs: [Entity<MyStruct>] = []
         structs.reserveCapacity(myStructCount)
@@ -1255,7 +1223,7 @@ class ParallelTests: XCTestCase {
         return (containers: containers, ids: ids)
     }
     
-    private static func randomInteger (maxValue: Int) -> Int {
+    internal static func randomInteger (maxValue: Int) -> Int {
         #if os(Linux)
             srandom(UInt32(time(nil)))
             return Int(random() % maxValue)

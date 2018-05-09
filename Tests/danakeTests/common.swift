@@ -138,4 +138,38 @@ internal class ContainerCollection : PersistentCollection<MyStructContainer> {
     
 }
 
+internal class ParallelTestPersistence {
+    
+    init (accessor: DatabaseAccessor, logger: Logger?) {
+        self.logger = logger
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
+        myStructCollection = PersistentCollection<MyStruct> (database: database, name: "MyStructs")
+        containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
+    }
+    
+    deinit {
+        if let logger = logger {
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "start", data: nil)
+            var myStructCount = 0
+            var containerCount = 0
+            myStructCollection.sync() { entities in
+                myStructCount = entities.count
+            }
+            containerCollection.sync() { entities in
+                containerCount = entities.count
+            }
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
+        }
+    }
+    
+    let logger: Logger?
+    
+    let myStructCollection: PersistentCollection<MyStruct>
+    
+    let containerCollection: ContainerCollection
+}
+
+
+
 
