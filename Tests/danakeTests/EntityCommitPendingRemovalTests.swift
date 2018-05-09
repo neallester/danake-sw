@@ -2350,7 +2350,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        var prefetch: (UUID) -> () = { id in
+        let prefetch: (UUID) -> () = { id in
             if preFetchCount == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
@@ -2477,7 +2477,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
 //                prefetchGroup.leave()
 //            }
 //            preFetchCount = preFetchCount + 1
-//            
+//
 //        }
 //        accessor.setPreFetch (prefetch)
 //        switch entity.timeoutSemaphore.wait(timeout: DispatchTime.now() + 10.0) {
