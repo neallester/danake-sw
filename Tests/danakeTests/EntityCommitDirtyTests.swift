@@ -2361,7 +2361,7 @@ class EntityCommitDirtyTests: XCTestCase {
             try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":40"))
-            XCTAssertTrue (json.contains("\"myString\":\"0\""))
+            XCTAssertTrue (json.contains("\"myString\":\"40\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
