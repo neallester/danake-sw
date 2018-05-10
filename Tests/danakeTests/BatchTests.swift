@@ -405,7 +405,12 @@ class BatchTests: XCTestCase {
             if testCount > 0 {
                 delay = totalExecutionTime / Double (testCount)
                 let delayAt = ParallelTests.randomInteger(maxValue: Int (1000000 * delay))
-                timeout = .microseconds(Int (delay * 600000.0))
+                #if os(Linux)
+                    timeout = .microseconds(Int (delay * 850000.0))
+                #else
+                    timeout = .microseconds(Int (delay * 600000.0))
+                #endif
+
                 accessor.setPreFetch() { uuid in
                     if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
                         usleep(UInt32 (delay * 1000000.0))
@@ -463,6 +468,7 @@ class BatchTests: XCTestCase {
         }
         // Technically speaking the occurrence of each scenario is dependent on factors which are randomized in the
         // Test so it is conceivable one of the following assertions could fail simply due to a random occurrence
+        // print ("batchTimeouts: \(batchTimeoutCount); entityTimeoutCount: \(entityTimeoutCount); eventuallyCount: \(succeededEventuallyCount)")
         XCTAssertTrue (batchTimeoutCount > 0)
         XCTAssertTrue (entityTimeoutCount > 0)
         XCTAssertTrue (succeededEventuallyCount > 0)
