@@ -5,6 +5,7 @@
 //  Created by Neal Lester on 3/10/18.
 //
 
+import XCTest
 import Foundation
 @testable import danake
 
@@ -170,6 +171,59 @@ internal class ParallelTestPersistence {
     let containerCollection: ContainerCollection
 }
 
+class DateExtensionTests : XCTestCase {
+    
+    public func testRoughlyEquals () {
+        let n   = 1526050509.714
+        let n03 = 1526050509.71403
+        let n05 = 1526050509.71405
+        let n08 = 1526050509.71408
+        let n3  = 1526050509.717
+        let n8  = 1526050509.722
+        let n10 = 1526050509.724
+        let n12 = 1526050509.726
+        let b   = 1526050529.714
+        print ("\(Date().timeIntervalSince1970))")
+        let d1 = Date (timeIntervalSince1970: n)
+        var d2 = Date (timeIntervalSince1970: n)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n03)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n05)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n08)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n3)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n8)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n10)
+        XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertTrue (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: n12)
+        XCTAssertFalse (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertFalse (d2.roughlyEquals(d1, millisecondPrecision: 10))
+        d2 = Date (timeIntervalSince1970: b)
+        XCTAssertFalse (d1.roughlyEquals(d2, millisecondPrecision: 10))
+        XCTAssertFalse (d2.roughlyEquals(d1, millisecondPrecision: 10))
+    }
+    
+}
 
+extension Date {
+    
+    func roughlyEquals (_ other: Date, millisecondPrecision: Int) -> Bool {
+        let thisMS = Int ((self.timeIntervalSince1970 * 1000).rounded())
+        let otherMS = Int ((other.timeIntervalSince1970 * 1000).rounded())
+        return (thisMS + millisecondPrecision) >= otherMS && (otherMS + millisecondPrecision) >= thisMS
+    }
+    
+}
 
 

@@ -29,6 +29,12 @@ extension DatabaseTests {
   ]
 }
 
+extension DateExtensionTests {
+  static var allTests = [
+    ("testRoughlyEquals ", testRoughlyEquals ),
+  ]
+}
+
 extension EntityCommitDirtyTests {
   static var allTests = [
     ("testCommitDirty", testCommitDirty),
@@ -213,6 +219,7 @@ extension SampleTests {
 XCTMain([
   testCase(BatchTests.allTests),
   testCase(DatabaseTests.allTests),
+  testCase(DateExtensionTests.allTests),
   testCase(EntityCommitDirtyTests.allTests),
   testCase(EntityCommitNewTests.allTests),
   testCase(EntityCommitPendingRemovalTests.allTests),

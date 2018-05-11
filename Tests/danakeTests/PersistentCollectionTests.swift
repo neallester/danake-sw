@@ -149,8 +149,8 @@ class PersistentCollectionTests: XCTestCase {
         XCTAssertEqual (entity.id.uuidString, retrievedEntity.id.uuidString)
         XCTAssertEqual (entity.getVersion(), retrievedEntity.getVersion())
         XCTAssertTrue (retrievedEntity.isInitialized(onCollection: collection))
-        XCTAssertEqual ((entity.created.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.created.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
-        XCTAssertEqual ((entity.getSaved ()!.timeIntervalSince1970 * 1000.0).rounded(), (retrievedEntity.getSaved ()!.timeIntervalSince1970 * 1000.0).rounded()) // We are keeping at least MS resolution in the db
+        XCTAssertTrue (entity.created.roughlyEquals (retrievedEntity.created, millisecondPrecision: 2))
+        XCTAssertTrue (entity.getSaved ()!.roughlyEquals (retrievedEntity.getSaved ()!, millisecondPrecision: 2))
         switch retrievedEntity.getPersistenceState() {
         case .new:
             break
