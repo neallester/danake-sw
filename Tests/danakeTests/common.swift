@@ -183,7 +183,6 @@ class DateExtensionTests : XCTestCase {
         let n10 = 1526050509.724
         let n12 = 1526050509.726
         let b   = 1526050529.714
-        print ("\(Date().timeIntervalSince1970))")
         let d1 = Date (timeIntervalSince1970: n)
         var d2 = Date (timeIntervalSince1970: n)
         XCTAssertTrue (d1.roughlyEquals(d2, millisecondPrecision: 10))
