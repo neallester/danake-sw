@@ -406,7 +406,7 @@ class BatchTests: XCTestCase {
                 delay = totalExecutionTime / Double (testCount)
                 let delayAt = ParallelTests.randomInteger(maxValue: Int (1000000 * delay))
                 #if os(Linux)
-                    timeout = .microseconds(Int (delay * 9000000.0))
+                    timeout = .microseconds(Int (delay * 900000.0))
                 #else
                     timeout = .microseconds(Int (delay * 600000.0))
                 #endif
