@@ -405,12 +405,8 @@ class BatchTests: XCTestCase {
             if testCount > 0 {
                 delay = totalExecutionTime / Double (testCount)
                 let delayAt = ParallelTests.randomInteger(maxValue: Int (1000000 * delay))
-                #if os(Linux)
-                    timeout = .microseconds(Int (delay * 900000.0))
-                #else
-                    timeout = .microseconds(Int (delay * 600000.0))
-                #endif
-
+                let msDelayMultiplier = Double (500000 + ParallelTests.randomInteger(maxValue: 550000))
+                timeout = .microseconds(Int (delay * msDelayMultiplier))
                 accessor.setPreFetch() { uuid in
                     if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
                         usleep(UInt32 (delay * 1000000.0))
