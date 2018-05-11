@@ -468,7 +468,7 @@ class BatchTests: XCTestCase {
         }
         // Technically speaking the occurrence of each scenario is dependent on factors which are randomized in the
         // Test so it is conceivable one of the following assertions could fail simply due to a random occurrence
-        // print ("batchTimeouts: \(batchTimeoutCount); entityTimeoutCount: \(entityTimeoutCount); eventuallyCount: \(succeededEventuallyCount)")
+        print ("batchTimeouts: \(batchTimeoutCount); entityTimeoutCount: \(entityTimeoutCount); eventuallyCount: \(succeededEventuallyCount)")
         XCTAssertTrue (batchTimeoutCount > 0)
         XCTAssertTrue (entityTimeoutCount > 0)
         XCTAssertTrue (succeededEventuallyCount > 0)
