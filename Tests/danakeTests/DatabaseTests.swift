@@ -20,6 +20,15 @@ class RegistrarTestItem {
 class DatabaseTests: XCTestCase {
 
     func testDatabaseCreation() {
+        // XCTAssertEqual (0, Database.registrar.count()) occasionally fails on Linux. That is, this test occasionally starts
+        // before a Database object created in another test is fully deallocated and removes itself from the database registry.
+        // This could be cause by the deallocation occuring on another thread (in which case one would expect to see it occasionally
+        // on OSX, or because Linux occasionally has problem with deterministic deallocation of constructs (which I have seen some other
+        // evience for.
+        let now = Date().timeIntervalSince1970
+        while (Database.registrar.count() > 0 && (now + 30.0 > Date().timeIntervalSince1970)) {
+            usleep(100)
+        }
         XCTAssertEqual (0, Database.registrar.count())
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
