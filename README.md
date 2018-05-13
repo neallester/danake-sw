@@ -14,7 +14,7 @@ Please see the [SampleUsageTests](https://github.com/neallester/danake-sw/blob/m
 
 ## Status
 
-This is library is currently in alpha testing on OSX.
+This is library is currently tested on OSX High Sierra and Ubuntu 16.04.
 
 ## Gotchas
 
