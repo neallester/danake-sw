@@ -240,7 +240,7 @@ public protocol DatabaseAccessor {
      Is the format of ** name ** a valid CollectionName in this storage medium and,
      is ** name ** NOT a reserved word in this storage medium?
      */
-    func isValidCollectionName (name: CollectionName) -> ValidationResult
+    func isValidCollectionName (_ name: CollectionName) -> ValidationResult
     
     /*
      A unique identifier for the specific instance of the database being accessed

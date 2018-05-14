@@ -45,7 +45,7 @@ public class PersistentCollection<T: Codable> {
         if !database.collectionRegistrar.register(key: name, value: self) {
             database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
         }
-        let nameValidationResult = database.getAccessor().isValidCollectionName(name: name)
+        let nameValidationResult = database.getAccessor().isValidCollectionName(name)
         if !nameValidationResult.isOk() {
             database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.getAccessor()))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
         }

@@ -119,7 +119,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func isValidCollectionName(name: CollectionName) -> ValidationResult {
+    public func isValidCollectionName(_ name: CollectionName) -> ValidationResult {
         if name.count > 0 {
             return .ok
         } else {
