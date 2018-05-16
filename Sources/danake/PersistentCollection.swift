@@ -15,6 +15,8 @@ import Foundation
 //}
 
 public typealias CollectionName = String
+public typealias QualifiedCollectionName = String
+public class UntypedPersistentCollection {}
 
 /*
  
@@ -25,7 +27,7 @@ public typealias CollectionName = String
  
 */
 
-public class PersistentCollection<T: Codable> {
+public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     
     typealias entityType = T
     
@@ -38,12 +40,17 @@ public class PersistentCollection<T: Codable> {
     public init (database: Database, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?) {
         self.database = database
         self.name = name
+        self.qualifiedName = database.qualifiedCollectionName(name)
         self.deserializationEnvironmentClosure = deserializationEnvironmentClosure
         cache = Dictionary<UUID, WeakItem<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         self.workQueue = database.workQueue
+        super.init()
         if !database.collectionRegistrar.register(key: name, value: self) {
             database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.getAccessor().hashValue()), (name: "collectionName", value: name)])
+        }
+        if !Database.collectionRegistrar.register(key: qualifiedName, value: self) {
+            database.logger?.log(level: .error, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCollectionName", value: self.qualifiedName)])
         }
         let nameValidationResult = database.getAccessor().isValidCollectionName(name)
         if !nameValidationResult.isOk() {
@@ -53,6 +60,7 @@ public class PersistentCollection<T: Codable> {
     }
 
     deinit {
+        Database.collectionRegistrar.deRegister(key: qualifiedName)
         database.collectionRegistrar.deRegister(key: name)
     }
     
@@ -215,6 +223,7 @@ public class PersistentCollection<T: Codable> {
     
     internal let database: Database
     public let name: CollectionName
+    public let qualifiedName: QualifiedCollectionName
     private var cache: Dictionary<UUID, WeakItem<T>>
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue

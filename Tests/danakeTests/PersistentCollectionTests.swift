@@ -15,22 +15,30 @@ class PersistentCollectionTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        database.collectionRegistrar.clear()
+        Database.collectionRegistrar.clear()
         let collectionName: CollectionName = "myCollection"
         var collection: PersistentCollection<MyStruct>? = PersistentCollection<MyStruct>(database: database, name: collectionName)
         let _ = collection // Quite a spurious xcode warning
         XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
+        XCTAssertTrue (Database.collectionRegistrar.isRegistered(key: collection!.qualifiedName))
+        XCTAssertEqual (1, Database.collectionRegistrar.count())
+
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
         let _ = PersistentCollection<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
-            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual (2, entries.count)
             XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.getAccessor().hashValue());collectionName=myCollection", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.getAccessor().hashValue()).myCollection", entries[1].asTestString())
         }
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (0, database.collectionRegistrar.count())
+        XCTAssertFalse (Database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertEqual (0, Database.collectionRegistrar.count())
         // Creation with closure
         let deserializationClosure: (inout [CodingUserInfoKey : Any]) -> () = { userInfo in
             userInfo[myKey] = "myValue"
@@ -39,7 +47,7 @@ class PersistentCollectionTests: XCTestCase {
         XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
         logger.sync() { entries in
-            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual (2, entries.count)
         }
         var userInfo: [CodingUserInfoKey : Any] = [:]
         collection?.getDeserializationEnvironmentClosure()!(&userInfo)

@@ -213,6 +213,10 @@ public class Database {
         return accessor
     }
     
+    internal func qualifiedCollectionName (_ collectionName: CollectionName) -> QualifiedCollectionName {
+        return Database.qualifiedCollectionName(databaseHash: accessor.hashValue(), collectionName: collectionName)
+    }
+    
     public let accessor: DatabaseAccessor
     public let logger: Logger?
     public let schemaVersion: Int
@@ -225,7 +229,12 @@ public class Database {
         Database.registrar.deRegister(key: hashValue)
     }
     
+    internal static func qualifiedCollectionName (databaseHash: String,  collectionName: CollectionName) -> QualifiedCollectionName {
+        return "\(databaseHash).\(collectionName)"
+    }
+
     static let registrar = Registrar<String, Database>()
+    static let collectionRegistrar = Registrar<QualifiedCollectionName, UntypedPersistentCollection>()
     public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
     

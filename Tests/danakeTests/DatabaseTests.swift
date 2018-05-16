@@ -254,4 +254,12 @@ class DatabaseTests: XCTestCase {
         }
     }
     
+    public func testQualifiedCollectionName() {
+        let collectionName: CollectionName = "B"
+        XCTAssertEqual ("A.B", Database.qualifiedCollectionName (databaseHash: "A", collectionName: collectionName))
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        XCTAssertEqual ("\(accessor.hashValue()).\(standardCollectionName)", database.qualifiedCollectionName(standardCollectionName))
+    }
+    
 }
