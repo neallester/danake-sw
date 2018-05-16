@@ -176,7 +176,8 @@ struct Address : Codable {
  
     class SampleCollections:        An application specific convenience class for organizing all of the PersistentCollection objects
                                     associated with the SampleDatabase. Declare objects of this type using `let' within a scope with
-                                    process lifetime
+                                    process lifetime. Ensure that all PersistentCollections used within the application are fully
+                                    created before proceeding with model processing.
 */
 
 class SampleDatabase : Database {
