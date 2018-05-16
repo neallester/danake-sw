@@ -310,12 +310,11 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":false"))
-            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
             XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
@@ -350,7 +349,7 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait1")
         testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference = testReference
@@ -396,10 +395,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":true"))
-            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
             XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
@@ -494,12 +492,11 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":false"))
-            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
             XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
@@ -527,7 +524,7 @@ class EntityReferenceTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait3")
         testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference = testReference
@@ -573,16 +570,15 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.isEager)
         }
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"databaseId\":\"\(database.accessor.hashValue())\""))
+            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(persistentChildId2.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":true"))
-            XCTAssertTrue (json.contains("\"collectionName\":\"myCollection\""))
             XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
         // Decoding with isNil:false
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10,\"isNil\":false}"
         waitFor = expectation(description: "wait1")
         testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference = testReference
@@ -634,26 +630,18 @@ class EntityReferenceTests: XCTestCase {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"databaseId\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"databaseId\\\", intValue: nil) (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
         }
-        // No databaseId
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        // No qualifiedCollectionName
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"databaseId\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"databaseId\\\", intValue: nil) (\\\"databaseId\\\").\", underlyingError: nil))", "\(error)")
-        }
-        // Illegal databaseId
-        json = "{\"databaseId\":44,\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
-        do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTFail ("Expected Exception")
-        } catch {
-            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"databaseId\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
         }
         // No id
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -661,7 +649,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal id
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"AAA\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"databaseId\":\"\",\"id\":\"AAA\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10,\"isNil\":false}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -684,24 +672,16 @@ class EntityReferenceTests: XCTestCase {
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"isEager\", intValue: nil)], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
-        // Missing collectionName
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
+        // illegal qualifiedCollectionName
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":false,\"version\":10}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"collectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"collectionName\\\", intValue: nil) (\\\"collectionName\\\").\", underlyingError: nil))", "\(error)")
-        }
-        // illegal collectionName
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":false,\"version\":10}"
-        do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTFail ("Expected Exception")
-        } catch {
-            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"collectionName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing Version
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\"}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\"}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -709,7 +689,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Version
-        json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":\"10\"}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":\"10\"}"
         do {
             reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -1933,8 +1913,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -1954,8 +1933,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2008,8 +1986,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2029,8 +2006,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2080,8 +2056,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2101,8 +2076,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2153,8 +2127,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2174,8 +2147,7 @@ class EntityReferenceTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (data.databaseId, database.getAccessor().hashValue())
-                XCTAssertEqual (data.collectionName, collection.name)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")

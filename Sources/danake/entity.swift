@@ -153,23 +153,25 @@ public struct EntityReferenceData<T: Codable> : Equatable {
 // Data for serializing a reference to an entity
 public struct EntityReferenceSerializationData: Equatable {
     
-    internal init  (databaseId: String, collectionName: String, id: UUID, version: Int) {
-        self.databaseId = databaseId
-        self.collectionName = collectionName
+    internal init (databaseId: String, collectionName: CollectionName, id: UUID, version: Int) {
+        self.qualifiedCollectionName = Database.qualifiedCollectionName(databaseHash: databaseId, collectionName: collectionName)
         self.id = id
         self.version = version
     }
     
-    
-    public let databaseId: String
-    public let collectionName: String
+    internal init (qualifiedCollectionName: QualifiedCollectionName, id: UUID, version: Int) {
+        self.qualifiedCollectionName = qualifiedCollectionName
+        self.id = id
+        self.version = version
+    }
+
+    public let qualifiedCollectionName: QualifiedCollectionName
     public let id: UUID
     public let version: Int
     
     public static func == (lhs: EntityReferenceSerializationData, rhs: EntityReferenceSerializationData) -> Bool {
         return
-            lhs.databaseId == rhs.databaseId &&
-            lhs.collectionName == rhs.collectionName &&
+            lhs.qualifiedCollectionName == rhs.qualifiedCollectionName &&
             lhs.id == rhs.id &&
             lhs.version == rhs.version
     }

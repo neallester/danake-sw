@@ -28,8 +28,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         case isEager
         case id
         case version
-        case databaseId
-        case collectionName
+        case qualifiedCollectionName
     }
     
     convenience init (parent: EntityReferenceData<P>, entity: Entity<T>?) {
@@ -78,13 +77,12 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
             if isNil {
                 state = .loaded
             } else {
-                let databaseId = try values.decode (String.self, forKey: .databaseId)
-                let collectionName = try values.decode (String.self, forKey: .collectionName)
+                let qualifiedCollectionName = try values.decode (String.self, forKey: .qualifiedCollectionName)
                 let version = try values.decode (Int.self, forKey: .version)
                 let idString = try values.decode (String.self, forKey: .id)
                 let id = UUID (uuidString: idString)
                 if let id = id {
-                    self.referenceData = EntityReferenceSerializationData (databaseId: databaseId, collectionName: collectionName, id: id, version: version)
+                    self.referenceData = EntityReferenceSerializationData (qualifiedCollectionName: qualifiedCollectionName, id: id, version: version)
                 } else {
                     throw EntityReferenceSerializationError.illegalId(idString)
                 }
@@ -105,13 +103,11 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         try queue.sync {
             try container.encode (isEager, forKey: .isEager)
             if let entity = entity {
-                try container.encode(entity.collection.database.accessor.hashValue(), forKey: .databaseId)
-                try container.encode (entity.collection.name, forKey: .collectionName)
+                try container.encode(entity.collection.qualifiedName, forKey: .qualifiedCollectionName)
                 try container.encode (entity.id, forKey: .id)
                 try container.encode (entity.getVersion(), forKey: .version)
             } else if let referenceData = referenceData {
-                try container.encode(referenceData.databaseId, forKey: .databaseId)
-                try container.encode (referenceData.collectionName, forKey: .collectionName)
+                try container.encode(referenceData.qualifiedCollectionName, forKey: .qualifiedCollectionName)
                 try container.encode (referenceData.id, forKey: .id)
                 try container.encode (referenceData.version, forKey: .version)
             } else {
@@ -186,18 +182,14 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     internal func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {
             if collection == nil {
-                if let database = Database.registrar.value(key: referenceData.databaseId) {
-                    if let candidateCollection = database.collectionRegistrar.value(key: referenceData.collectionName) {
-                        if let collection = candidateCollection as? PersistentCollection<T> {
-                            self.collection = collection
-                        } else {
-                            closure (.error ("collectionName: \(referenceData.collectionName) returns wrong type: \(type (of: candidateCollection))"))
-                        }
+                if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCollectionName) {
+                    if let collection = candidateCollection as? PersistentCollection<T> {
+                        self.collection = collection
                     } else {
-                        closure (.error ("Unknown collectionName: \(referenceData.collectionName)"))
+                        closure (.error ("collectionName: \(referenceData.qualifiedCollectionName) returns wrong type: \(type (of: candidateCollection))"))
                     }
                 } else {
-                    closure (.error ("Unknown databaseId: \(referenceData.databaseId)"))
+                    closure (.error ("Unknown collectionName: \(referenceData.qualifiedCollectionName)"))
                 }
             }
             if let collection = collection {
