@@ -258,7 +258,30 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
 
+    // Type Erased Access
+    // TODO Add and test
+    //    public lazy var asAnyEntity: AnyEntity = {
+    //        return AnyEntity(item: self)
+    //    }()
+    
+    // Write Access to item
+    
+
     // Read Only Access to item
+
+    
+/*
+
+     *** IMPORTANT NOTES ***
+     
+     The async (closure:), sync (closure:) and update(closure:) must not assign a reference to item outside
+     of the closure. Doing so negates thread safety for item.
+     
+     The async(closure:) and sync (closure:) cannot assign to item's attributes (because they do not receive an
+     inout parameter), however they can still modify item via any of item's state modifying functions.
+     Always use update when calling state modifying functions on item.
+     
+*/
     
     public func async (closure: @escaping (T) -> Void) {
         queue.async () {
@@ -273,14 +296,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
-// Type Erased Access
-// TODO Add and test
-//    public lazy var asAnyEntity: AnyEntity = {
-//        return AnyEntity(item: self)
-//    }()
-
-// Write Access to item
-
 // Convention is Entity.queue -> Batch.queue
     
     public func update (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
