@@ -128,6 +128,7 @@ extension EntityReferenceTests {
     ("testAsync", testAsync),
     ("testGet", testGet),
     ("testSetWithinEntity", testSetWithinEntity),
+    ("testPolymorphicRetrieval", testPolymorphicRetrieval),
   ]
 }
 

@@ -32,7 +32,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -48,7 +49,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -64,7 +65,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, child.id.uuidString)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -80,7 +81,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -97,7 +98,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -113,7 +115,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -157,7 +159,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -209,7 +212,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName])
             switch reference.state {
             case .loaded:
                 break
@@ -225,7 +228,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -249,7 +252,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -264,7 +267,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -286,7 +289,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -301,7 +304,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (child.collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (child.collection === reference.collections[child.collection.qualifiedName]!)
             switch reference.state {
             case .loaded:
                 break
@@ -325,7 +329,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (child.referenceData(), reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -340,7 +344,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (child.collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (child.collection === reference.collections[child.collection.qualifiedName]!)
             switch reference.state {
             case .loaded:
                 break
@@ -364,7 +369,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (child.referenceData(), reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName]!)
             switch reference.state {
             case .retrieving (let referenceData):
                 XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
@@ -385,7 +391,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName]!)
             switch reference.state {
             case .loaded:
                 break
@@ -409,7 +416,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -431,7 +438,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -446,7 +453,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -468,7 +475,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -483,7 +490,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (child.referenceData(), reference.referenceData!)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -507,7 +514,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (child.referenceData(), reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -539,7 +546,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (persistentChildId2.uuidString, reference.referenceData!.id.uuidString)
-            XCTAssertTrue (reference.collection === child.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (child.collection === reference.collections[child.collection.qualifiedName]!)
             switch reference.state {
             case .retrieving (let referenceData):
                 XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
@@ -560,7 +568,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName]!)
             switch reference.state {
             case .loaded:
                 break
@@ -593,7 +602,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (child.referenceData(), reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName]!)
             switch reference.state {
             case .retrieving (let referenceData):
                 XCTAssertEqual (referenceData.id.uuidString, reference.referenceData?.id.uuidString)
@@ -614,7 +624,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (collection === reference.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (collection === reference.collections[collection.qualifiedName]!)
             switch reference.state {
             case .loaded:
                 break
@@ -847,7 +858,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -871,7 +882,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === entity1.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -893,8 +905,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -914,8 +927,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -937,8 +951,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -959,8 +974,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -990,7 +1006,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -1019,7 +1035,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1050,8 +1067,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1080,8 +1098,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1112,8 +1131,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1143,8 +1163,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === entity1.collection)
-            XCTAssertTrue (reference.collection === entity2.collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity1.collection)
+            XCTAssertTrue (reference.collections[entity1.collection.qualifiedName]! === entity2.collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1178,7 +1199,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -1201,7 +1222,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId.uuidString)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -1224,7 +1245,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId.uuidString)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -1248,7 +1269,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId2.uuidString)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .decoded:
                 break
@@ -1271,7 +1292,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -1296,7 +1317,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1318,7 +1340,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId2.uuidString)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .decoded:
                 break
@@ -1343,7 +1366,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === collection)
+                        XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1375,7 +1399,7 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertNil (reference.collection)
+            XCTAssertEqual (0, reference.collections.count)
             switch reference.state {
             case .loaded:
                 break
@@ -1418,7 +1442,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId.uuidString)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .retrieving(let referenceData):
                 XCTAssertEqual (entityId.uuidString, referenceData.id.uuidString)
@@ -1439,7 +1465,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1458,7 +1485,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1493,7 +1521,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId2.uuidString)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .retrieving(let referenceData):
                 XCTAssertEqual (entityId2.uuidString, referenceData.id.uuidString)
@@ -1514,8 +1543,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
-            switch reference.state {
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
+switch reference.state {
             case .loaded:
                 break
             default:
@@ -1532,7 +1562,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1557,7 +1588,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1593,7 +1625,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertEqual (reference.referenceData!.id.uuidString, entityId3.uuidString)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .retrieving(let referenceData):
                 XCTAssertEqual (entityId3.uuidString, referenceData.id.uuidString)
@@ -1620,7 +1653,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection! === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -1640,7 +1674,8 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertTrue (reference.parent as! Entity<MyStruct> === parent)
             XCTAssertTrue (parentData == reference.parentData)
             XCTAssertNil (reference.referenceData)
-            XCTAssertTrue (reference.collection === collection)
+            XCTAssertEqual (1, reference.collections.count)
+            XCTAssertTrue (reference.collections[collection.qualifiedName]! === collection)
             switch reference.state {
             case .loaded:
                 break
@@ -2358,7 +2393,191 @@ class EntityReferenceTests: XCTestCase {
         }
 
     }
+    
+    public func testPolymorphicRetrieval() {
+        
+        class ModifyByFunction : Codable {
+            
+            func set (s: String) {
+                self.s = s
+            }
+            
+            func get() -> String {
+                return s
+            }
+
+            private var s = ""
+        }
+        
+        var mbf: ModifyByFunction? = nil
+        
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let mbfCollection = PersistentCollection<ModifyByFunction>(database: database, name: "mbf")
+        let batch = EventuallyConsistentBatch()
+        let mbfEntity = mbfCollection.new(batch: batch, item: ModifyByFunction())
+        batch.commitSync()
+        mbfEntity.sync() { m in
+            mbf = m
+            m.set(s: "B")
+        }
+        mbfEntity.sync() { m in
+            XCTAssertEqual("B", m.get())
+        }
+        batch.syncEntities() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+        mbf!.set(s: "C")
+        XCTAssertEqual("C", mbf!.get())
+    }
+        
+        
+//        let classAcollection = PersistentCollection<ClassA>(database: database, name: "classA")
+//        let classBcollection = PersistentCollection<ClassB>(database: database, name: "classB")
+//        let containerCollection = PersistentCollection<StructProtocolContainer>(database: database, name: "container")
+//        let batch = EventuallyConsistentBatch()
+//        let entityA = classAcollection.new(batch: batch, item: ClassA (labelA: "A"))
+//        let entityB = classBcollection.new(batch: batch, item: ClassB (labelB: "B"))
+//        let containerEntity = containerCollection.new(batch: batch) { parentData in
+//            return StructProtocolContainer (parentReference: parentData)
+//        }
+//        containerEntity.update(batch: batch) { container in
+//            container.structReference.set (entity: entityA, batch: batch)
+//        }
+//        containerEntity.sync() { container in
+//            XCTAssertTrue (container.structReference.get().item()! === entityA)
+//        }
+//        containerEntity.update(batch: batch) { container in
+//            container.structReference.set (entity: entityB, batch: batch)
+//        }
+//        containerEntity.sync() { container in
+//            XCTAssertTrue (container.structReference.get().item()! === entityB)
+//        }
+//
+//
+//    }
 }
+
+fileprivate protocol StructProtocol : Codable {
+    func label() -> String
+}
+
+fileprivate class ClassA : StructProtocol {
+    
+    init(labelA: String) {
+        self.labelA = labelA
+    }
+    
+    func label() -> String {
+        return labelA
+    }
+    
+    let labelA: String
+}
+
+fileprivate class ClassB : StructProtocol {
+    
+    init(labelB: String) {
+        self.labelB = labelB
+    }
+    
+    func label() -> String {
+        return labelB
+    }
+    
+    let labelB: String
+}
+
+//fileprivate class StructProtocolWrapper : StructProtocol {
+//
+//    init (item: Entity<StructProtocol>) {
+//        self.item = item
+//    }
+//
+//    func label() -> String {
+//        return item.label()
+//    }
+//
+//    let item: Entity<StructProtocol>
+//}
+
+//fileprivate class StructProtocolContainer : Codable {
+//
+//    init (parentReference: EntityReferenceData<StructProtocolContainer>) {
+//        structReference = EntityReference<StructProtocolContainer, StructClass> (parent: parentReference, entity: nil)
+//    }
+//
+//    let structReference: EntityReference<StructProtocolContainer, StructClass>
+//}
+
+
+//fileprivate protocol StructProtocol : Codable {
+//    func label() -> String
+//}
+//
+//fileprivate class StructClass : StructProtocol {
+//
+//    func label() -> String { return "" }
+//
+//}
+//
+//fileprivate class ClassA : StructClass {
+//
+//    enum CodingKeys: String, CodingKey {
+//        case labelA
+//    }
+//
+//
+//    init(labelA: String) {
+//        self.labelA = labelA
+//        super.init()
+//    }
+//
+//    required init(from decoder: Decoder) throws {
+//        let values = try decoder.container(keyedBy: CodingKeys.self)
+//        labelA = try values.decode(String.self, forKey: .labelA)
+//        try super.init (from: decoder)
+//    }
+//
+//    override func label() -> String {
+//        return labelA
+//    }
+//
+//    let labelA: String
+//}
+//
+//fileprivate class ClassB : StructClass {
+//
+//    enum CodingKeys: String, CodingKey {
+//        case labelB
+//    }
+//
+//    init(labelB: String) {
+//        self.labelB = labelB
+//        super.init()
+//    }
+//
+//    required init(from decoder: Decoder) throws {
+//        let values = try decoder.container(keyedBy: CodingKeys.self)
+//        labelB = try values.decode(String.self, forKey: .labelB)
+//        try super.init (from: decoder)
+//    }
+//
+//    override func label() -> String {
+//        return labelB
+//    }
+//
+//    let labelB: String
+//}
+//
+//fileprivate class StructProtocolContainer : Codable {
+//
+//    init (parentReference: EntityReferenceData<StructProtocolContainer>) {
+//        structReference = EntityReference<StructProtocolContainer, StructClass> (parent: parentReference, entity: nil)
+//    }
+//
+//    let structReference: EntityReference<StructProtocolContainer, StructClass>
+//}
 
 // function retrieve() waits until the thread which created the reference
 // signals the semaphore

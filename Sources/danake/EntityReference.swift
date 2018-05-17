@@ -41,7 +41,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         self.state = .loaded
         self.isEager = isEager
         if let entity = entity {
-            collection = entity.collection
+            collections[entity.collection.qualifiedName] = entity.collection
         }
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
     }
@@ -181,10 +181,12 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     // Not thread safe, must be called within queue
     internal func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {
+            var collection = collections[referenceData.qualifiedCollectionName]
             if collection == nil {
                 if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCollectionName) {
-                    if let collection = candidateCollection as? PersistentCollection<T> {
-                        self.collection = collection
+                    if let candidateCollection = candidateCollection as? PersistentCollection<T> {
+                        collection = candidateCollection
+                        self.collections[candidateCollection.qualifiedName] = candidateCollection
                     } else {
                         closure (.error ("collectionName: \(referenceData.qualifiedCollectionName) returns wrong type: \(type (of: candidateCollection))"))
                     }
@@ -252,7 +254,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                 }
             }
             if let entity = entity {
-                self.collection = entity.collection
+                self.collections [entity.collection.qualifiedName] = entity.collection
             }
             self.pendingEntityClosures = []
             if wasUpdated {
@@ -326,7 +328,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     private var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: EntityReferenceSerializationData?
-    private var collection: PersistentCollection<T>?
+    private var collections: [QualifiedCollectionName : PersistentCollection<T>] = [:]
     private var state: EntityReferenceState
     internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
@@ -339,7 +341,7 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     
     // Not Thread Safe
     internal func contents() -> EntityReferenceContents<P, T> {
-        return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
+        return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collections: self.collections, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
     }
     
     internal func sync (closure: (EntityReferenceContents<P, T>) -> ()) {
@@ -372,4 +374,4 @@ internal struct ClosureContainer<T: Codable> {
     
 }
 
-internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<T>?, state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)
+internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collections: [QualifiedCollectionName : PersistentCollection<T>], state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)
