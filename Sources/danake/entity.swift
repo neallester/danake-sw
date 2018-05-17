@@ -187,6 +187,13 @@ public enum EntityDeserializationError<T: Codable> : Error {
 
 /*
     **** Class Entity is the primary model object wrapper. ****
+ 
+    Danake does not support polymorphic retrieval of Entity items because Swift
+    generics are invariant rather than covariant. If polymorphic behavior is required
+    the recommended approach is to use a Codable (non-entity) polymorphic delegate
+    See https://medium.com/tsengineering/swift-4-0-codable-decoding-subclasses-inherited-classes-heterogeneous-arrays-ee3e180eb556
+    for one approach to implementing Codable polymorphic constructs 
+ 
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
     
