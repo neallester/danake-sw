@@ -24,6 +24,8 @@ class EntityReferenceTests: XCTestCase {
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         
+        print ("1")
+        
         decoder.userInfo[Database.parentDataKey] = parentDataContainer
         // not isEager
         // Creation with entity
@@ -42,6 +44,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("2")
+        
         // Creation with nil entity
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
@@ -61,6 +66,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("3")
+        
         // Creation with referenceData
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         reference.sync() { reference in
@@ -77,6 +85,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("4")
+        
         // Creation with nil referenceData
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         reference.sync() { reference in
@@ -93,6 +104,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("5")
+        
         // isEager
         // Creation with entity
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child, isEager: true)
@@ -110,6 +124,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("6")
+        
         // Creation with nil entity
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
@@ -129,6 +146,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("7")
+        
         // Creation with referenceData for a cached object
         var waitFor = expectation(description: "wait1")
         var testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData(), isEager: true)
@@ -173,6 +193,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("8")
+        
         // Creation with referenceData for a uncached object
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
@@ -232,6 +255,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
         }
+        
+        print ("9")
+        
         // Creation with nil referenceData
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
@@ -254,6 +280,9 @@ class EntityReferenceTests: XCTestCase {
         parent.referenceContainers() { references in
             XCTAssertEqual (0, references.count)
         }
+        
+        print ("10")
+        
         // Decoding
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         var json = "{\"isEager\":false,\"isNil\":true}"
@@ -281,6 +310,9 @@ class EntityReferenceTests: XCTestCase {
         parent.referenceContainers() { references in
             XCTAssertEqual (0, references.count)
         }
+        
+        print ("11")
+        
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -306,6 +338,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
+        
+        print ("12")
+        
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -321,6 +356,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("13")
+        
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
         reference.sync() { reference in
             XCTAssertTrue (child === reference.entity)
@@ -336,6 +374,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("14")
+        
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -348,6 +389,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
+        
+        print ("15")
+        
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -363,6 +407,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertFalse (reference.isEager)
         }
+        
+        print ("16")
+        
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -381,6 +428,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("17")
+        
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -429,6 +479,9 @@ class EntityReferenceTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
         }
+        
+        print ("18")
+
         #if os(Linux)
             XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
@@ -466,6 +519,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
+        
+        print ("19")
+        
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -484,6 +540,9 @@ class EntityReferenceTests: XCTestCase {
         parent.referenceContainers() { references in
             XCTAssertEqual (0, references.count)
         }
+        
+        print ("20")
+
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil, isEager: true)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -509,6 +568,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
+
+        print ("21")
+
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -527,6 +589,9 @@ class EntityReferenceTests: XCTestCase {
         parent.referenceContainers() { references in
             XCTAssertEqual (0, references.count)
         }
+
+        print ("22")
+
         reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -554,6 +619,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
+        
+        print ("23")
+
         reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -582,6 +650,9 @@ class EntityReferenceTests: XCTestCase {
         }
         json = "{\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait3")
+        
+        print ("24")
+        
         testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -637,6 +708,9 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
+        
+        print ("25")
+
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -690,6 +764,9 @@ class EntityReferenceTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
         }
+        
+        print ("26")
+        
         // Decoding errors
         // IsNil Present but False
         json = "{\"isEager\":false,\"isNil\":false}"
