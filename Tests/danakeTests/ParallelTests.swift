@@ -12,7 +12,7 @@ class ParallelTests: XCTestCase {
 
     func testParallel() {
         let accessor = InMemoryAccessor()
-        ParallelTests.performTest(accessor: accessor, repetitions: 100, logger: nil)
+        ParallelTests.performTest(accessor: accessor, repetitions: 100, logger: ConsoleLogger())
     }
 
     public static func performTest(accessor: DatabaseAccessor, repetitions: Int, logger: Logger?) {
