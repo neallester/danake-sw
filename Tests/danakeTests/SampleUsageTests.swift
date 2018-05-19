@@ -108,6 +108,10 @@ class Employee : Codable {
 
     var name: String
     
+    func resetName() {
+        name = ""
+    }
+    
     // Always declare attributes of type 'EntityReference' using 'let'
     // The entities which are referenced may change, but the EntityReference itself does not
     let company: EntityReference<Employee, Company>
@@ -475,19 +479,56 @@ class SampleTests: XCTestCase {
             }
             group.wait()
             batch.commitSync()
-
             
+            // Gotchas
+            
+            var employeeItem: Employee?
+            employeeItem = nil
+            employee2!.sync() { employee in
+                // Capturing a reference to an entity's item outside of the
+                // Entity.sync(), Entity.async(), or Entity.update() closures
+                // bypasses the multi-threading protection offered by the Entity wrapper.
+                // i.e. avoid doing the following:
+                // employeeItem = employee
+            }
+            XCTAssertNil (employeeItem)
+
+            // Closures which modify an item's state via functions must always be called within an
+            // Entity.update() call. Failure to do so will cause lost data (which will be logged when
+            // the entity is deallocated; this error is not demonstrated here)
+            employee2!.update(batch: batch) { employee in
+                employee.resetName()
+            }
+            batch.commitSync()
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
             }
-            employee2 = nil
             
+            // EntityReference objects contain strong references to their referenced Entity
+            // once loaded. Use Entity.breakReferences() to unload those entities if
+            // they may create strong reference cycles (i.e. refer back to self).
+            // There is also Entity.breakReferencesRecursive().
+            // They make the EntityReferences within the Entity's item unusable so call only
+            // when completely finished with the entity (and all reachable Entities for the recursive
+            // version). Notes:
+            // 1) breakReferences() will not interfere with a future or in progress
+            //    asynchronous save.
+            // 2) There isn't actually a reference cycle in employee2 below;
+            //    This just demonstrates the usage of Entity.breakReferences()
+            //    See EntityTests.testEntityReferenceCycle() for an example of a direct
+            //    reference cycle (indirect cycles are also possible).
+            employee2!.sync() { employee in
+                let _ = employee.company.get().item()!
+            }
+            employee2!.breakReferences() // unloads the Entity<Company>;makes employee2.item.company unusuable
+            employee2 = nil              // so only call after we are completely finished with employee2
+
         }
 
         // Closing the previous scope will cause `company1' and `company2' to be removed from cache
         // when they are deallocated. However, if batch.commit() rather than batch.commitSync() had
         // been used, then those entity objects could live on beyond the end of the scope until
-        // the batch (processing asynchronously) was finished them
+        // the batch (processing asynchronously) was finished with them
         
         // Application developers must always commit batches
         // Updates to an Entity will be lost (and ERROR logged) if both the batch and entity go out of
@@ -969,6 +1010,9 @@ class SampleTests: XCTestCase {
         }
         XCTAssertEqual ("Bob Carol", employee.name)
         XCTAssertTrue (employee.address.get().item() === addressEntity)
+        // resetName()
+        employee.resetName()
+        XCTAssertEqual ("", employee.name)
     }
     
     func testEmployeeFromCollection() {

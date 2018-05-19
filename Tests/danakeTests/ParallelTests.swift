@@ -275,6 +275,7 @@ class ParallelTests: XCTestCase {
             }
             persistenceObjects = nil
             Database.registrar.clear()
+            Database.collectionRegistrar.clear()
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             // Test 1
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
@@ -421,7 +422,8 @@ class ParallelTests: XCTestCase {
                     let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
                     let expectedInt = counter * 10
                     entity.sync() { container in
-                        let myStruct = container.myStruct.get().item()!
+                        let rr = container.myStruct.get()
+                        let myStruct = rr.item()!
                         myStruct.sync() { item in
                             XCTAssertEqual (expectedInt, item.myInt)
                             XCTAssertEqual ("\(expectedInt)", item.myString)

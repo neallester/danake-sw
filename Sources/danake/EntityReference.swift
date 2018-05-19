@@ -13,6 +13,7 @@ internal enum EntityReferenceState {
     case retrieving (EntityReferenceSerializationData)
     case retrievalError (Date, String)
     case loaded
+    case dereferenced
     
 }
 
@@ -21,7 +22,14 @@ public enum EntityReferenceSerializationError : Error {
     case illegalId(String)
 }
 
-public class EntityReference<P: Codable, T: Codable> : Codable {
+internal protocol EntityReferenceContainer {
+    
+    func dereference()
+    func dereferenceRecursive()
+    
+}
+
+public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer, Codable {
     
     enum CodingKeys: String, CodingKey {
         case isNil
@@ -40,10 +48,13 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         self.entity = entity
         self.state = .loaded
         self.isEager = isEager
+        queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
         if let entity = entity {
+            parent.collection.registerOnCache(id: parent.id) { parentEntity in
+                parentEntity.registerReferenceContainer (self)
+            }
             collection = entity.collection
         }
-        queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
     }
 
     convenience init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?) {
@@ -149,6 +160,10 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                         closure (.error (errorMessage))
                     }
                 }
+            case .dereferenced:
+                self.parentData.collection.database.workQueue.async {
+                    closure (.error ("alreadyDereferenced"))
+                }
             }
         }
     }
@@ -242,21 +257,26 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     
     public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
         queue.sync {
-            let wasUpdated = self.willUpdate(newId: entity?.id)
-            self.entity = entity
-            self.referenceData = nil
-            self.state = .loaded
-            for closure in self.pendingEntityClosures {
-                self.parentData.collection.database.workQueue.async {
-                    closure (.ok (entity))
+            switch self.state {
+            case .dereferenced:
+                collection?.database.logger?.log(level: .error, source: self, featureName: "set(entity:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "entityCollection", value: entity?.collection.qualifiedName), (name: "entityId", value: entity?.id)])
+            default:
+                let wasUpdated = self.willUpdate(newId: entity?.id)
+                self.entity = entity
+                self.referenceData = nil
+                self.state = .loaded
+                for closure in self.pendingEntityClosures {
+                    self.parentData.collection.database.workQueue.async {
+                        closure (.ok (entity))
+                    }
                 }
-            }
-            if let entity = entity {
-                self.collection = entity.collection
-            }
-            self.pendingEntityClosures = []
-            if wasUpdated {
-                self.addParentTo(batch: batch)
+                if let entity = entity {
+                    self.collection = entity.collection
+                }
+                self.pendingEntityClosures = []
+                if wasUpdated {
+                    self.addParentTo(batch: batch)
+                }
             }
         }
     }
@@ -280,11 +300,13 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
                     }
                 case .retrieving, .retrievalError:
                     self.retrieve() { result in }
+                case .dereferenced:
+                    collection?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCollectionName), (name: "referenceDataId", value: referenceData?.id)])
                 }
             }
         }
     }
-
+    
     internal func willUpdate (newId: UUID?, closure: (Bool) -> ()) {
         queue.sync {
             closure (willUpdate (newId: newId))
@@ -292,16 +314,26 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
     }
     
     internal func addParentTo (batch: EventuallyConsistentBatch) {
-        if self.parent == nil {
-            let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
-            if let parent = retrievalResult.item() {
-                self.parent = parent
-            } else {
-                self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentToBatch", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
-            }
-        }
-        if let parent = self.parent {
+        if let parent = getParent() {
             parent.setDirty(batch: batch)
+        }
+    }
+    
+    internal func getParent() -> EntityManagement? {
+        if let parent = self.parent {
+            return parent
+        }
+        let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
+        if let parent = retrievalResult.item() {
+            if !hasRegistered {
+                parent.registerReferenceContainer(self)
+                hasRegistered = true
+            }
+            self.parent = parent
+            return parent
+        } else {
+            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "retrieveParent", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
+            return nil
         }
     }
     
@@ -316,20 +348,47 @@ public class EntityReference<P: Codable, T: Codable> : Codable {
         } else {
             return entity != nil || self.referenceData != nil
         }
-
     }
     
+    internal func dereference() {
+        queue.async {
+            self.state = .dereferenced
+            if let entity = self.entity {
+                self.referenceData = entity.referenceData()
+                self.entity = nil
+            }
+        }
+    }
+
+    internal func dereferenceRecursive() {
+        queue.async {
+            self.state = .dereferenced
+            if let entity = self.entity {
+                self.referenceData = entity.referenceData()
+                self.entity = nil
+                entity.breakReferencesRecursive()
+            }
+        }
+    }
+
     // Used for testing by descendents
     internal func retrievalGetHook() {}
 
-    private var entity: Entity<T>?
-    private var parent: EntityManagement?
+    private var entity: Entity<T>? {
+        willSet (newEntity) {
+            if let _ = newEntity {
+                let _ = getParent()
+            }
+        }
+    }
+    private weak var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: EntityReferenceSerializationData?
     private var collection: PersistentCollection<T>?
     private var state: EntityReferenceState
     internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
+    private var hasRegistered = false
     
     public let isEager: Bool
     

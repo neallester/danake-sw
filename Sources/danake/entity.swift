@@ -6,7 +6,7 @@
 
 import Foundation
 
-public protocol EntityProtocol {
+public protocol EntityProtocol : class {
 
     var id: UUID {get}
     func getVersion() -> Int
@@ -192,7 +192,7 @@ public enum EntityDeserializationError<T: Codable> : Error {
     generics are invariant rather than covariant. If polymorphic behavior is required
     the recommended approach is to use a Codable (non-entity) polymorphic delegate
     See https://medium.com/tsengineering/swift-4-0-codable-decoding-subclasses-inherited-classes-heterogeneous-arrays-ee3e180eb556
-    for one approach to implementing Codable polymorphic constructs 
+    for one approach to implementing Codable polymorphic constructs
  
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
@@ -206,6 +206,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         self.schemaVersion = collection.database.schemaVersion
         persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
+        self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
         created = Date()
         collection.cacheEntity(self)
     }
@@ -356,6 +357,48 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             localVersion = version
         }
         return EntityReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
+    }
+    
+    /*
+        Call before reference to self goes out of scope (or the only reachable reference is
+        set to nil) if it is possible that an EntityReference owned by `item' contains a loaded
+        reference back to self (which would create a strong reference cycle).
+     
+        This unloads the referenced entities and also makes the EntityReferences unusable for
+        further application processing but will not interfere with asynchronous batch processing
+     
+    */
+    
+    public func breakReferences() {
+        referencesQueue.async {
+            if !self.hasDereferenced {
+                self.hasDereferenced = true
+                for reference in self.references {
+                    reference.dereference()
+                }
+            }
+        }
+    }
+    
+    public func breakReferencesRecursive() {
+        referencesQueue.async {
+            if !self.hasDereferenced {
+                self.hasDereferenced = true
+                for reference in self.references {
+                    reference.dereferenceRecursive()
+                }
+            }
+        }
+    }
+
+    // Reference Registration
+    // This is used by attributes of self containing references (e.g. EntityReference)
+    // to register with self (to be notified, for example, when self receives instruction
+    // to breakReferences). It is up to caller to only call once.
+    internal func registerReferenceContainer (_ reference: EntityReferenceContainer) {
+        referencesQueue.async {
+            self.references.append(reference)
+        }
     }
     
 // Persistence Action Handling
@@ -548,6 +591,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 }
                 persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
                 self.queue = DispatchQueue (label: id.uuidString)
+                self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
+//                queue.sync {
+//                    do {
+//                        self.itemData = try Database.encoder.encode(self.item)
+//                    } catch {
+//                        collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue())), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
+//                    }
+//                }
                 collection.cacheEntity(self)
             } else {
                 throw EntityDeserializationError<T>.illegalId(idString)
@@ -568,7 +619,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
         return result
     }
-
+    
 // Internal access for testing purposes
     
     internal func getSchemaVersion () -> Int {
@@ -611,6 +662,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
+    internal func referenceContainers (closure: ([EntityReferenceContainer]) -> ()) {
+        referencesQueue.sync {
+            closure (self.references)
+        }
+    }
+    
     internal func timeoutTestingHook() {}
     
 // Attributes
@@ -620,6 +677,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public let created: Date
     private var saved: Date?
     private var item: T
+    private var itemData: Data?
     fileprivate let queue: DispatchQueue
     private var persistenceState: PersistenceState
     internal let collection: PersistentCollection<T>
@@ -627,6 +685,9 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
     private var isInsertingToBatch = false
+    private var references: [EntityReferenceContainer] = []
+    private var referencesQueue: DispatchQueue
+    private var hasDereferenced = false
 
 }
 

@@ -128,6 +128,7 @@ extension EntityReferenceTests {
     ("testAsync", testAsync),
     ("testGet", testGet),
     ("testSetWithinEntity", testSetWithinEntity),
+    ("testDereference", testDereference),
   ]
 }
 
@@ -150,6 +151,8 @@ extension EntityTests {
     ("testPersistenceStatePair", testPersistenceStatePair),
     ("testEntityReferenceData", testEntityReferenceData),
     ("testEntityReferenceSerializationData", testEntityReferenceSerializationData),
+    ("testEntityReferenceCycle", testEntityReferenceCycle),
+    ("testRegisterReferenceContainer", testRegisterReferenceContainer),
   ]
 }
 
@@ -191,6 +194,7 @@ extension PersistentCollectionTests {
     ("testGetAsync ", testGetAsync ),
     ("testScan", testScan),
     ("testScanAsync", testScanAsync),
+    ("testRegisterOnCache", testRegisterOnCache),
   ]
 }
 

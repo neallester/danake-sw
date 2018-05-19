@@ -200,7 +200,17 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     internal func cacheEntity (_ entity: Entity<T>) {
         cacheQueue.async() {
             precondition ( self.cache[entity.id]?.item == nil)
+            if let onCache = self.onCache[entity.id] {
+                onCache (entity)
+                self.onCache[entity.id] = nil
+            }
             self.cache[entity.id] = WeakItem (item: entity)
+        }
+    }
+    
+    internal func registerOnCache (id: UUID, closure: @escaping (Entity<T>) -> ()) {
+        cacheQueue.async {
+            self.onCache[id] = closure
         }
     }
 
@@ -211,6 +221,15 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
             closure (cache)
         }
     }
+    
+    internal func onCacheCount() -> Int {
+        var result = 0
+        cacheQueue.sync {
+            result = onCache.count
+        }
+        return result
+    }
+    
 // Deserialization Environment
     
     internal func getDeserializationEnvironmentClosure() -> ((inout [CodingUserInfoKey : Any]) -> ())? {
@@ -225,6 +244,7 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     public let name: CollectionName
     public let qualifiedName: QualifiedCollectionName
     private var cache: Dictionary<UUID, WeakItem<T>>
+    private var onCache: Dictionary<UUID, (Entity<T>) -> ()> = [:]
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue
     

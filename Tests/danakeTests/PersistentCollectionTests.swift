@@ -1313,4 +1313,22 @@ class PersistentCollectionTests: XCTestCase {
         }
     }
     
+    public func testRegisterOnCache() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+        var didFire = false
+        let id = UUID()
+        let waitFor = expectation(description: "wait1")
+        collection.registerOnCache(id: id) { entity in
+            didFire = true
+            waitFor.fulfill()
+        }
+        let entity =  Entity<MyStruct>(collection: collection, id: id, version: 10, item: MyStruct(myInt: 10, myString: "10"))
+        waitForExpectations(timeout: 10, handler: nil)
+        XCTAssertNotNil(entity)
+        XCTAssertTrue (didFire)
+        XCTAssertEqual (0, collection.onCacheCount())
+    }
+    
 }

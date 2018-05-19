@@ -1255,5 +1255,205 @@ class EntityTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), data.version)
     }
     
+    func testEntityReferenceCycle() {
+        
+        class Node : Codable {
+            
+            init (parentData: EntityReferenceData<Node>) {
+                parent = EntityReference<Node, Node> (parent: parentData, entity: nil)
+            }
+            
+            init (parentData: EntityReferenceData<Node>, child: Entity<Node>) {
+                parent = EntityReference<Node, Node> (parent: parentData, entity: child)
+            }
+
+            let parent: EntityReference<Node, Node>
+            
+        }
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
+        let collection = PersistentCollection<Node>(database: database, name: "node")
+        let batch = EventuallyConsistentBatch()
+        var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        parent!.referenceContainers() { containers in
+            XCTAssertEqual (0, containers.count)
+        }
+        batch.commitSync()
+        let parentId = parent!.id.uuidString
+        collection.sync() { entities in
+            XCTAssertEqual (1, entities.count)
+        }
+        parent = nil
+        collection.sync() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+        parent = collection.get(id: UUID (uuidString: parentId)!).item()!
+        var child: Entity<Node>? = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        let childId = child!.id.uuidString
+        child!.update(batch: batch) { node in
+            node.parent.set(entity: parent, batch: batch)
+        }
+        batch.commitSync()
+        collection.sync() { entities in
+            XCTAssertEqual (2, entities.count)
+        }
+        parent = nil
+        collection.sync() { entities in
+            XCTAssertEqual (2, entities.count)
+        }
+        child = nil
+        collection.sync() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child?.sync() { node in
+            parent = node.parent.get().item()!
+        }
+        // Set up a reference cycle;
+        // child.parent = parent
+        // parent.parent = child
+        parent!.update(batch: batch) { node in
+            node.parent.set (entity: child, batch: batch)
+        }
+        batch.commitSync()
+        child = nil
+        parent = nil
+        collection.sync() { entities in
+            XCTAssertEqual (2, entities.count)
+        }
+        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child!.sync() { node in
+            parent = node.parent.get().item()!
+        }
+        parent!.sync() { node in
+            child = node.parent.get().item()!
+        }
+        child!.breakReferences()
+        child = nil
+        parent!.breakReferences()
+        parent = nil
+        var collectionHasEntities = true
+        var timeout = Date().timeIntervalSince1970 + 30.0
+        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+            usleep (100)
+            collection.sync() { entities in
+                collectionHasEntities = entities.count > 0
+            }
+
+        }
+        collection.sync() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child!.sync() { node in
+            parent = node.parent.get().item()!
+        }
+        parent!.sync() { node in
+            child = node.parent.get().item()!
+        }
+        collection.sync() { entities in
+            XCTAssertEqual (2, entities.count)
+        }
+        // Test Recursive Dereferencing
+        child!.breakReferencesRecursive()
+        var wereBothDereferenced = false
+        timeout = Date().timeIntervalSince1970 + 30.0
+        while (!wereBothDereferenced && Date().timeIntervalSince1970 < timeout) {
+            var parentWasDereferenced = false
+            var childWasDereferenced = false
+            parent!.sync() { node in
+                node.parent.sync() { reference in
+                    switch reference.state {
+                    case .dereferenced:
+                        parentWasDereferenced = true
+                    default:
+                        break
+                    }
+                }
+            }
+            child!.sync() { node in
+                node.parent.sync() { reference in
+                    switch reference.state {
+                    case .dereferenced:
+                        childWasDereferenced = true
+                    default:
+                        break
+                    }
+                }
+            }
+            wereBothDereferenced = parentWasDereferenced && childWasDereferenced
+            if !wereBothDereferenced {
+                usleep (100)
+            }
+        }
+        XCTAssertTrue (wereBothDereferenced)
+        child = nil
+        parent = nil
+        collectionHasEntities = true
+        timeout = Date().timeIntervalSince1970 + 30.0
+        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+            usleep (100)
+            collection.sync() { entities in
+                collectionHasEntities = entities.count > 0
+            }
+            
+        }
+        collection.sync() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+        // Test creation of parent with existing child
+        // Registers the EntityReference with parent
+        let child2: Entity<Node> = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        let parent2: Entity<Node> = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData, child: child2)
+        }
+        var childReference: EntityReference<Node, Node>? = nil
+        parent2.sync() { node in
+            childReference = node.parent
+        }
+        var collectionHasOnCache = true
+        timeout = Date().timeIntervalSince1970 + 30.0
+        while (collectionHasOnCache && Date().timeIntervalSince1970 < timeout) {
+            usleep (100)
+            collectionHasOnCache = collection.onCacheCount() > 0
+        }
+        parent2.referenceContainers() { containers in
+            XCTAssertEqual (1, containers.count)
+            XCTAssertTrue (containers[0] as! EntityReference<Node, Node> === childReference)
+        }
+        
+    }
+    
+    func testRegisterReferenceContainer() {
+        let entity = newTestEntity(myInt: 10, myString: "10")
+
+        class TestContainer : EntityReferenceContainer {
+            func dereference() {}
+            func dereferenceRecursive() {}
+        }
+        
+        let container1 = TestContainer()
+        let container2 = TestContainer()
+        
+        entity.registerReferenceContainer(container1)
+        entity.referenceContainers() { references in
+            XCTAssertEqual (1, references.count)
+            XCTAssertTrue (container1 === references[0] as! TestContainer)
+        }
+        entity.registerReferenceContainer(container2)
+        entity.referenceContainers() { references in
+            XCTAssertEqual (2, references.count)
+            XCTAssertTrue (container1 === references[0] as! TestContainer)
+            XCTAssertTrue (container2 === references[1] as! TestContainer)
+        }
+    }
+    
+    
 }
 

@@ -125,6 +125,14 @@ public class InMemoryLogger : ThreadSafeLogger {
         }
     }
     
+    func printAll() {
+        queue.sync {
+            for entry in entries {
+                print (entry.asTestString())
+            }
+        }
+    }
+    
     private var entries: [LogEntry] = []
     
 }

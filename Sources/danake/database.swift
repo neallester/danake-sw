@@ -237,7 +237,11 @@ public class Database {
     static let collectionRegistrar = Registrar<QualifiedCollectionName, UntypedPersistentCollection>()
     public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
-    
+    internal static let encoder: JSONEncoder = {
+        let result = JSONEncoder()
+        result.dateEncodingStrategy = .millisecondsSince1970
+        return result
+    }()
 }
 
 public protocol DatabaseAccessor {
