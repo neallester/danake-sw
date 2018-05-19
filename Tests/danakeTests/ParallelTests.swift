@@ -14,10 +14,10 @@ class ParallelTests: XCTestCase {
         let accessor = InMemoryAccessor()
         var repetitions = 100
         #if os(Linux)
-            repetitions = 1
+            repetitions = 20
         #endif
 
-        ParallelTests.performTest(accessor: accessor, repetitions: repetitions, logger: ConsoleLogger())
+        ParallelTests.performTest(accessor: accessor, repetitions: repetitions, logger: nil)
     }
 
     public static func performTest(accessor: DatabaseAccessor, repetitions: Int, logger: Logger?) {
