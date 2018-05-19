@@ -19,7 +19,7 @@ class EntityReferenceTests: XCTestCase {
         print ("0.c")
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
         print ("0.d")
-        let parentId = UUID()
+        var parentId = UUID()
         print ("0.e")
         let parentDataContainer = DataContainer()
         print ("0.f")
@@ -61,6 +61,7 @@ class EntityReferenceTests: XCTestCase {
         print ("2")
         
         // Creation with nil entity
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -141,6 +142,7 @@ class EntityReferenceTests: XCTestCase {
         print ("6")
         
         // Creation with nil entity
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -210,6 +212,7 @@ class EntityReferenceTests: XCTestCase {
         print ("8")
         
         // Creation with referenceData for a uncached object
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -272,6 +275,7 @@ class EntityReferenceTests: XCTestCase {
         print ("9")
         
         // Creation with nil referenceData
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -390,6 +394,7 @@ class EntityReferenceTests: XCTestCase {
         
         print ("14")
         
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -423,6 +428,7 @@ class EntityReferenceTests: XCTestCase {
         
         print ("16")
         
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -444,6 +450,7 @@ class EntityReferenceTests: XCTestCase {
         
         print ("17")
         
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -504,6 +511,7 @@ class EntityReferenceTests: XCTestCase {
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
         // Creation with EntityReferenceSerializationData
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
@@ -724,6 +732,7 @@ class EntityReferenceTests: XCTestCase {
         
         print ("25")
 
+        parentId = UUID()
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
         parentDataContainer.data = parentData
