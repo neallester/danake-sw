@@ -89,6 +89,7 @@ class ParallelTests: XCTestCase {
             setupGroup.wait()
             persistenceObjects = nil
             Database.registrar.clear()
+            Database.collectionRegistrar.clear()
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             let test1 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
@@ -594,6 +595,8 @@ class ParallelTests: XCTestCase {
                 resultCount = resultCount + 1
             }
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
+            Database.registrar.clear()
+            Database.collectionRegistrar.clear()
             testCount = testCount + 1
         }
     }
