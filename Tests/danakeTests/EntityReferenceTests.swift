@@ -11,17 +11,30 @@ import XCTest
 class EntityReferenceTests: XCTestCase {
 
     func testCreationEncodeDecode() throws {
+        
+        print ("0.a")
         let accessor = InMemoryAccessor()
+        print ("0.b")
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        print ("0.c")
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        print ("0.d")
         let parentId = UUID()
+        print ("0.e")
         let parentDataContainer = DataContainer()
+        print ("0.f")
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        print ("0.g")
         var parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: parent.getVersion())
+        print ("0.h")
         parentDataContainer.data = parentData
+        print ("0.i")
         let childId = UUID()
+        print ("0.j")
         let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
+        print ("0.k")
         let encoder = JSONEncoder()
+        print ("0.l")
         let decoder = JSONDecoder()
         
         print ("1")
