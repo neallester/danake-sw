@@ -745,7 +745,7 @@ class EntityTests: XCTestCase {
             XCTAssertNotNil(item.entityReference)
             item.entityReference.sync() { reference in
                 XCTAssertNil (reference.entity)
-                XCTAssertNil (reference.parent)
+                XCTAssertTrue (reference.parent === parent)
                 XCTAssertTrue (reference.parentData.collection === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parent.id.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
@@ -767,7 +767,7 @@ class EntityTests: XCTestCase {
             XCTAssertNotNil(item.entityReference)
             item.entityReference.sync() { reference in
                 XCTAssertNil (reference.entity)
-                XCTAssertNil (reference.parent)
+                XCTAssertTrue (reference.parent === parent2)
                 XCTAssertTrue (reference.parentData.collection === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
@@ -1238,7 +1238,6 @@ class EntityTests: XCTestCase {
         XCTAssertNotEqual(data, data2)
         data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 11)
         XCTAssertNotEqual(data, data2)
-        
         data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId1", collectionName: "collectionName"), id: id, version: 10)
         XCTAssertNotEqual(data, data2)
         data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName1"), id: id, version: 10)
@@ -1247,7 +1246,6 @@ class EntityTests: XCTestCase {
         XCTAssertNotEqual(data, data2)
         data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: id, version: 11)
         XCTAssertNotEqual(data, data2)
-        
         let entity = newTestEntity(myInt: 10, myString: "20")
         data = entity.referenceData()
         XCTAssertEqual (entity.collection.qualifiedName, data.qualifiedCollectionName)
@@ -1277,8 +1275,16 @@ class EntityTests: XCTestCase {
         var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
-        parent!.referenceContainers() { containers in
-            XCTAssertEqual (0, containers.count)
+        var timeout = Date().timeIntervalSince1970 + 10.0
+        var referenceCount = 0
+        while referenceCount == 0 {
+            usleep(100)
+            parent!.referenceContainers() { references in
+                referenceCount = references.count
+            }
+        }
+        parent!.referenceContainers() { references in
+            XCTAssertEqual (1, references.count)
         }
         batch.commitSync()
         let parentId = parent!.id.uuidString
@@ -1337,7 +1343,7 @@ class EntityTests: XCTestCase {
         parent!.breakReferences()
         parent = nil
         var collectionHasEntities = true
-        var timeout = Date().timeIntervalSince1970 + 30.0
+        timeout = Date().timeIntervalSince1970 + 30.0
         while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
             collection.sync() { entities in
@@ -1430,6 +1436,102 @@ class EntityTests: XCTestCase {
         
     }
     
+    func testTwoReferences () {
+        
+        class Node : Codable {
+            
+            init (parentData: EntityReferenceData<Node>) {
+                n1 = EntityReference<Node, Node> (parent: parentData, entity: nil)
+                n2 = EntityReference<Node, Node> (parent: parentData, entity: nil)
+            }
+            
+            init (parentData: EntityReferenceData<Node>, n1: Entity<Node>?, n2: Entity<Node>?) {
+                self.n1 = EntityReference<Node, Node> (parent: parentData, entity: n1)
+                self.n2 = EntityReference<Node, Node> (parent: parentData, entity: n2)
+            }
+            
+            let n1: EntityReference<Node, Node>
+            let n2: EntityReference<Node, Node>
+            
+        }
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
+        let collection = PersistentCollection<Node>(database: database, name: "node")
+        let batch = EventuallyConsistentBatch()
+        var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        var timeout = Date().timeIntervalSince1970 + 10.0
+        var referenceCount = 0
+        while referenceCount != 2 && Date().timeIntervalSince1970 < timeout {
+            usleep(100)
+            parent!.referenceContainers() { references in
+                referenceCount = references.count
+            }
+        }
+        var ref1: EntityReference<Node, Node>? = nil
+        var ref2: EntityReference<Node, Node>? = nil
+        parent?.sync() { node in
+            ref1 = node.n1
+            ref2 = node.n2
+        }
+        parent!.referenceContainers() { references in
+            XCTAssertEqual (2, references.count)
+            var found1 = false
+            var found2 = false
+            for reference in references {
+                if let reference = reference as? EntityReference<Node, Node>, reference === ref1 {
+                    found1 = true
+                }
+                if let reference = reference as? EntityReference<Node, Node>, reference === ref2 {
+                    found2 = true
+                }
+            }
+            XCTAssertTrue (found1)
+            XCTAssertTrue (found2)
+        }
+        batch.commitSync()
+        let c1: Entity<Node> = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        let c2: Entity<Node> = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData)
+        }
+        parent = collection.new(batch: batch) { parentData in
+            return Node (parentData: parentData, n1: c1, n2: c2)
+        }
+        timeout = Date().timeIntervalSince1970 + 10.0
+        referenceCount = 0
+        while referenceCount != 2 && Date().timeIntervalSince1970 < timeout {
+            usleep(100)
+            parent!.referenceContainers() { references in
+                referenceCount = references.count
+            }
+        }
+        ref1 = nil
+        ref2 = nil
+        parent?.sync() { node in
+            ref1 = node.n1
+            ref2 = node.n2
+        }
+        parent!.referenceContainers() { references in
+            XCTAssertEqual (2, references.count)
+            var found1 = false
+            var found2 = false
+            for reference in references {
+                if let reference = reference as? EntityReference<Node, Node>, reference === ref1 {
+                    found1 = true
+                }
+                if let reference = reference as? EntityReference<Node, Node>, reference === ref2 {
+                    found2 = true
+                }
+            }
+            XCTAssertTrue (found1)
+            XCTAssertTrue (found2)
+        }
+        batch.commitSync()
+    }
+
     func testRegisterReferenceContainer() {
         let entity = newTestEntity(myInt: 10, myString: "10")
 

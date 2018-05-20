@@ -198,19 +198,26 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     }
     
     internal func cacheEntity (_ entity: Entity<T>) {
-        cacheQueue.async() {
+        cacheQueue.sync() {
             precondition ( self.cache[entity.id]?.item == nil)
-            if let onCache = self.onCache[entity.id] {
-                onCache (entity)
-                self.onCache[entity.id] = nil
-            }
             self.cache[entity.id] = WeakItem (item: entity)
+            if let closureList = self.onEntityCached[entity.id] {
+                for closure in closureList {
+                    closure(entity)
+                }
+                self.onEntityCached[entity.id] = nil
+            }
         }
     }
     
-    internal func registerOnCache (id: UUID, closure: @escaping (Entity<T>) -> ()) {
+    internal func registerOnEntityCached (id: UUID, closure: @escaping (Entity<T>) -> ()) {
         cacheQueue.async {
-            self.onCache[id] = closure
+            if var closureList = self.onEntityCached[id] {
+                closureList.append(closure)
+                self.onEntityCached[id] = closureList
+            } else {
+                self.onEntityCached[id] = [closure]
+            }
         }
     }
 
@@ -225,7 +232,7 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     internal func onCacheCount() -> Int {
         var result = 0
         cacheQueue.sync {
-            result = onCache.count
+            result = onEntityCached.count
         }
         return result
     }
@@ -244,7 +251,7 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
     public let name: CollectionName
     public let qualifiedName: QualifiedCollectionName
     private var cache: Dictionary<UUID, WeakItem<T>>
-    private var onCache: Dictionary<UUID, (Entity<T>) -> ()> = [:]
+    private var onEntityCached: Dictionary<UUID, [(Entity<T>) -> ()]> = [:]
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue
     

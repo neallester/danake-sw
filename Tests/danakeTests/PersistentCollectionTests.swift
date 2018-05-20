@@ -1317,17 +1317,25 @@ class PersistentCollectionTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
-        var didFire = false
+        var didFire1 = false
+        var didFire2 = false
         let id = UUID()
-        let waitFor = expectation(description: "wait1")
-        collection.registerOnCache(id: id) { entity in
-            didFire = true
-            waitFor.fulfill()
+        let waitFor1 = expectation(description: "wait1")
+        let waitFor2 = expectation(description: "wait2")
+        collection.registerOnEntityCached(id: id) { entity in
+            didFire1 = true
+            waitFor1.fulfill()
         }
+        collection.registerOnEntityCached(id: id) { entity in
+            didFire2 = true
+            waitFor2.fulfill()
+        }
+        XCTAssertEqual (1, collection.onCacheCount())
         let entity =  Entity<MyStruct>(collection: collection, id: id, version: 10, item: MyStruct(myInt: 10, myString: "10"))
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertNotNil(entity)
-        XCTAssertTrue (didFire)
+        XCTAssertTrue (didFire1)
+        XCTAssertTrue (didFire2)
         XCTAssertEqual (0, collection.onCacheCount())
     }
     

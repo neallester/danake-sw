@@ -49,10 +49,8 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         self.state = .loaded
         self.isEager = isEager
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if let entity = entity {
-            parent.collection.registerOnCache(id: parent.id) { parentEntity in
-                parentEntity.registerReferenceContainer (self)
-            }
             collection = entity.collection
         }
     }
@@ -71,6 +69,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         }        
         self.isEager = isEager
         queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if self.isEager {
             queue.async {
                 self.retrieve() { result in}
@@ -99,6 +98,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
                 }
                 state = .decoded
             }
+            parentData.collection.registerOnEntityCached(id: parentData.id, closure: setParent)
             if self.isEager {
                 queue.async {
                     self.retrieve() { result in}
@@ -313,27 +313,12 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         }
     }
     
+    // Not Thread safe, always call within queue
     internal func addParentTo (batch: EventuallyConsistentBatch) {
-        if let parent = getParent() {
-            parent.setDirty(batch: batch)
-        }
-    }
-    
-    internal func getParent() -> EntityManagement? {
         if let parent = self.parent {
-            return parent
-        }
-        let retrievalResult = self.parentData.collection.get(id: self.parentData.id)
-        if let parent = retrievalResult.item() {
-            if !hasRegistered {
-                parent.registerReferenceContainer(self)
-                hasRegistered = true
-            }
-            self.parent = parent
-            return parent
+            parent.setDirty(batch: batch)
         } else {
-            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "retrieveParent", message: "noParent", data: [(name:"collectionName", value: self.parentData.collection.name), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version), (name: "errorMessage", value: "\(retrievalResult)")])
-            return nil
+            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"collectionName", value: self.parentData.collection.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
         }
     }
     
@@ -370,17 +355,18 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
             }
         }
     }
+    
+    private func setParent (parent: Entity<P>) {
+        queue.async {
+            self.parent = parent
+            parent.registerReferenceContainer (self)
+        }
+    }
 
     // Used for testing by descendents
     internal func retrievalGetHook() {}
 
-    private var entity: Entity<T>? {
-        willSet (newEntity) {
-            if let _ = newEntity {
-                let _ = getParent()
-            }
-        }
-    }
+    private var entity: Entity<T>?
     private weak var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: EntityReferenceSerializationData?

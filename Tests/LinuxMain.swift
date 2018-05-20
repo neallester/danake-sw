@@ -152,6 +152,7 @@ extension EntityTests {
     ("testEntityReferenceData", testEntityReferenceData),
     ("testEntityReferenceSerializationData", testEntityReferenceSerializationData),
     ("testEntityReferenceCycle", testEntityReferenceCycle),
+    ("testTwoReferences ", testTwoReferences ),
     ("testRegisterReferenceContainer", testRegisterReferenceContainer),
   ]
 }
