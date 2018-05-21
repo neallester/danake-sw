@@ -1312,6 +1312,15 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (2, entities.count)
         }
         child = nil
+        var collectionHasEntities = true
+        timeout = Date().timeIntervalSince1970 + 30.0
+        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+            usleep (100)
+            collection.sync() { entities in
+                collectionHasEntities = entities.count > 0
+            }
+            
+        }
         collection.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
@@ -1342,7 +1351,7 @@ class EntityTests: XCTestCase {
         child = nil
         parent!.breakReferences()
         parent = nil
-        var collectionHasEntities = true
+        collectionHasEntities = true
         timeout = Date().timeIntervalSince1970 + 30.0
         while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
@@ -1556,6 +1565,49 @@ class EntityTests: XCTestCase {
         }
     }
     
+    func testUnsavedChangesLogging() {
+        
+        class SneakyUpdater : Codable {
+            
+            var label: String = ""
+            
+            func setLabel (_ label: String) {
+                self.label = label
+            }
+        }
+        
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger (level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
+        let collection = PersistentCollection<SneakyUpdater>(database: database, name: "sneak")
+        let batch = EventuallyConsistentBatch()
+        var updaterEntity: Entity<SneakyUpdater>? = collection.new(batch: batch, item: SneakyUpdater())
+        let updaterId = updaterEntity!.id.uuidString
+        updaterEntity!.update(batch: batch) { updater in
+            updater.setLabel ("1")
+        }
+        batch.commitSync()
+        updaterEntity!.sync() { updater in
+            XCTAssertEqual ("1", updater.label)
+        }
+        logger.sync() { entries in
+            XCTAssertEqual (0, entries.count)
+        }
+        updaterEntity!.sync() { updater in
+            updater.setLabel("2")
+        }
+        updaterEntity = nil
+        var loggerCount = 0
+        let timeout = Date().timeIntervalSince1970 + 10.0
+        while loggerCount != 1 && Date().timeIntervalSince1970 < timeout {
+            logger.sync() { entries in
+                loggerCount = entries.count
+            }
+        }
+        logger.sync() { entries in
+            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|collectionName=\(collection.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
+        }
+    }
     
 }
 

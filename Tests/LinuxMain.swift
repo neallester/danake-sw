@@ -154,6 +154,7 @@ extension EntityTests {
     ("testEntityReferenceCycle", testEntityReferenceCycle),
     ("testTwoReferences ", testTwoReferences ),
     ("testRegisterReferenceContainer", testRegisterReferenceContainer),
+    ("testUnsavedChangesLogging", testUnsavedChangesLogging),
   ]
 }
 

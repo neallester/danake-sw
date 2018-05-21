@@ -20,7 +20,8 @@ This is library is currently tested on OSX High Sierra and Ubuntu 16.04.
 
 * Removing Entities (Entity.remove(batch:)) which are referenced by other Entities from persistent storage will generate errors when the remaining references are used. 
 * Application developers are responsible for removing Entities ((Entity.remove(batch:)) which are not needed as persistent media entry points and which are not referenced by any other Entities from persistent media.
-* Unless EntityReference is used, attributes which reference objects (that is, attributes which are implemented as classes rather than structs) will be stored and retrieved with struct (value) semantics rather than class (reference) semantics. 
+* Unless EntityReference is used, attributes which reference objects (that is, attributes which are implemented as classes rather than structs) will be stored and retrieved with struct (value) semantics rather than class (reference) semantics.
+* Changes to Entity items must be done via Entity.update(), not Entity.sync(), but the compiler will only enforce this restriction for closures which directly assign to item attributes. Ensure that any changes which occur as side effects to function calls occur within an Entity.update() closure.
 
 ## Setup Development Environment on OSX
 1. Install [sourcery](https://github.com/krzysztofzablocki/Sourcery)

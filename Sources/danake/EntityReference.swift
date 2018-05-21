@@ -116,7 +116,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
             if let entity = entity {
                 try container.encode(entity.collection.qualifiedName, forKey: .qualifiedCollectionName)
                 try container.encode (entity.id, forKey: .id)
-                try container.encode (entity.getVersion(), forKey: .version)
+                try container.encode (entity.getVersionUnsafe(), forKey: .version)
             } else if let referenceData = referenceData {
                 try container.encode(referenceData.qualifiedCollectionName, forKey: .qualifiedCollectionName)
                 try container.encode (referenceData.id, forKey: .id)

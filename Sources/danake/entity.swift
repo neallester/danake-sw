@@ -221,6 +221,28 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     deinit {
         collection.decache (id: id)
+        switch self.persistenceState {
+        case .persistent:
+            let localItem = item
+            if let itemData = itemData {
+                let localCollection = collection
+                let localId = id
+                collection.database.workQueue.async {
+                    do {
+                        let currentData = try Database.encoder.encode(localItem)
+                        if currentData != itemData {
+                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedWithoutSave", data: [(name:"collectionName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+                        }
+                    } catch {
+                        localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"collectionName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
+                    }
+                }
+            } else {
+                collection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"collectionName", value: collection.qualifiedName), (name: "entityId", value: self.id.uuidString)])
+            }
+        default:
+            break
+        }
     }
 
 // Metadata
@@ -232,6 +254,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             result = version
         }
         return result!
+    }
+    
+    // For use when caller is being executed on queue
+    internal func getVersionUnsafe() -> Int {
+        return version
     }
     
     public func getPersistenceState() -> PersistenceState {
@@ -469,6 +496,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
         let actionSource = databaseActionSource (collection.database.accessor)
         let actionResult = actionSource (wrapper)
+        var newItemData: Data? = nil
+        do {
+            newItemData = try Database.encoder.encode(item)
+        } catch {}
         switch actionResult {
         case .ok (let action):
             persistenceState = .saving
@@ -494,6 +525,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                             switch result {
                             case .ok:
                                 self.persistenceState = successState
+                                self.itemData = newItemData
                             case .error, .unrecoverableError:
                                 self.persistenceState = failureState
                                 self.version = self.version - 1
@@ -592,13 +624,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
                 self.queue = DispatchQueue (label: id.uuidString)
                 self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
-//                queue.sync {
-//                    do {
-//                        self.itemData = try Database.encoder.encode(self.item)
-//                    } catch {
-//                        collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue())), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
-//                    }
-//                }
+                do {
+                    self.itemData = try Database.encoder.encode(self.item)
+                } catch {
+                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue())), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
+                }
                 collection.cacheEntity(self)
             } else {
                 throw EntityDeserializationError<T>.illegalId(idString)
