@@ -1,5 +1,5 @@
 //
-//  EntityReferenceTests.swift
+//  ReferenceManagerTests.swift
 //  danakeTests
 //
 //  Created by Neal Lester on 3/27/18.
@@ -8,7 +8,7 @@
 import XCTest
 @testable import danake
 
-class EntityReferenceTests: XCTestCase {
+class ReferenceManagerTests: XCTestCase {
 
     func testCreationEncodeDecode() throws {
         let accessor = InMemoryAccessor()
