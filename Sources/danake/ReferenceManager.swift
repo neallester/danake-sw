@@ -198,7 +198,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         if let referenceData = self.referenceData {
             if collection == nil {
                 if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCollectionName) {
-                    if let collection = candidateCollection as? PersistentCollection<T> {
+                    if let collection = candidateCollection as? EntityCache<T> {
                         self.collection = collection
                     } else {
                         closure (.error ("collectionName: \(referenceData.qualifiedCollectionName) returns wrong type: \(type (of: candidateCollection))"))
@@ -370,7 +370,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     private weak var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: ReferenceManagerData?
-    private var collection: PersistentCollection<T>?
+    private var collection: EntityCache<T>?
     private var state: ReferenceManagerState
     internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
@@ -417,4 +417,4 @@ internal struct ClosureContainer<T: Codable> {
     
 }
 
-internal typealias ReferenceManagerContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: ReferenceManagerData?, collection: PersistentCollection<T>?, state: ReferenceManagerState, isEager: Bool, pendingEntityClosureCount: Int)
+internal typealias ReferenceManagerContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: ReferenceManagerData?, collection: EntityCache<T>?, state: ReferenceManagerState, isEager: Bool, pendingEntityClosureCount: Int)

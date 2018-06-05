@@ -24,7 +24,7 @@ func newTestClassEntity (myInt: Int, myString: String) -> Entity<MyClass> {
     myClass.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    return Entity (collection: PersistentCollection<MyClass>(database: database, name: "myCollection"), id: id, version: 0, item: myClass)
+    return Entity (collection: EntityCache<MyClass>(database: database, name: "myCollection"), id: id, version: 0, item: myClass)
     
 }
 
@@ -41,7 +41,7 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    let collection = PersistentCollection<MyStruct>(database: database, name: "myCollection")
+    let collection = EntityCache<MyStruct>(database: database, name: "myCollection")
     return Entity (collection: collection, id: id, version: 0, item: myStruct)
 }
 
@@ -51,7 +51,7 @@ func newTestEntitySchema5 (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    let collection = PersistentCollection<MyStruct>(database: database, name: "myCollection")
+    let collection = EntityCache<MyStruct>(database: database, name: "myCollection")
     return Entity (collection: collection, id: id, version: 5, item: myStruct)
 }
 
@@ -87,7 +87,7 @@ func msRounded (date: Date) -> Double {
 */
 class TimeoutHookEntity<T: Codable> : Entity<T> {
     
-    internal init (collection: PersistentCollection<T>, id: UUID, version: Int, item: T, semaphoreValue: Int) {
+    internal init (collection: EntityCache<T>, id: UUID, version: Int, item: T, semaphoreValue: Int) {
         self.timeoutSemaphore = DispatchSemaphore (value: semaphoreValue)
         super.init (collection: collection, id: id, version: version, item: item)
     }
@@ -123,7 +123,7 @@ internal class MyStructContainer : Codable {
     let myStruct: ReferenceManager<MyStructContainer, MyStruct>
 }
 
-internal class ContainerCollection : PersistentCollection<MyStructContainer> {
+internal class ContainerCollection : EntityCache<MyStructContainer> {
     
     func new(batch: EventuallyConsistentBatch, myStruct: Entity<MyStruct>?) -> Entity<MyStructContainer> {
         return new (batch: batch) { parentData in
@@ -144,7 +144,7 @@ internal class ParallelTestPersistence {
     init (accessor: DatabaseAccessor, logger: Logger?) {
         self.logger = logger
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
-        myStructCollection = PersistentCollection<MyStruct> (database: database, name: "MyStructs")
+        myStructCollection = EntityCache<MyStruct> (database: database, name: "MyStructs")
         containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
     }
     
@@ -166,7 +166,7 @@ internal class ParallelTestPersistence {
     
     let logger: Logger?
     
-    let myStructCollection: PersistentCollection<MyStruct>
+    let myStructCollection: EntityCache<MyStruct>
     
     let containerCollection: ContainerCollection
 }

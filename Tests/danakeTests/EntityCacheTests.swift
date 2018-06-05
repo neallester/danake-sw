@@ -8,7 +8,7 @@
 import XCTest
 @testable import danake
 
-class PersistentCollectionTests: XCTestCase {
+class EntityCacheTests: XCTestCase {
     
     func testCreation() {
         let myKey: CodingUserInfoKey = CodingUserInfoKey(rawValue: "myKey")!
@@ -18,7 +18,7 @@ class PersistentCollectionTests: XCTestCase {
         database.collectionRegistrar.clear()
         Database.collectionRegistrar.clear()
         let collectionName: CollectionName = "myCollection"
-        var collection: PersistentCollection<MyStruct>? = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        var collection: EntityCache<MyStruct>? = EntityCache<MyStruct>(database: database, name: collectionName)
         let _ = collection // Quite a spurious xcode warning
         XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
@@ -28,11 +28,11 @@ class PersistentCollectionTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
-        let _ = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let _ = EntityCache<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.getAccessor().hashValue());collectionName=myCollection", entries[0].asTestString())
-            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.getAccessor().hashValue()).myCollection", entries[1].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.getAccessor().hashValue());collectionName=myCollection", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.getAccessor().hashValue()).myCollection", entries[1].asTestString())
         }
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
@@ -43,7 +43,7 @@ class PersistentCollectionTests: XCTestCase {
         let deserializationClosure: (inout [CodingUserInfoKey : Any]) -> () = { userInfo in
             userInfo[myKey] = "myValue"
         }
-        collection = PersistentCollection<MyStruct> (database: database, name: collectionName, deserializationEnvironmentClosure: deserializationClosure)
+        collection = EntityCache<MyStruct> (database: database, name: collectionName, deserializationEnvironmentClosure: deserializationClosure)
         XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
         logger.sync() { entries in
@@ -59,10 +59,10 @@ class PersistentCollectionTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = ""
-        let _ = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let _ = EntityCache<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|PersistentCollection<MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue());collectionName=", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue());collectionName=", entries[0].asTestString())
         }
     }
 
@@ -70,7 +70,7 @@ class PersistentCollectionTests: XCTestCase {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
         var batch = EventuallyConsistentBatch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.collection)
@@ -140,7 +140,7 @@ class PersistentCollectionTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
         let data = try accessor.encoder.encode(entity)
         var result = collection.get (id: entity.id)
         XCTAssertTrue (result.isOk())
@@ -148,7 +148,7 @@ class PersistentCollectionTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|PersistentCollection<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.id)", entry)
+            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
         let _ = accessor.add(name: standardCollectionName, id: entity.id, data: data)
@@ -226,7 +226,7 @@ class PersistentCollectionTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -242,7 +242,7 @@ class PersistentCollectionTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=getError", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=getError", entry)
         }
     }
     
@@ -258,7 +258,7 @@ class PersistentCollectionTests: XCTestCase {
             let dispatchGroup = DispatchGroup()
             let _ = accessor.add(name: standardCollectionName, id: id1, data: data1)
             let _ = accessor.add(name: standardCollectionName, id: id2, data: data2)
-            let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
@@ -364,7 +364,7 @@ class PersistentCollectionTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .warning)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
             var waitFor1 = expectation(description: "wait1.1")
             var waitFor2 = expectation(description: "wait2.1")
             var result1: RetrievalResult<Entity<MyStruct>>? = nil
@@ -591,7 +591,7 @@ class PersistentCollectionTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .warning)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
             var retrievedEntities = collection.scan(criteria: nil).item()!
             XCTAssertEqual (0, retrievedEntities.count)
             retrievedEntities = collection.scan().item()!
@@ -804,7 +804,7 @@ class PersistentCollectionTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .error)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
     
@@ -900,7 +900,7 @@ class PersistentCollectionTests: XCTestCase {
                 let accessor = InMemoryAccessor()
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-                let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+                let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
                 // entity1, entity2: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
         
@@ -990,7 +990,7 @@ class PersistentCollectionTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .error)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
     
@@ -1070,9 +1070,9 @@ class PersistentCollectionTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 var entry = entries[0].asTestString()
-                XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
                 entry = entries[1].asTestString()
-                XCTAssertEqual ("EMERGENCY|PersistentCollection<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
             }
         }
     }
@@ -1085,7 +1085,7 @@ class PersistentCollectionTests: XCTestCase {
                 let accessor = InMemoryAccessor()
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-                let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+                let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
                 let dispatchGroup = DispatchGroup()
                 // entity1, entity2: Data in accessor
                 let id1 = UUID()
@@ -1316,7 +1316,7 @@ class PersistentCollectionTests: XCTestCase {
     public func testRegisterOnCache() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
         var didFire1 = false
         var didFire2 = false
         let id = UUID()

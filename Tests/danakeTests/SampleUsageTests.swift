@@ -158,19 +158,19 @@ struct Address : Codable {
                                     in system. Declare Database objects as let constants within a scope with process lifetime.
                                     Re-creating a Database object is not currently supported.
  
-    class SampleDatabase:           Provides PersistentCollections with access to the applicatio specific SampleAccessor. Only
+    class SampleDatabase:           Provides EntityCaches with access to the applicatio specific SampleAccessor. Only
                                     required for applications which include an application specific DatabaseAccessor.
  
-    class PersistentCollection<T>:  Access to the persisted instances of a single type or a polymorphically related set of types (use
+    class EntityCache<T>:           Access to the persisted instances of a single type or a polymorphically related set of types (use
                                     polymorism if indexed queries based on attributes shared by all of the types are required). Each
-                                    PersistentCollection must be associated with exactly one database. Declare PersistentCollection
-                                    attributes with `let' within a scope with process lifetime. Re-creating a PersistentCollection
+                                    EntityCache must be associated with exactly one database. Declare EntityCache
+                                    attributes with `let' within a scope with process lifetime. Re-creating a EntityCache
                                     object is not currently supported.
  
     class CompanyCollection:        Access to persistent Company objects. Demonstrates:
                                     - creation of model objects which include an id whose value matches the id of their enclosing
                                       Entity
-                                    - setup of a PersistentCollection to support deserialization of objects which include properties
+                                    - setup of a EntityCache to support deserialization of objects which include properties
                                       which are populated from the environment rather than the serialized data.
                                     - custom `new' function for creating new Entity<Company> objects
  
@@ -178,9 +178,9 @@ struct Address : Codable {
                                     - deserialization of objects which include EntityReference properties
                                     - custom synchronous and asynchronous retrieval functions
  
-    class SampleCollections:        An application specific convenience class for organizing all of the PersistentCollection objects
+    class SampleCollections:        An application specific convenience class for organizing all of the EntityCache objects
                                     associated with the SampleDatabase. Declare objects of this type using `let' within a scope with
-                                    process lifetime. Ensure that all PersistentCollections used within the application are fully
+                                    process lifetime. Ensure that all EntityCaches used within the application are fully
                                     created before proceeding with model processing.
 */
 
@@ -200,11 +200,11 @@ class SampleDatabase : Database {
 }
 
 protocol SampleAccessor : DatabaseAccessor {
-    func employeesForCompany (collection: PersistentCollection<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>>
+    func employeesForCompany (collection: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>>
 }
 
 class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
-    func employeesForCompany (collection: PersistentCollection<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>> {
+    func employeesForCompany (collection: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>> {
         let retrievalResult = scan (type: Entity<Employee>.self, collection: collection)
         switch retrievalResult {
         case .ok(let allEmployees):
@@ -224,7 +224,7 @@ class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
 }
 
-class CompanyCollection : PersistentCollection<Company> {
+class CompanyCollection : EntityCache<Company> {
     
     init (database: SampleDatabase, employeeCollection: EmployeeCollection) {
         self.employeeCollection = employeeCollection
@@ -245,7 +245,7 @@ class CompanyCollection : PersistentCollection<Company> {
     private let employeeCollection: EmployeeCollection
 }
 
-class EmployeeCollection : PersistentCollection<Employee> {
+class EmployeeCollection : EntityCache<Employee> {
 
     init(database: SampleDatabase) {
         forCompanyClosure = { collection, company in
@@ -286,7 +286,7 @@ class SampleCollections {
         self.logger = logger
         employees = EmployeeCollection (database: database)
         companies = CompanyCollection (database: database, employeeCollection: employees)
-        addresses = PersistentCollection<Address> (database: database, name: "address")
+        addresses = EntityCache<Address> (database: database, name: "address")
     }
     
     public let logger: Logger?
@@ -295,7 +295,7 @@ class SampleCollections {
     
     public let employees: EmployeeCollection
     
-    public let addresses: PersistentCollection<Address>
+    public let addresses: EntityCache<Address>
     
 }
 
@@ -384,7 +384,7 @@ class SampleTests: XCTestCase {
                 XCTFail ("Expected valid item")
             }
             
-            // Because PersistentCollection.get() can be expensive,
+            // Because EntityCache.get() can be expensive,
             // use asynchronous version when possible
             group.enter()
             collections.companies.get(id: company2.id) { retrievalResult in
@@ -398,7 +398,7 @@ class SampleTests: XCTestCase {
             }
             group.wait()
             
-            // Asynchronous version is also preferred for PersistentCollection.scan()
+            // Asynchronous version is also preferred for EntityCache.scan()
             group.enter()
             collections.companies.scan() { retrievalResult in
                 if let companies = retrievalResult.item() {
@@ -426,7 +426,7 @@ class SampleTests: XCTestCase {
             }
             group.wait()
             
-            // An unsuccessful PersistentCollection.get logs a WARNING
+            // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.getAccessor().hashValue());collection=company;id=\(badId.uuidString)", entries[1].asTestString())
@@ -559,7 +559,7 @@ class SampleTests: XCTestCase {
         
         // Batch cleanup occurs asynchronously
         // For demonstration purposes only wait for it to complete using the internal
-        // function PersistentCollection.sync()
+        // function EntityCache.sync()
         // In application code waiting like this should never be necessary because
         // batches should always be committed before they go out of scope
         var hasCached = true

@@ -13,7 +13,7 @@ class EntityReferenceTests: XCTestCase {
     func testCreationEncodeDecode() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         let parentDataContainer = DataContainer()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
@@ -895,7 +895,7 @@ class EntityReferenceTests: XCTestCase {
     
     func testGetReference() {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         let childId = UUID()
@@ -920,7 +920,7 @@ class EntityReferenceTests: XCTestCase {
     
     func testWillUpdate() {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -969,7 +969,7 @@ class EntityReferenceTests: XCTestCase {
         let logger = InMemoryLogger(level: .warning)
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let parentId = UUID()
         // No such parent
         let parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
@@ -1003,7 +1003,7 @@ class EntityReferenceTests: XCTestCase {
 
     public func testSetEntity() {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
@@ -1388,7 +1388,7 @@ class EntityReferenceTests: XCTestCase {
     
     public func testSetReferenceData() {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
@@ -1622,7 +1622,7 @@ class EntityReferenceTests: XCTestCase {
     public func testSetReferenceDataIsEager() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
@@ -1961,7 +1961,7 @@ class EntityReferenceTests: XCTestCase {
     public func testAsync() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -2463,7 +2463,7 @@ class EntityReferenceTests: XCTestCase {
     public func testGet() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -2486,7 +2486,7 @@ class EntityReferenceTests: XCTestCase {
     public func testSetWithinEntity() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let structCollection = PersistentCollection<MyStruct> (database: database, name: "structCollection")
+        let structCollection = EntityCache<MyStruct> (database: database, name: "structCollection")
         let containerCollection = ContainerCollection (database: database, name: "containerCollection")
         var batch = EventuallyConsistentBatch()
         let containerEntity = containerCollection.new(batch: batch, myStruct: nil)
@@ -2663,7 +2663,7 @@ class EntityReferenceTests: XCTestCase {
 
     public func testDereference() {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)

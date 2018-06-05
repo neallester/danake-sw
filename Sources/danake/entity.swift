@@ -131,13 +131,13 @@ public class EntityPersistenceWrapper : Encodable {
 // Data for a reference to an Entity
 public struct EntityReferenceData<T: Codable> : Equatable {
     
-    public init (collection: PersistentCollection<T>, id: UUID, version: Int) {
+    public init (collection: EntityCache<T>, id: UUID, version: Int) {
         self.collection = collection
         self.id = id
         self.version = version
     }
     
-    let collection: PersistentCollection<T>
+    let collection: EntityCache<T>
     let id: UUID
     let version: Int
     
@@ -198,7 +198,7 @@ public enum EntityDeserializationError<T: Codable> : Error {
 public class Entity<T: Codable> : EntityManagement, Codable {
     
     
-    internal init (collection: PersistentCollection<T>, id: UUID, version: Int, item: T) {
+    internal init (collection: EntityCache<T>, id: UUID, version: Int, item: T) {
         self.collection = collection
         self.id = id
         self.version = version
@@ -211,7 +211,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         collection.cacheEntity(self)
     }
 
-    internal convenience init (collection: PersistentCollection<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
+    internal convenience init (collection: EntityCache<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
         let selfReference = EntityReferenceData (collection: collection, id: id, version: version)
         let item = itemClosure(selfReference)
         self.init (collection: collection, id: id, version: version, item: item)
@@ -597,7 +597,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // it from the EntityReferenceData stored in userInfo[Database.parentKeyData]
     public required init (from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        let collection = decoder.userInfo[Database.collectionKey] as? PersistentCollection<T>
+        let collection = decoder.userInfo[Database.collectionKey] as? EntityCache<T>
         if let collection = collection {
             let idString = try values.decode(String.self, forKey: .id)
             let id = UUID (uuidString: idString)
@@ -640,7 +640,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Initialization
     
-    internal func isInitialized (onCollection: PersistentCollection<T>) -> Bool {
+    internal func isInitialized (onCollection: EntityCache<T>) -> Bool {
         var result = false
         queue.sync {
             if self.collection === onCollection, collection.database.schemaVersion == self.schemaVersion {
@@ -710,7 +710,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var itemData: Data?
     fileprivate let queue: DispatchQueue
     private var persistenceState: PersistenceState
-    internal let collection: PersistentCollection<T>
+    internal let collection: EntityCache<T>
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil

@@ -16,18 +16,17 @@ import Foundation
 
 public typealias CollectionName = String
 public typealias QualifiedCollectionName = String
-public class UntypedPersistentCollection {}
+public class UntypedEntityCache {}
 
 /*
  
-    Access to the persisted instances of a single type or a polymorphically related set of types (use polymorism if indexed queries
-    based on attributes shared by all of the types are required). Each PersistentCollection must be associated with exactly one
-    database. Declare PersistentCollection attributes with `let' within a scope with process lifetime. Re-creating a
-    PersistentCollection object is not currently supported.
+    Access to the persisted instances of a single type. Each EntityCache must be associated with exactly one
+    database. Declare EntityCache attributes with `let' within a scope with process lifetime. Re-creating a
+    EntityCache object is not currently supported.
  
 */
 
-public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
+public class EntityCache<T: Codable> : UntypedEntityCache {
     
     typealias entityType = T
     

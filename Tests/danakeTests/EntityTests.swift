@@ -18,7 +18,7 @@ class EntityTests: XCTestCase {
         myStruct.myString = "Test String 1"
         let id = UUID()
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.id.uuidString)
         XCTAssertEqual (10, entity1.getVersion())
@@ -62,7 +62,7 @@ class EntityTests: XCTestCase {
         myStruct.myString = "Test String 1"
         let id = UUID()
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let entity = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (5, entity.getSchemaVersion())
         XCTAssertNil (entity.getSaved())
@@ -408,7 +408,7 @@ class EntityTests: XCTestCase {
         myStruct.myInt = 100
         myStruct.myString = "Test String 1"
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
+        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         var batch = EventuallyConsistentBatch()
         let waitFor = expectation(description: "wait1")
         let entity = collection.new(batch: batch, item: myStruct)
@@ -470,7 +470,7 @@ class EntityTests: XCTestCase {
         return result
     }()
     
-    public func decoder <T> (collection: PersistentCollection<T>) -> JSONDecoder {
+    public func decoder <T> (collection: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.collectionKey] = collection
@@ -493,13 +493,13 @@ class EntityTests: XCTestCase {
         // Wrong collection
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let wrongCollection = PersistentCollection<String>(database: database, name: "wrongCollection")
+        let wrongCollection = EntityCache<String>(database: database, name: "wrongCollection")
         decoder.userInfo[Database.collectionKey] = wrongCollection
         do {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch EntityDeserializationError<MyStruct>.NoCollectionInDecoderUserInfo {}
-        let collection = PersistentCollection<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
         // With correct collection (success)
         decoder.userInfo[Database.collectionKey] = collection
         let entity1 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
@@ -736,7 +736,7 @@ class EntityTests: XCTestCase {
         let parentId = UUID (uuidString: "438AF59B-0CC1-46C1-8C73-336BDC2AA606")!
         let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"qualifiedCollectionName\":\"\(accessor.hashValue()).childCollection\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
         let parentId2 = UUID (uuidString: "BE6458D5-8762-4AEF-9748-94870B0BBCB1")!
-        let parentCollection = PersistentCollection<EntityReferenceContainer> (database: database, name: "parentCollection")
+        let parentCollection = EntityCache<EntityReferenceContainer> (database: database, name: "parentCollection")
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
         let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
         let parent = parentCollection.get(id: parentId).item()!
@@ -1270,7 +1270,7 @@ class EntityTests: XCTestCase {
         }
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
-        let collection = PersistentCollection<Node>(database: database, name: "node")
+        let collection = EntityCache<Node>(database: database, name: "node")
         let batch = EventuallyConsistentBatch()
         var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
             return Node (parentData: parentData)
@@ -1465,7 +1465,7 @@ class EntityTests: XCTestCase {
         }
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
-        let collection = PersistentCollection<Node>(database: database, name: "node")
+        let collection = EntityCache<Node>(database: database, name: "node")
         let batch = EventuallyConsistentBatch()
         var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
             return Node (parentData: parentData)
@@ -1579,7 +1579,7 @@ class EntityTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger (level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
-        let collection = PersistentCollection<SneakyUpdater>(database: database, name: "sneak")
+        let collection = EntityCache<SneakyUpdater>(database: database, name: "sneak")
         let batch = EventuallyConsistentBatch()
         var updaterEntity: Entity<SneakyUpdater>? = collection.new(batch: batch, item: SneakyUpdater())
         let updaterId = updaterEntity!.id.uuidString

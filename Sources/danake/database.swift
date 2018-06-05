@@ -234,7 +234,7 @@ public class Database {
     }
 
     static let registrar = Registrar<String, Database>()
-    static let collectionRegistrar = Registrar<QualifiedCollectionName, UntypedPersistentCollection>()
+    static let collectionRegistrar = Registrar<QualifiedCollectionName, UntypedEntityCache>()
     public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
     internal static let encoder: JSONEncoder = {
@@ -246,8 +246,8 @@ public class Database {
 
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, collection: PersistentCollection<T>, id: UUID) -> RetrievalResult<Entity<T>>
-    func scan<T> (type: Entity<T>.Type, collection: PersistentCollection<T>) -> DatabaseAccessListResult<Entity<T>>
+    func get<T> (type: Entity<T>.Type, collection: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>>
+    func scan<T> (type: Entity<T>.Type, collection: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>>
     
     /*
      Is the format of ** name ** a valid CollectionName in this storage medium and,

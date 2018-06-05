@@ -18,7 +18,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     // Implement protocol DatabaseAccessor
     
-    public func get<T, E: Entity<T>> (type: E.Type, collection: PersistentCollection<T>, id: UUID) -> RetrievalResult<Entity<T>> {
+    public func get<T, E: Entity<T>> (type: E.Type, collection: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>> {
         var result: Entity<T>? = nil
         var errorMessage: String? = nil
         if let preFetch = preFetch {
@@ -47,7 +47,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, collection: PersistentCollection<T>) -> DatabaseAccessListResult<Entity<T>> {
+    public func scan<T, E: Entity<T>> (type: E.Type, collection: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>> {
         var resultList: [Entity<T>] = []
         var result = DatabaseAccessListResult<Entity<T>>.ok (resultList)
         queue.sync {
@@ -243,7 +243,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }()
     
-    public func decoder <T> (collection: PersistentCollection<T>) -> JSONDecoder {
+    public func decoder <T> (collection: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.collectionKey] = collection

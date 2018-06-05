@@ -16,7 +16,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         var group = DispatchGroup()
@@ -377,7 +377,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -477,7 +477,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -803,7 +803,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -925,7 +925,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1035,7 +1035,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1391,7 +1391,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -1512,7 +1512,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1619,7 +1619,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1966,7 +1966,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -2084,7 +2084,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2181,7 +2181,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2501,7 +2501,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -2610,7 +2610,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2713,7 +2713,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2929,7 +2929,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -3044,7 +3044,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -3151,7 +3151,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -3501,7 +3501,7 @@ class EntityCommitNewTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let collectionName: CollectionName = "myCollection"
-        let collection = PersistentCollection<MyStruct>(database: database, name: collectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()

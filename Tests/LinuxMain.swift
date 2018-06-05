@@ -36,6 +36,20 @@ extension DateExtensionTests {
   ]
 }
 
+extension EntityCacheTests {
+  static var allTests = [
+    ("testCreation", testCreation),
+    ("testCreationInvalidName", testCreationInvalidName),
+    ("testPersistenceCollectionNew", testPersistenceCollectionNew),
+    ("testGet", testGet),
+    ("testPerssistentCollectionGetParallel", testPerssistentCollectionGetParallel),
+    ("testGetAsync ", testGetAsync ),
+    ("testScan", testScan),
+    ("testScanAsync", testScanAsync),
+    ("testRegisterOnCache", testRegisterOnCache),
+  ]
+}
+
 extension EntityCommitDirtyTests {
   static var allTests = [
     ("testCommitDirty", testCommitDirty),
@@ -186,20 +200,6 @@ extension ParallelTests {
   ]
 }
 
-extension PersistentCollectionTests {
-  static var allTests = [
-    ("testCreation", testCreation),
-    ("testCreationInvalidName", testCreationInvalidName),
-    ("testPersistenceCollectionNew", testPersistenceCollectionNew),
-    ("testGet", testGet),
-    ("testPerssistentCollectionGetParallel", testPerssistentCollectionGetParallel),
-    ("testGetAsync ", testGetAsync ),
-    ("testScan", testScan),
-    ("testScanAsync", testScanAsync),
-    ("testRegisterOnCache", testRegisterOnCache),
-  ]
-}
-
 extension SampleTests {
   static var allTests = [
     ("testInMemorySample", testInMemorySample),
@@ -227,6 +227,7 @@ XCTMain([
   testCase(BatchTests.allTests),
   testCase(DatabaseTests.allTests),
   testCase(DateExtensionTests.allTests),
+  testCase(EntityCacheTests.allTests),
   testCase(EntityCommitDirtyTests.allTests),
   testCase(EntityCommitNewTests.allTests),
   testCase(EntityCommitPendingRemovalTests.allTests),
@@ -236,6 +237,5 @@ XCTMain([
   testCase(InMemoryAccessorTests.allTests),
   testCase(LoggingTests.allTests),
   testCase(ParallelTests.allTests),
-  testCase(PersistentCollectionTests.allTests),
   testCase(SampleTests.allTests),
 ])

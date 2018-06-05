@@ -1129,7 +1129,7 @@ class ParallelTests: XCTestCase {
         group.leave()
     }
 
-    private static func preLoad<T> (collection: PersistentCollection<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
+    private static func preLoad<T> (collection: EntityCache<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
         logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "start." + label, data: nil)
         var result: [Entity<T>] = []
         var badIds: [UUID] = []
