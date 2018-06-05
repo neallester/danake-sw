@@ -55,17 +55,7 @@ public enum EntityEncodingResult<R> {
     case error (String)
 }
 
-struct PersistenceStatePair : Codable {
-    
-    init (success: PersistenceState, failure: PersistenceState) {
-        self.success = success
-        self.failure = failure
-    }
-    
-    let success: PersistenceState
-    let failure: PersistenceState
-    
-}
+typealias PersistenceStatePair = (success: PersistenceState, failure: PersistenceState)
 
 internal class DataContainer {
     
