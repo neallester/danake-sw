@@ -66,7 +66,7 @@ internal class DataContainer {
 // type erased access to the metadata for any Entity
 public class AnyEntity : EntityProtocol {
     
-    init (item: EntityProtocol) {
+    init (_ item: EntityProtocol) {
         self.item = item
         self.id = item.id
     }

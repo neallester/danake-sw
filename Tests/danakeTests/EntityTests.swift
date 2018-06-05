@@ -788,7 +788,7 @@ class EntityTests: XCTestCase {
     
     func testAnyEntity() {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        let anyEntity: AnyEntity = AnyEntity (item: entity)
+        let anyEntity: AnyEntity = AnyEntity (entity)
         XCTAssertEqual (entity.id, anyEntity.id)
         XCTAssertEqual (entity.version, anyEntity.version)
         XCTAssertEqual (entity.persistenceState, anyEntity.persistenceState)
