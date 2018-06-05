@@ -88,7 +88,7 @@ class InMemoryAccessorTests: XCTestCase {
             item.myString = "11"
         }
         retrievedEntity1!.saved = Date()
-        let wrapper = EntityPersistenceWrapper (collectionName: retrievedEntity1!.collection.name, item: retrievedEntity1!)
+        let wrapper = EntityPersistenceWrapper (collectionName: retrievedEntity1!.collection.name, entity: retrievedEntity1!)
         switch accessor.updateAction(wrapper: wrapper) {
         case .ok (let updateClosure):
             switch updateClosure() {
@@ -240,7 +240,7 @@ class InMemoryAccessorTests: XCTestCase {
                 prefetchUuid = uuid.uuidString
             }
         }
-        let wrapper3 = EntityPersistenceWrapper (collectionName: collection.name, item: entity3)
+        let wrapper3 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity3)
         switch accessor.addAction(wrapper: wrapper3) {
         case .ok (let closure):
             switch closure() {
@@ -306,7 +306,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .error")
         }
         XCTAssertEqual (3, accessor.count(name: collection.name))
-        var wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, item: entity4)
+        var wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity4)
         switch accessor.addAction(wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (3, accessor.count(name: collection.name))
@@ -342,7 +342,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         XCTAssertEqual (4, accessor.count(name: collection.name))
-        wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, item: entity4)
+        wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity4)
         switch accessor.addAction(wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (4, accessor.count(name: collection.name))

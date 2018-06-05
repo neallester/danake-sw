@@ -108,21 +108,21 @@ public class AnyEntity : EntityProtocol {
  */
 public class EntityPersistenceWrapper : Encodable {
     
-    init (collectionName: CollectionName, item: EntityManagement) {
+    init (collectionName: CollectionName, entity: EntityManagement) {
         self.collectionName = collectionName
-        self.item = item
-        self.id = item.id
+        self.entity = entity
+        self.id = entity.id
     }
     
     // Not Thread Safe
     public func encode(to encoder: Encoder) throws {
-        try item.encode (to: encoder)
+        try entity.encode (to: encoder)
     }
     
     let id: UUID
     
     public let collectionName: CollectionName
-    private let item: EntityManagement
+    private let entity: EntityManagement
     
    
 }
@@ -502,7 +502,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
         _persistenceState = successState
         _version = _version + 1
-        let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
+        let wrapper = EntityPersistenceWrapper (collectionName: collection.name, entity: self)
         let actionSource = databaseActionSource (collection.database.accessor)
         let actionResult = actionSource (wrapper)
         var newItemData: Data? = nil

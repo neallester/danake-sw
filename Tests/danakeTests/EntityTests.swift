@@ -798,7 +798,7 @@ class EntityTests: XCTestCase {
 
     func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.collection.name, item: entity)
+        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.collection.name, entity: entity)
         XCTAssertEqual (entity.id, wrapper.id)
         XCTAssertEqual (entity.collection.name, wrapper.collectionName)
         let encoder = JSONEncoder()
