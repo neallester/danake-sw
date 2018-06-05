@@ -20,7 +20,7 @@ internal protocol EntityManagement : EntityProtocol, Encodable {
     
     func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
     func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
-    func referenceData() -> EntityReferenceSerializationData
+    func referenceData() -> ReferenceManagerData
     func setDirty (batch: EventuallyConsistentBatch)
     
 }
@@ -150,8 +150,8 @@ public struct EntityReferenceData<T: Codable> : Equatable {
     
 }
 
-// Data for serializing a reference to an entity
-public struct EntityReferenceSerializationData: Equatable {
+// Data for serializing the reference state of a ReferenceManager
+public struct ReferenceManagerData: Equatable {
     
     internal init (databaseId: String, collectionName: CollectionName, id: UUID, version: Int) {
         self.qualifiedCollectionName = Database.qualifiedCollectionName(databaseHash: databaseId, collectionName: collectionName)
@@ -169,7 +169,7 @@ public struct EntityReferenceSerializationData: Equatable {
     public let id: UUID
     public let version: Int
     
-    public static func == (lhs: EntityReferenceSerializationData, rhs: EntityReferenceSerializationData) -> Bool {
+    public static func == (lhs: ReferenceManagerData, rhs: ReferenceManagerData) -> Bool {
         return
             lhs.qualifiedCollectionName == rhs.qualifiedCollectionName &&
             lhs.id == rhs.id &&
@@ -378,20 +378,20 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Serialization Data
     
-    public func referenceData() -> EntityReferenceSerializationData {
+    public func referenceData() -> ReferenceManagerData {
         var localVersion = 0
         queue.sync {
             localVersion = version
         }
-        return EntityReferenceSerializationData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
+        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
     }
     
     /*
         Call before reference to self goes out of scope (or the only reachable reference is
-        set to nil) if it is possible that an EntityReference owned by `item' contains a loaded
+        set to nil) if it is possible that an ReferenceManager owned by `item' contains a loaded
         reference back to self (which would create a strong reference cycle).
      
-        This unloads the referenced entities and also makes the EntityReferences unusable for
+        This unloads the referenced entities and also makes the ReferenceManagers unusable for
         further application processing but will not interfere with asynchronous batch processing
      
     */
@@ -419,10 +419,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
 
     // Reference Registration
-    // This is used by attributes of self containing references (e.g. EntityReference)
+    // This is used by attributes of self containing references (e.g. ReferenceManager)
     // to register with self (to be notified, for example, when self receives instruction
     // to breakReferences). It is up to caller to only call once.
-    internal func registerReferenceContainer (_ reference: EntityReferenceContainer) {
+    internal func registerReferenceContainer (_ reference: ReferenceManagerContainer) {
         referencesQueue.async {
             self.references.append(reference)
         }
@@ -692,7 +692,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
-    internal func referenceContainers (closure: ([EntityReferenceContainer]) -> ()) {
+    internal func referenceContainers (closure: ([ReferenceManagerContainer]) -> ()) {
         referencesQueue.sync {
             closure (self.references)
         }
@@ -715,7 +715,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil
     private var isInsertingToBatch = false
-    private var references: [EntityReferenceContainer] = []
+    private var references: [ReferenceManagerContainer] = []
     private var referencesQueue: DispatchQueue
     private var hasDereferenced = false
 

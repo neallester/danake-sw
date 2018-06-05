@@ -102,8 +102,8 @@ class Employee : Codable {
     init (selfReference: EntityReferenceData<Employee>, company: Entity<Company>, name: String, address: Entity<Address>?) {
         self.name = name
         // company reference is created with eager retrieval
-        self.company = EntityReference<Employee, Company> (parent: selfReference, entity: company, isEager: true)
-        self.address = EntityReference<Employee, Address> (parent: selfReference, entity: address)
+        self.company = ReferenceManager<Employee, Company> (parent: selfReference, entity: company, isEager: true)
+        self.address = ReferenceManager<Employee, Address> (parent: selfReference, entity: address)
     }
 
     var name: String
@@ -114,8 +114,8 @@ class Employee : Codable {
     
     // Always declare attributes of type 'EntityReference' using 'let'
     // The entities which are referenced may change, but the EntityReference itself does not
-    let company: EntityReference<Employee, Company>
-    let address: EntityReference<Employee, Address>
+    let company: ReferenceManager<Employee, Company>
+    let address: ReferenceManager<Employee, Address>
     
 }
 

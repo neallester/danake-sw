@@ -57,11 +57,11 @@ class ParallelTests: XCTestCase {
                 }
                 test2Results.append (structIds)
             }
-            var test300prInput: (containers: [UUID], newRefs: [EntityReferenceSerializationData]) = ([], [])
+            var test300prInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
                 let containers = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
                 let newStructs = ParallelTests.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
-                var newRefs: [EntityReferenceSerializationData] = []
+                var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
                     persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
@@ -72,11 +72,11 @@ class ParallelTests: XCTestCase {
                     persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
                 }
             }
-            var test300prplInput: (containers: [UUID], newRefs: [EntityReferenceSerializationData]) = ([], [])
+            var test300prplInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
                 let containers = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
                 let newStructs = ParallelTests.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
-                var newRefs: [EntityReferenceSerializationData] = []
+                var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
                     persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
@@ -936,7 +936,7 @@ class ParallelTests: XCTestCase {
         }
     }
     
-    private static func executeOnReference (reference: EntityReference<MyStructContainer, MyStruct>, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>?) -> ()) {
+    private static func executeOnReference (reference: ReferenceManager<MyStructContainer, MyStruct>, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>?) -> ()) {
         reference.async() { result in
             switch result {
             case .ok (let entity):
@@ -1010,7 +1010,7 @@ class ParallelTests: XCTestCase {
     }
     
     // MyContainer -> Update + Edit Struct independent in parallel
-    private static func containerTest300pr (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [EntityReferenceSerializationData]) {
+    private static func containerTest300pr (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let workQueue = DispatchQueue (label: "300pr.work", attributes: .concurrent)
@@ -1066,7 +1066,7 @@ class ParallelTests: XCTestCase {
     }
     
     // MyContainer -> Update + Edit Struct independent in parallel with preloading
-    private static func containerTest300prpl (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [EntityReferenceSerializationData]) {
+    private static func containerTest300prpl (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
         let containerPreload = preLoad(collection: persistenceObjects.containerCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: containers)
         let _ = containerPreload.count
         var structIds: [UUID] = []

@@ -174,9 +174,9 @@ public class PersistentCollection<T: Codable> : UntypedPersistentCollection {
      Use when creation of some attribute of T requires a back reference to T
      e.g.
      class Parent
-     let child: EntityReference<Child>
+     let child: ReferenceManager<Child>
      class Child
-     let parent: EntityReference<Parent>
+     let parent: ReferenceManager<Parent>
      */
     public func new (batch: EventuallyConsistentBatch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)

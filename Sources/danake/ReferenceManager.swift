@@ -1,5 +1,5 @@
 //
-//  EntityReference.swift
+//  ReferenceManager.swift
 //  danakePackageDescription
 //
 //  Created by Neal Lester on 3/26/18.
@@ -7,29 +7,29 @@
 
 import Foundation
 
-internal enum EntityReferenceState {
+internal enum ReferenceManagerState {
     
     case decoded
-    case retrieving (EntityReferenceSerializationData)
+    case retrieving (ReferenceManagerData)
     case retrievalError (Date, String)
     case loaded
     case dereferenced
     
 }
 
-public enum EntityReferenceSerializationError : Error {
+public enum ReferenceManagerSerializationError : Error {
     case noParentData
     case illegalId(String)
 }
 
-internal protocol EntityReferenceContainer {
+internal protocol ReferenceManagerContainer {
     
     func dereference()
     func dereferenceRecursive()
     
 }
 
-public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer, Codable {
+public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer, Codable {
     
     enum CodingKeys: String, CodingKey {
         case isNil
@@ -48,18 +48,18 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         self.entity = entity
         self.state = .loaded
         self.isEager = isEager
-        queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
         parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if let entity = entity {
             collection = entity.collection
         }
     }
 
-    convenience init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?) {
+    convenience init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?) {
         self.init (parent: parent, referenceData: referenceData, isEager: false)
     }
 
-    init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
+    init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?, isEager: Bool) {
         self.parentData = parent
         self.referenceData = referenceData
         if let _ = referenceData {
@@ -68,7 +68,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
             self.state = .loaded
         }        
         self.isEager = isEager
-        queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+        queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
         parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if self.isEager {
             queue.async {
@@ -82,7 +82,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         if let parentContainer = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentData = parentContainer.data as? EntityReferenceData<P> {
             self.parentData = parentData
             self.isEager = try values.decode (Bool.self, forKey: .isEager)
-            queue = DispatchQueue (label: EntityReference.queueName(collectionName: parentData.collection.name))
+            queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
             let isNil = try values.contains (.isNil) && values.decode (Bool.self, forKey: .isNil)
             if isNil {
                 state = .loaded
@@ -92,9 +92,9 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
                 let idString = try values.decode (String.self, forKey: .id)
                 let id = UUID (uuidString: idString)
                 if let id = id {
-                    self.referenceData = EntityReferenceSerializationData (qualifiedCollectionName: qualifiedCollectionName, id: id, version: version)
+                    self.referenceData = ReferenceManagerData (qualifiedCollectionName: qualifiedCollectionName, id: id, version: version)
                 } else {
-                    throw EntityReferenceSerializationError.illegalId(idString)
+                    throw ReferenceManagerSerializationError.illegalId(idString)
                 }
                 state = .decoded
             }
@@ -105,7 +105,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
                 }
             }
         } else {
-            throw EntityReferenceSerializationError.noParentData
+            throw ReferenceManagerSerializationError.noParentData
         }
     }
 
@@ -127,8 +127,8 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         }
     }
     
-    public func getReference() -> EntityReferenceSerializationData? {
-        var result: EntityReferenceSerializationData? = nil
+    public func getReference() -> ReferenceManagerData? {
+        var result: ReferenceManagerData? = nil
         queue.sync {
             if let entity = self.entity {
                 result = entity.referenceData()
@@ -281,7 +281,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         }
     }
 
-    public func set (referenceData: EntityReferenceSerializationData?, batch: EventuallyConsistentBatch) {
+    public func set (referenceData: ReferenceManagerData?, batch: EventuallyConsistentBatch) {
         queue.sync {
             let wasUpdated = self.willUpdate(newId: referenceData?.id)
             if wasUpdated {
@@ -369,9 +369,9 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
     private var entity: Entity<T>?
     private weak var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
-    private var referenceData: EntityReferenceSerializationData?
+    private var referenceData: ReferenceManagerData?
     private var collection: PersistentCollection<T>?
-    private var state: EntityReferenceState
+    private var state: ReferenceManagerState
     internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
     private var hasRegistered = false
@@ -379,15 +379,15 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
     public let isEager: Bool
     
     static func queueName (collectionName: String) -> String {
-        return "EntityReference.parent: " + collectionName
+        return "ReferenceManager.parent: " + collectionName
     }
     
     // Not Thread Safe
-    internal func contents() -> EntityReferenceContents<P, T> {
+    internal func contents() -> ReferenceManagerContents<P, T> {
         return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
     }
     
-    internal func sync (closure: (EntityReferenceContents<P, T>) -> ()) {
+    internal func sync (closure: (ReferenceManagerContents<P, T>) -> ()) {
         queue.sync {
             closure (contents())
         }
@@ -399,7 +399,7 @@ public class EntityReference<P: Codable, T: Codable> : EntityReferenceContainer,
         }
     }
     
-    internal func setState (state: EntityReferenceState) {
+    internal func setState (state: ReferenceManagerState) {
         queue.sync {
             self.state = state
         }
@@ -417,4 +417,4 @@ internal struct ClosureContainer<T: Codable> {
     
 }
 
-internal typealias EntityReferenceContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, collection: PersistentCollection<T>?, state: EntityReferenceState, isEager: Bool, pendingEntityClosureCount: Int)
+internal typealias ReferenceManagerContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: ReferenceManagerData?, collection: PersistentCollection<T>?, state: ReferenceManagerState, isEager: Bool, pendingEntityClosureCount: Int)

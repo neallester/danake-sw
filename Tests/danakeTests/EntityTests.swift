@@ -719,15 +719,15 @@ class EntityTests: XCTestCase {
         }
     }
     
-    func testDecodeEntityReference() throws {
+    func testDecodeReferenceManager() throws {
         
         class EntityReferenceContainer : Codable {
             
             init (parentData: EntityReferenceData<EntityReferenceContainer>) {
-                entityReference = EntityReference<EntityReferenceContainer, MyStruct> (parent: parentData, entity: nil)
+                entityReference = ReferenceManager<EntityReferenceContainer, MyStruct> (parent: parentData, entity: nil)
             }
             
-            internal let entityReference: EntityReference<EntityReferenceContainer, MyStruct>
+            internal let entityReference: ReferenceManager<EntityReferenceContainer, MyStruct>
         }
         
         let accessor = InMemoryAccessor()
@@ -1222,29 +1222,29 @@ class EntityTests: XCTestCase {
         XCTAssertNotEqual (data1, data2)
     }
     
-    func testEntityReferenceSerializationData() {
+    func testReferenceManagerSerializationData() {
         let id = UUID()
-        var data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
+        var data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
         XCTAssertEqual (Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), data.qualifiedCollectionName)
         XCTAssertEqual (id.uuidString, data.id.uuidString)
         XCTAssertEqual (10, data.version)
-        let data2 = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
+        let data2 = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
         XCTAssertEqual (data, data2)
-        data = EntityReferenceSerializationData (databaseId: "dbId1", collectionName: "collectionName", id: id, version: 10)
+        data = ReferenceManagerData (databaseId: "dbId1", collectionName: "collectionName", id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName1", id: id, version: 10)
+        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName1", id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: UUID(), version: 10)
+        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: UUID(), version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 11)
+        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 11)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId1", collectionName: "collectionName"), id: id, version: 10)
+        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId1", collectionName: "collectionName"), id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName1"), id: id, version: 10)
+        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName1"), id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: UUID(), version: 10)
+        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: UUID(), version: 10)
         XCTAssertNotEqual(data, data2)
-        data = EntityReferenceSerializationData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: id, version: 11)
+        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: id, version: 11)
         XCTAssertNotEqual(data, data2)
         let entity = newTestEntity(myInt: 10, myString: "20")
         data = entity.referenceData()
@@ -1253,19 +1253,19 @@ class EntityTests: XCTestCase {
         XCTAssertEqual (entity.getVersion(), data.version)
     }
     
-    func testEntityReferenceCycle() {
+    func testReferenceManagerCycle() {
         
         class Node : Codable {
             
             init (parentData: EntityReferenceData<Node>) {
-                parent = EntityReference<Node, Node> (parent: parentData, entity: nil)
+                parent = ReferenceManager<Node, Node> (parent: parentData, entity: nil)
             }
             
             init (parentData: EntityReferenceData<Node>, child: Entity<Node>) {
-                parent = EntityReference<Node, Node> (parent: parentData, entity: child)
+                parent = ReferenceManager<Node, Node> (parent: parentData, entity: child)
             }
 
-            let parent: EntityReference<Node, Node>
+            let parent: ReferenceManager<Node, Node>
             
         }
         let accessor = InMemoryAccessor()
@@ -1421,14 +1421,14 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (0, entities.count)
         }
         // Test creation of parent with existing child
-        // Registers the EntityReference with parent
+        // Registers the ReferenceManager with parent
         let child2: Entity<Node> = collection.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
         let parent2: Entity<Node> = collection.new(batch: batch) { parentData in
             return Node (parentData: parentData, child: child2)
         }
-        var childReference: EntityReference<Node, Node>? = nil
+        var childReference: ReferenceManager<Node, Node>? = nil
         parent2.sync() { node in
             childReference = node.parent
         }
@@ -1440,7 +1440,7 @@ class EntityTests: XCTestCase {
         }
         parent2.referenceContainers() { containers in
             XCTAssertEqual (1, containers.count)
-            XCTAssertTrue (containers[0] as! EntityReference<Node, Node> === childReference)
+            XCTAssertTrue (containers[0] as! ReferenceManager<Node, Node> === childReference)
         }
         
     }
@@ -1450,17 +1450,17 @@ class EntityTests: XCTestCase {
         class Node : Codable {
             
             init (parentData: EntityReferenceData<Node>) {
-                n1 = EntityReference<Node, Node> (parent: parentData, entity: nil)
-                n2 = EntityReference<Node, Node> (parent: parentData, entity: nil)
+                n1 = ReferenceManager<Node, Node> (parent: parentData, entity: nil)
+                n2 = ReferenceManager<Node, Node> (parent: parentData, entity: nil)
             }
             
             init (parentData: EntityReferenceData<Node>, n1: Entity<Node>?, n2: Entity<Node>?) {
-                self.n1 = EntityReference<Node, Node> (parent: parentData, entity: n1)
-                self.n2 = EntityReference<Node, Node> (parent: parentData, entity: n2)
+                self.n1 = ReferenceManager<Node, Node> (parent: parentData, entity: n1)
+                self.n2 = ReferenceManager<Node, Node> (parent: parentData, entity: n2)
             }
             
-            let n1: EntityReference<Node, Node>
-            let n2: EntityReference<Node, Node>
+            let n1: ReferenceManager<Node, Node>
+            let n2: ReferenceManager<Node, Node>
             
         }
         let accessor = InMemoryAccessor()
@@ -1478,8 +1478,8 @@ class EntityTests: XCTestCase {
                 referenceCount = references.count
             }
         }
-        var ref1: EntityReference<Node, Node>? = nil
-        var ref2: EntityReference<Node, Node>? = nil
+        var ref1: ReferenceManager<Node, Node>? = nil
+        var ref2: ReferenceManager<Node, Node>? = nil
         parent?.sync() { node in
             ref1 = node.n1
             ref2 = node.n2
@@ -1489,10 +1489,10 @@ class EntityTests: XCTestCase {
             var found1 = false
             var found2 = false
             for reference in references {
-                if let reference = reference as? EntityReference<Node, Node>, reference === ref1 {
+                if let reference = reference as? ReferenceManager<Node, Node>, reference === ref1 {
                     found1 = true
                 }
-                if let reference = reference as? EntityReference<Node, Node>, reference === ref2 {
+                if let reference = reference as? ReferenceManager<Node, Node>, reference === ref2 {
                     found2 = true
                 }
             }
@@ -1528,10 +1528,10 @@ class EntityTests: XCTestCase {
             var found1 = false
             var found2 = false
             for reference in references {
-                if let reference = reference as? EntityReference<Node, Node>, reference === ref1 {
+                if let reference = reference as? ReferenceManager<Node, Node>, reference === ref1 {
                     found1 = true
                 }
-                if let reference = reference as? EntityReference<Node, Node>, reference === ref2 {
+                if let reference = reference as? ReferenceManager<Node, Node>, reference === ref2 {
                     found2 = true
                 }
             }
@@ -1544,7 +1544,7 @@ class EntityTests: XCTestCase {
     func testRegisterReferenceContainer() {
         let entity = newTestEntity(myInt: 10, myString: "10")
 
-        class TestContainer : EntityReferenceContainer {
+        class TestContainer : ReferenceManagerContainer {
             func dereference() {}
             func dereferenceRecursive() {}
         }

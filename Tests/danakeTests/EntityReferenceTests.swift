@@ -25,7 +25,7 @@ class EntityReferenceTests: XCTestCase {
         decoder.userInfo[Database.parentDataKey] = parentDataContainer
         // not isEager
         // Creation with entity
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertTrue (reference.entity! === child)
@@ -45,7 +45,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -63,13 +63,13 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -87,13 +87,13 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with nil referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -111,14 +111,14 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // isEager
         // Creation with entity
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertTrue (reference.entity! === child)
@@ -136,13 +136,13 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with nil entity
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -160,14 +160,14 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with referenceData for a cached object
         var waitFor = expectation(description: "wait1")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        var testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData(), isEager: true)
+        var testReference = RetrieveControlledReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData(), isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -212,7 +212,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with referenceData for a uncached object
         parentId = UUID()
@@ -227,7 +227,7 @@ class EntityReferenceTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         waitFor = expectation(description: "wait1a")
-        testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: persistentChildId1, version: 10), isEager: true)
+        testReference = RetrieveControlledReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: ReferenceManagerData(databaseId: accessor.hashValue(), collectionName: collection.name, id: persistentChildId1, version: 10), isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -272,17 +272,17 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Creation with nil referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -300,13 +300,13 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Decoding
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         var json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
@@ -318,7 +318,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -336,12 +336,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -359,7 +359,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
@@ -371,7 +371,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -390,7 +390,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertTrue (child === reference.entity)
@@ -408,7 +408,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         #if os(Linux)
@@ -422,7 +422,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -440,12 +440,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertTrue (child === reference.entity)
@@ -463,14 +463,14 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait1")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        testReference = try decoder.decode(RetrieveControlledReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -516,7 +516,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         #if os(Linux)
             XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
@@ -526,11 +526,11 @@ class EntityReferenceTests: XCTestCase {
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
-        // Creation with EntityReferenceSerializationData
+        // Creation with ReferenceManagerData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -548,7 +548,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":false,\"isNil\":true}"
         #if os(Linux)
@@ -560,7 +560,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -578,12 +578,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: nil, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -601,7 +601,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":true,\"isNil\":true}"
         #if os(Linux)
@@ -613,7 +613,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -631,12 +631,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -654,7 +654,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         #if os(Linux)
@@ -668,7 +668,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -686,7 +686,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         let persistentChildId2 = UUID()
         let persistentChildData2 = "{\"id\":\"\(persistentChildId2.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":200,\"myString\":\"200\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
@@ -701,7 +701,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        testReference = try decoder.decode(RetrieveControlledReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -747,7 +747,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         #if os(Linux)
             XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\""))
@@ -763,7 +763,7 @@ class EntityReferenceTests: XCTestCase {
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         parentDataContainer.data = parentData
-        testReference = try decoder.decode(RetrieveControlledEntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+        testReference = try decoder.decode(RetrieveControlledReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -809,13 +809,13 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Decoding errors
         // IsNil Present but False
         json = "{\"isEager\":false,\"isNil\":false}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
@@ -823,7 +823,7 @@ class EntityReferenceTests: XCTestCase {
         // No qualifiedCollectionName
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
@@ -831,7 +831,7 @@ class EntityReferenceTests: XCTestCase {
         // No id
         json = "{\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
@@ -839,7 +839,7 @@ class EntityReferenceTests: XCTestCase {
         // Illegal id
         json = "{\"databaseId\":\"\",\"id\":\"AAA\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":10,\"isNil\":false}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("illegalId(\"AAA\")", "\(error)")
@@ -847,7 +847,7 @@ class EntityReferenceTests: XCTestCase {
         // isEager missing
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"isEager\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"isEager\\\", intValue: nil) (\\\"isEager\\\").\", underlyingError: nil))", "\(error)")
@@ -855,7 +855,7 @@ class EntityReferenceTests: XCTestCase {
         // illegal isEager
         json = "{\"databaseId\":\"\(database.accessor.hashValue())\",\"id\":\"\(child.id.uuidString)\",\"isEager\":\"what?\",\"collectionName\":\"myCollection\",\"version\":10}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"isEager\", intValue: nil)], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
@@ -863,7 +863,7 @@ class EntityReferenceTests: XCTestCase {
         // illegal qualifiedCollectionName
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":false,\"version\":10}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
@@ -871,7 +871,7 @@ class EntityReferenceTests: XCTestCase {
         // Missing Version
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\"}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
@@ -879,7 +879,7 @@ class EntityReferenceTests: XCTestCase {
         // Illegal Version
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue()).myCollection\",\"version\":\"10\"}"
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"version\", intValue: nil)], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
@@ -888,9 +888,9 @@ class EntityReferenceTests: XCTestCase {
         // No parentData
         decoder.userInfo[Database.parentDataKey] = nil
         do {
-            reference = try decoder.decode(EntityReference<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
+            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
-        } catch EntityReferenceSerializationError.noParentData {}
+        } catch ReferenceManagerSerializationError.noParentData {}
     }
     
     func testGetReference() {
@@ -901,19 +901,19 @@ class EntityReferenceTests: XCTestCase {
         let childId = UUID()
         let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
         // Nil
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         XCTAssertNil (reference.getReference())
         // Creation with entity
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         XCTAssertEqual (child.referenceData(), reference.getReference()!)
         // Creation with reference Data
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         XCTAssertEqual (child.referenceData(), reference.getReference()!)
     }
@@ -926,40 +926,40 @@ class EntityReferenceTests: XCTestCase {
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
         let childId = UUID()
         let child = Entity (collection: collection, id: childId, version: 10, item: MyStruct (myInt: 20, myString: "20"))
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         reference.willUpdate(newId: nil) { willUpdate in
             XCTAssertFalse (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         reference.willUpdate(newId: nil) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         reference.willUpdate(newId: nil) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertFalse (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         reference.willUpdate(newId: child.id) { willUpdate in
             XCTAssertFalse (willUpdate)
         }
         let newID = UUID()
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         reference.willUpdate(newId: newID) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: child)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         reference.willUpdate(newId: newID) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         reference.willUpdate(newId: newID) { willUpdate in
             XCTAssertTrue (willUpdate)
         }
@@ -973,7 +973,7 @@ class EntityReferenceTests: XCTestCase {
         let parentId = UUID()
         // No such parent
         let parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        let reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        let reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         let batch = EventuallyConsistentBatch()
         reference.addParentTo (batch: batch)
         batch.syncEntities() { entities in
@@ -981,7 +981,7 @@ class EntityReferenceTests: XCTestCase {
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|EntityReference<MyStruct, MyStruct>.addParentTo|lostData:noParent|collectionName=\(collection.qualifiedName);parentId=\(parentId.uuidString);parentVersion=10", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.addParentTo|lostData:noParent|collectionName=\(collection.qualifiedName);parentId=\(parentId.uuidString);parentVersion=10", entries[0].asTestString())
         }
         XCTAssertEqual (1, collection.onCacheCount())
         // Valid parent
@@ -1006,7 +1006,7 @@ class EntityReferenceTests: XCTestCase {
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         var batch = EventuallyConsistentBatch()
         reference.set (entity: nil, batch: batch)
@@ -1027,7 +1027,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         XCTAssertNil (reference.entityId())
         batch.syncEntities() { entities in
@@ -1056,7 +1056,7 @@ class EntityReferenceTests: XCTestCase {
         XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1083,7 +1083,7 @@ class EntityReferenceTests: XCTestCase {
         XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1108,7 +1108,7 @@ class EntityReferenceTests: XCTestCase {
         XCTAssertEqual (reference.entityId()!.uuidString, entity2.id.uuidString)
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1135,7 +1135,7 @@ class EntityReferenceTests: XCTestCase {
         XCTAssertNil (reference.entityId())
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1164,12 +1164,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Same again, with pending closure
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         batch = EventuallyConsistentBatch()
         var retrievalResult: RetrievalResult<Entity<MyStruct>>? = nil
@@ -1197,7 +1197,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1234,7 +1234,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -1269,7 +1269,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -1304,7 +1304,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -1340,7 +1340,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -1375,7 +1375,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
         switch retrievalResult! {
@@ -1391,7 +1391,7 @@ class EntityReferenceTests: XCTestCase {
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         var batch = EventuallyConsistentBatch()
         // nil -> nil
@@ -1444,7 +1444,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // referenceData -> same referenceData
         batch = EventuallyConsistentBatch()
@@ -1470,7 +1470,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // referenceData -> new referenceData
         let entityId2 = UUID()
@@ -1499,7 +1499,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // referenceData -> nil
         batch = EventuallyConsistentBatch()
@@ -1526,12 +1526,12 @@ class EntityReferenceTests: XCTestCase {
         XCTAssertNil (reference.entityId())
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> entity.referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.set(entity: entity, batch: batch)
         batch = EventuallyConsistentBatch()
@@ -1557,7 +1557,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> new referenceData
         batch = EventuallyConsistentBatch()
@@ -1584,12 +1584,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> nil referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.set(entity: entity, batch: batch)
         batch = EventuallyConsistentBatch()
@@ -1615,7 +1615,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
     }
     
@@ -1625,7 +1625,7 @@ class EntityReferenceTests: XCTestCase {
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         var batch = EventuallyConsistentBatch()
         // nil -> nil
@@ -1650,7 +1650,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // nil -> referenceData
         let semaphore = DispatchSemaphore(value: 1)
@@ -1662,7 +1662,7 @@ class EntityReferenceTests: XCTestCase {
         }
         let entityId = UUID(uuidString: "D8691B27-C99B-4CA9-BBBE-689AEDE5464B")!
         let entityData = "{\"id\":\"D8691B27-C99B-4CA9-BBBE-689AEDE5464B\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entityReferenceData = EntityReferenceSerializationData (databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId, version: 10)
+        let entityReferenceData = ReferenceManagerData (databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId, data: entityData)
         var waitFor = expectation(description: "wait1")
         reference.appendClosure() { result in
@@ -1698,7 +1698,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -1741,12 +1741,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // referenceData -> new referenceData
         let entityId2 = UUID(uuidString: "45097C35-DF05-4C13-84CC-087E72BC2D0E")!
         let entityData2 = "{\"id\":\"45097C35-DF05-4C13-84CC-087E72BC2D0E\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entity2ReferenceData = EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId2, version: 10)
+        let entity2ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId2, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId2, data: entityData2)
         batch = EventuallyConsistentBatch()
         waitFor = expectation(description: "wait2")
@@ -1781,7 +1781,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -1824,12 +1824,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> entity.referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        let testReference = RetrieveControlledEntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        let testReference = RetrieveControlledReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         reference.set(entity: entity, batch: batch)
@@ -1855,12 +1855,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> new referenceData
         let entityId3 = UUID()
         let entityData3 = "{\"id\":\"\(entityId3.uuidString)\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entity3ReferenceData = EntityReferenceSerializationData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId3, version: 10)
+        let entity3ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue(), collectionName: collection.name, id: entityId3, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId3, data: entityData3)
 
         batch = EventuallyConsistentBatch()
@@ -1899,7 +1899,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         reference.appendClosure() { result in
             waitFor.fulfill()
@@ -1923,12 +1923,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // entity -> nil referenceData
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil, isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.set(entity: entity, batch: batch)
         batch = EventuallyConsistentBatch()
@@ -1954,7 +1954,7 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
     }
     
@@ -1965,7 +1965,7 @@ class EntityReferenceTests: XCTestCase {
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         // loaded nil
         reference.sync() { contents in
             switch contents.state {
@@ -2030,7 +2030,7 @@ class EntityReferenceTests: XCTestCase {
             }
         }
         // Decoded with valid reference
-        reference = EntityReference (parent: parentData, referenceData: entity.referenceData())
+        reference = ReferenceManager (parent: parentData, referenceData: entity.referenceData())
         retrievedEntity = nil
         reference.sync() { contents in
             switch contents.state {
@@ -2061,8 +2061,8 @@ class EntityReferenceTests: XCTestCase {
             }
         }
         // Decoded with invalid reference
-        let invalidReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: UUID(), version: 1)
-        reference = EntityReference (parent: parentData, referenceData: invalidReferenceData)
+        let invalidReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: UUID(), version: 1)
+        reference = ReferenceManager (parent: parentData, referenceData: invalidReferenceData)
         reference.sync() { contents in
             switch contents.state {
             case .decoded:
@@ -2075,7 +2075,7 @@ class EntityReferenceTests: XCTestCase {
         reference.async() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 waitFor.fulfill()
             default:
                 XCTFail ("Expected .error")
@@ -2086,7 +2086,7 @@ class EntityReferenceTests: XCTestCase {
         reference.sync() { contents in
             switch contents.state {
             case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 let now = Date()
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + collection.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + collection.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
@@ -2100,7 +2100,7 @@ class EntityReferenceTests: XCTestCase {
         reference.async() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 waitFor.fulfill()
             default:
                 XCTFail ("Expected .error")
@@ -2110,7 +2110,7 @@ class EntityReferenceTests: XCTestCase {
         reference.sync() { contents in
             switch contents.state {
             case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 XCTAssertEqual (suspendSeconds, suspendtime.timeIntervalSince1970)
             default:
                 XCTFail ("Expected .retrievalError")
@@ -2123,7 +2123,7 @@ class EntityReferenceTests: XCTestCase {
         reference.async() { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 waitFor.fulfill()
             default:
                 XCTFail ("Expected .error")
@@ -2134,7 +2134,7 @@ class EntityReferenceTests: XCTestCase {
         reference.sync() { contents in
             switch contents.state {
             case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("EntityReference<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
                 let now = Date()
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + collection.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + collection.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
@@ -2149,8 +2149,8 @@ class EntityReferenceTests: XCTestCase {
         let savedDateString = try! jsonEncodedDate (date: Date())!
         var json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        var persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        var persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         reference.setState(state: .retrievalError(oldTime, "Test Error"))
         waitFor = expectation(description: "wait7")
         reference.async() { result in
@@ -2192,8 +2192,8 @@ class EntityReferenceTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2265,8 +2265,8 @@ class EntityReferenceTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2336,8 +2336,8 @@ class EntityReferenceTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2407,8 +2407,8 @@ class EntityReferenceTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2467,14 +2467,14 @@ class EntityReferenceTests: XCTestCase {
         let parentId = UUID()
         let parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         let creationDateString = try! jsonEncodedDate (date: Date())!
         let savedDateString = try! jsonEncodedDate (date: Date())!
         let entityId = UUID()
         let json = "{\"id\":\"\(entityId.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: entityId, data: json.data(using: .utf8)!)
-        let persistentReferenceData = EntityReferenceSerializationData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: entityId, version: 10)
-        reference = EntityReference (parent: parentData, referenceData: persistentReferenceData)
+        let persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: entityId, version: 10)
+        reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch reference.get() {
         case .ok(let retrievedEntity):
             XCTAssertEqual (entityId.uuidString, retrievedEntity!.id.uuidString)
@@ -2666,7 +2666,7 @@ class EntityReferenceTests: XCTestCase {
         let collection = PersistentCollection<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
         var parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
-        var reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         var parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         // Loaded nil
         reference.sync() { reference in
@@ -2704,7 +2704,7 @@ class EntityReferenceTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "10")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, entity: entity)
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: entity)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertTrue (reference.entity === entity)
@@ -2740,7 +2740,7 @@ class EntityReferenceTests: XCTestCase {
         // Decoded with refeference
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: entity.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: entity.referenceData())
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -2775,12 +2775,12 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (references[0] as? EntityReference<MyStruct, MyStruct> === reference)
+            XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         // Loaded after decoding
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
-        reference = EntityReference<MyStruct, MyStruct> (parent: parentData, referenceData: entity.referenceData())
+        reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: entity.referenceData())
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let _ = reference.get().item()!
         reference.sync() { reference in
@@ -2816,14 +2816,14 @@ class EntityReferenceTests: XCTestCase {
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
-            XCTAssertTrue (reference === references[0] as! EntityReference<MyStruct, MyStruct>)
+            XCTAssertTrue (reference === references[0] as! ReferenceManager<MyStruct, MyStruct>)
         }
     }
 }
 
 // function retrieve() waits until the thread which created the reference
 // signals the semaphore
-class RetrieveControlledEntityReference<P: Codable, T: Codable> : EntityReference<P, T> {
+class RetrieveControlledReferenceManager<P: Codable, T: Codable> : ReferenceManager<P, T> {
     
     override init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool) {
         switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
@@ -2836,7 +2836,7 @@ class RetrieveControlledEntityReference<P: Codable, T: Codable> : EntityReferenc
         super.init (parent: parent, entity: entity, isEager: isEager)
     }
     
-    override init (parent: EntityReferenceData<P>, referenceData: EntityReferenceSerializationData?, isEager: Bool) {
+    override init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?, isEager: Bool) {
         switch self.semaphore.wait(timeout: DispatchTime.now() + 10) {
         case .success:
             break
@@ -2870,7 +2870,7 @@ class RetrieveControlledEntityReference<P: Codable, T: Codable> : EntityReferenc
         }
     }
 
-    var contents: EntityReferenceContents<P, T>? = nil
+    var contents: ReferenceManagerContents<P, T>? = nil
     
     // Not thread safe, intended for use when waiting on retrievalGetHook()
 

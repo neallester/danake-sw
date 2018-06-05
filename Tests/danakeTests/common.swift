@@ -113,14 +113,14 @@ class TimeoutHookEntity<T: Codable> : Entity<T> {
 internal class MyStructContainer : Codable {
     
     init (parentData: EntityReferenceData<MyStructContainer>, myStruct: Entity<MyStruct>?) {
-        self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
+        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
     }
     
-    init (parentData: EntityReferenceData<MyStructContainer>, structData: EntityReferenceSerializationData?) {
-        self.myStruct = EntityReference<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
+    init (parentData: EntityReferenceData<MyStructContainer>, structData: ReferenceManagerData?) {
+        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
     }
     
-    let myStruct: EntityReference<MyStructContainer, MyStruct>
+    let myStruct: ReferenceManager<MyStructContainer, MyStruct>
 }
 
 internal class ContainerCollection : PersistentCollection<MyStructContainer> {
@@ -131,7 +131,7 @@ internal class ContainerCollection : PersistentCollection<MyStructContainer> {
         }
     }
     
-    func new(batch: EventuallyConsistentBatch, structData: EntityReferenceSerializationData?) -> Entity<MyStructContainer> {
+    func new(batch: EventuallyConsistentBatch, structData: ReferenceManagerData?) -> Entity<MyStructContainer> {
         return new (batch: batch) { parentData in
             return MyStructContainer (parentData: parentData, structData: structData)
         }
