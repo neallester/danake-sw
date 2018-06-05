@@ -204,8 +204,8 @@ class DatabaseTests: XCTestCase {
             XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
             XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
             XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
-            XCTAssertEqual (10, entity1.getVersion() )
-            switch entity1.getPersistenceState() {
+            XCTAssertEqual (10, entity1.version )
+            switch entity1.persistenceState {
             case .persistent:
                 break
             default:
@@ -216,7 +216,7 @@ class DatabaseTests: XCTestCase {
                 XCTAssertEqual("A \"Quoted\" String", item.myString)
             }
             try XCTAssertEqual (jsonEncodedDate (date: entity1.created)!, creationDateString1)
-            XCTAssertNil (entity1.getSaved())
+            XCTAssertNil (entity1.saved)
             entity = entity1
         default:
             XCTFail("Expected .ok")
@@ -227,8 +227,8 @@ class DatabaseTests: XCTestCase {
             XCTAssertTrue (entity2 === collection.cachedEntity(id: id1)!)
             XCTAssertEqual (id1.uuidString, entity2.id.uuidString)
             XCTAssertEqual (5, entity2.getSchemaVersion()) // Schema version is taken from the collection, not the json
-            XCTAssertEqual (10, entity2.getVersion() )
-            switch entity2.getPersistenceState() {
+            XCTAssertEqual (10, entity2.version )
+            switch entity2.persistenceState {
             case .persistent:
                 break
             default:
@@ -239,7 +239,7 @@ class DatabaseTests: XCTestCase {
                 XCTAssertEqual("A \"Quoted\" String", item.myString)
             }
             try XCTAssertEqual (jsonEncodedDate (date: entity2.created)!, creationDateString1)
-            XCTAssertNil (entity2.getSaved())
+            XCTAssertNil (entity2.saved)
             XCTAssertTrue (entity === entity2)
         default:
             XCTFail("Expected .ok")

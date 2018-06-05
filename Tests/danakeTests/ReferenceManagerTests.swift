@@ -2497,13 +2497,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2513,13 +2513,13 @@ class ReferenceManagerTests: XCTestCase {
         containerEntity.sync() { container in
             container.myStruct.set(entity: structEntity, batch: batch)
         }
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .dirty:
             break
         default:
             XCTFail ("Expected .dirty")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2534,13 +2534,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2553,13 +2553,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2569,13 +2569,13 @@ class ReferenceManagerTests: XCTestCase {
         containerEntity.async() { container in
             container.myStruct.set(entity: structEntity, batch: batch)
         }
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .dirty:
             break
         default:
             XCTFail ("Expected .dirty")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2590,13 +2590,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2609,13 +2609,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2625,13 +2625,13 @@ class ReferenceManagerTests: XCTestCase {
         containerEntity.update(batch: batch) { container in
             container.myStruct.set(entity: structEntity, batch: batch)
         }
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .dirty:
             break
         default:
             XCTFail ("Expected .dirty")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:
@@ -2646,13 +2646,13 @@ class ReferenceManagerTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch containerEntity.getPersistenceState() {
+        switch containerEntity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch structEntity.getPersistenceState() {
+        switch structEntity.persistenceState {
         case .persistent:
             break
         default:

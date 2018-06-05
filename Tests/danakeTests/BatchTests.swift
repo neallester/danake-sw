@@ -17,7 +17,7 @@ class BatchTests: XCTestCase {
         batch.insertAsync(entity: entity, closure: nil)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
@@ -28,7 +28,7 @@ class BatchTests: XCTestCase {
         batch.insertAsync(entity: entity, closure: nil)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
@@ -40,8 +40,8 @@ class BatchTests: XCTestCase {
         batch.insertAsync(entity: entity2, closure: nil)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(2, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
-            XCTAssertEqual(0, entity2.getVersion())
+            XCTAssertEqual(0, entity.version)
+            XCTAssertEqual(0, entity2.version)
             var retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
             retrievedEntity = entities[entity2.id]! as! Entity<MyStruct>
@@ -66,7 +66,7 @@ class BatchTests: XCTestCase {
         }
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
         }
@@ -80,7 +80,7 @@ class BatchTests: XCTestCase {
         }
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
         }
@@ -99,8 +99,8 @@ class BatchTests: XCTestCase {
         }
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(2, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
-            XCTAssertEqual(0, entity2.getVersion())
+            XCTAssertEqual(0, entity.version)
+            XCTAssertEqual(0, entity2.version)
             var retrievedEntity = entities[entity.id]! as! Entity<MyClass>
             XCTAssertTrue (entity === retrievedEntity)
             retrievedEntity = entities[entity2.id]! as! Entity<MyClass>
@@ -130,13 +130,13 @@ class BatchTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch entity1.getPersistenceState() {
+        switch entity1.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch entity2.getPersistenceState() {
+        switch entity2.persistenceState {
         case .persistent:
             break
         default:
@@ -172,13 +172,13 @@ class BatchTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch entity1.getPersistenceState() {
+        switch entity1.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        switch entity2.getPersistenceState() {
+        switch entity2.persistenceState {
         case .persistent:
             break
         default:
@@ -220,13 +220,13 @@ class BatchTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch entity1.getPersistenceState() {
+        switch entity1.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch entity2.getPersistenceState() {
+        switch entity2.persistenceState {
         case .persistent:
             break
         default:
@@ -293,17 +293,17 @@ class BatchTests: XCTestCase {
             slowCodable.semaphore.signal()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
-        switch entity1.getPersistenceState() {
+        switch entity1.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persistent")
         }
-        switch entity2.getPersistenceState() {
+        switch entity2.persistenceState {
         case .persistent:
             break
         default:
-            XCTFail ("Expected .persistent but got \(entity2.getPersistenceState())")
+            XCTFail ("Expected .persistent but got \(entity2.persistenceState)")
         }
         XCTAssertEqual (1, accessor.count (name: collectionName))
         XCTAssertTrue (accessor.has(name: collectionName, id: entity1.id))
@@ -451,7 +451,7 @@ class BatchTests: XCTestCase {
                     XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                 }
                 if !batchTimedOut {
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:

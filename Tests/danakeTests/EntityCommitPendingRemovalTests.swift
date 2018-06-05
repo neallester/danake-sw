@@ -41,13 +41,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         // .pendingRemoval building removeAction throws error
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -68,13 +68,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -83,13 +83,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -103,13 +103,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         // .pendingRemoval firing removeAction throws error
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -143,13 +143,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -158,13 +158,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -179,13 +179,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
         // .pendingRemoval firing removeAction timesout
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -234,13 +234,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -270,14 +270,14 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
         // .pendingRemoval Success
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
         preFetchCount = 0
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -305,13 +305,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -320,13 +320,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -368,7 +368,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -396,13 +396,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             
         }
         accessor.setPreFetch (prefetch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -416,13 +416,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -431,13 +431,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: entity.asData(encoder: accessor.encoder)!, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -490,7 +490,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -505,13 +505,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         var preFetchCount = 0
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -546,13 +546,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -561,13 +561,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -594,13 +594,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -636,13 +636,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -651,13 +651,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -699,13 +699,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -742,13 +742,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (40, item.myInt)
                 XCTAssertEqual ("40", item.myString)
@@ -757,13 +757,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -816,7 +816,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -831,13 +831,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         var preFetchCount = 0
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -877,13 +877,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -891,13 +891,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -951,20 +951,20 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -998,13 +998,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1013,13 +1013,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1087,14 +1087,14 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1129,13 +1129,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1144,13 +1144,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1187,13 +1187,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1229,13 +1229,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (50, item.myInt)
                 XCTAssertEqual ("50", item.myString)
@@ -1244,13 +1244,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1304,13 +1304,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         preFetchCount = 0
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (50, item.myInt)
             XCTAssertEqual ("50", item.myString)
@@ -1346,13 +1346,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (70, item.myInt)
                 XCTAssertEqual ("70", item.myString)
@@ -1361,13 +1361,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync { item in
             XCTAssertEqual (50, item.myInt)
             XCTAssertEqual ("50", item.myString)
@@ -1443,14 +1443,14 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1491,13 +1491,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1505,13 +1505,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1575,7 +1575,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1588,13 +1588,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1622,13 +1622,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -1637,13 +1637,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1711,13 +1711,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1752,13 +1752,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -1767,13 +1767,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1806,13 +1806,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending updateAction closure
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -1849,13 +1849,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1864,13 +1864,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -1919,13 +1919,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1962,13 +1962,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (40, item.myInt)
                 XCTAssertEqual ("40", item.myString)
@@ -1976,13 +1976,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -2051,13 +2051,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2098,13 +2098,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -2112,13 +2112,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2180,18 +2180,18 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         XCTAssertNil (entity.getPendingAction())
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2222,13 +2222,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2237,13 +2237,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2300,12 +2300,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -2341,13 +2341,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2356,13 +2356,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2384,13 +2384,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2426,13 +2426,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2440,13 +2440,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2489,13 +2489,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -2532,13 +2532,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -2547,13 +2547,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -2610,12 +2610,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -2657,13 +2657,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2671,13 +2671,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2730,13 +2730,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2770,13 +2770,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2785,13 +2785,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2854,12 +2854,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -2896,13 +2896,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2911,13 +2911,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2946,13 +2946,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .dirty")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2988,13 +2988,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -3003,13 +3003,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3059,12 +3059,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         entity.remove(batch: batch)
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -3102,13 +3102,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3117,13 +3117,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -3186,12 +3186,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -3234,13 +3234,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -3248,13 +3248,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3314,13 +3314,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3354,13 +3354,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3369,13 +3369,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3444,13 +3444,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3485,13 +3485,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3500,13 +3500,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3538,12 +3538,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -3580,13 +3580,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -3595,13 +3595,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -3654,12 +3654,12 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         entity.remove(batch: batch)
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (40, item.myInt)
             XCTAssertEqual ("40", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -3697,13 +3697,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (4, entity.getVersion())
+            XCTAssertEqual (4, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (50, item.myInt)
                 XCTAssertEqual ("50", item.myString)
@@ -3712,13 +3712,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (4, entity.getVersion())
+        XCTAssertEqual (4, entity.version)
         entity.sync() { item in
             XCTAssertEqual (40, item.myInt)
             XCTAssertEqual ("40", item.myString)
@@ -3786,13 +3786,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         }
         let batch = EventuallyConsistentBatch()
         entity.remove (batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
             XCTFail ("Expected .pendingRemoval")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3832,13 +3832,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3846,13 +3846,13 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)

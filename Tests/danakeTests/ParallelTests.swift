@@ -295,7 +295,7 @@ class ParallelTests: XCTestCase {
                         XCTAssertEqual (expectedInt, myStruct.myInt)
                         XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -314,7 +314,7 @@ class ParallelTests: XCTestCase {
                         XCTAssertEqual (expectedInt, myStruct.myInt)
                         XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -349,7 +349,7 @@ class ParallelTests: XCTestCase {
                         XCTAssertEqual (expectedInt, myStruct.myInt)
                         XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -368,7 +368,7 @@ class ParallelTests: XCTestCase {
                         XCTAssertEqual (expectedInt, myStruct.myInt)
                         XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -389,7 +389,7 @@ class ParallelTests: XCTestCase {
                             XCTAssertEqual (expectedInt, myStruct.myInt)
                             XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                         }
-                        switch entity.getPersistenceState() {
+                        switch entity.persistenceState {
                         case .persistent:
                             break
                         default:
@@ -409,7 +409,7 @@ class ParallelTests: XCTestCase {
                             XCTAssertEqual (expectedInt, myStruct.myInt)
                             XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                         }
-                        switch entity.getPersistenceState() {
+                        switch entity.persistenceState {
                         case .persistent:
                             break
                         default:
@@ -435,7 +435,7 @@ class ParallelTests: XCTestCase {
                             XCTAssertEqual ("\(expectedInt)", item.myString)
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -457,7 +457,7 @@ class ParallelTests: XCTestCase {
                             XCTAssertEqual ("\(expectedInt)", item.myString)
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -484,7 +484,7 @@ class ParallelTests: XCTestCase {
                             group.leave()
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -510,7 +510,7 @@ class ParallelTests: XCTestCase {
                             group.leave()
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -535,7 +535,7 @@ class ParallelTests: XCTestCase {
                             XCTFail ("Expected .ok")
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -557,7 +557,7 @@ class ParallelTests: XCTestCase {
                             XCTFail ("Expected .ok")
                         }
                     }
-                    switch entity.getPersistenceState() {
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -589,7 +589,7 @@ class ParallelTests: XCTestCase {
                             XCTFail ("Expected .ok")
                         }
                     }
-                    switch containerEntity.getPersistenceState() {
+                    switch containerEntity.persistenceState {
                     case .persistent:
                         break
                     default:

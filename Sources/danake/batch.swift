@@ -79,7 +79,7 @@ public class EventuallyConsistentBatch {
         if let logger = logger {
             delegate.sync() { entities in
                 for entity in entities.values {
-                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.id), (name: "entityPersistenceState", value: "\(entity.getPersistenceState())")])
+                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.id), (name: "entityPersistenceState", value: "\(entity.persistenceState)")])
                 }
             }
         }

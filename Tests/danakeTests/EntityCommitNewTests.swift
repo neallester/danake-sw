@@ -23,13 +23,13 @@ class EntityCommitNewTests: XCTestCase {
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
         // .new building addAction throws error
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -50,13 +50,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -65,13 +65,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -85,13 +85,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         // .new firing updateAction throws error
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -126,13 +126,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -141,13 +141,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -162,13 +162,13 @@ class EntityCommitNewTests: XCTestCase {
         }
         // .new firing updateAction times out
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -205,13 +205,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -225,13 +225,13 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -252,14 +252,14 @@ class EntityCommitNewTests: XCTestCase {
         }
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // .new Success
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
         preFetchCount = 0
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -287,13 +287,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -302,13 +302,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -323,13 +323,13 @@ class EntityCommitNewTests: XCTestCase {
         }
         // Move to a different test?
         // .persistent
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail ("Expected .persitent")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -348,13 +348,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -383,13 +383,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -423,13 +423,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -438,13 +438,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -488,13 +488,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -528,13 +528,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -543,13 +543,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -576,13 +576,13 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -618,13 +618,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -632,13 +632,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -665,14 +665,14 @@ class EntityCommitNewTests: XCTestCase {
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains ("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains ("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains ("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains ("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains ("\"item\":{"))
             XCTAssertTrue (json.contains ("\"myInt\":20"))
             XCTAssertTrue (json.contains ("\"myString\":\"20\""))
             XCTAssertTrue (json.contains ("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains ("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
@@ -696,13 +696,13 @@ class EntityCommitNewTests: XCTestCase {
             item.myInt = 30
             item.myString = "30"
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -739,13 +739,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (40, item.myInt)
                 XCTAssertEqual ("40", item.myString)
@@ -753,13 +753,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -786,14 +786,14 @@ class EntityCommitNewTests: XCTestCase {
             json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":30"))
             XCTAssertTrue (json.contains("\"myString\":\"30\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
     
@@ -814,13 +814,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -860,13 +860,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -874,13 +874,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -897,13 +897,13 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -931,13 +931,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -971,13 +971,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -986,13 +986,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1046,13 +1046,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1086,13 +1086,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1101,13 +1101,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1144,13 +1144,13 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1186,13 +1186,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (50, item.myInt)
                 XCTAssertEqual ("50", item.myString)
@@ -1200,13 +1200,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1243,14 +1243,14 @@ class EntityCommitNewTests: XCTestCase {
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":30"))
             XCTAssertTrue (json.contains("\"myString\":\"30\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
@@ -1274,13 +1274,13 @@ class EntityCommitNewTests: XCTestCase {
             item.myInt = 50
             item.myString = "50"
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (50, item.myInt)
             XCTAssertEqual ("50", item.myString)
@@ -1317,13 +1317,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (70, item.myInt)
                 XCTAssertEqual ("70", item.myString)
@@ -1331,13 +1331,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (50, item.myInt)
             XCTAssertEqual ("50", item.myString)
@@ -1374,14 +1374,14 @@ class EntityCommitNewTests: XCTestCase {
             json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":50"))
             XCTAssertTrue (json.contains("\"myString\":\"50\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -1402,13 +1402,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1448,13 +1448,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1462,13 +1462,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1518,13 +1518,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1558,13 +1558,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -1573,13 +1573,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1630,13 +1630,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1670,13 +1670,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -1685,13 +1685,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -1725,13 +1725,13 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: collectionName, id: id))
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -1767,13 +1767,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -1781,13 +1781,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -1821,14 +1821,14 @@ class EntityCommitNewTests: XCTestCase {
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":20"))
             XCTAssertTrue (json.contains("\"myString\":\"20\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
@@ -1852,13 +1852,13 @@ class EntityCommitNewTests: XCTestCase {
             item.myInt = 30
             item.myString = "30"
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1895,13 +1895,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .dirty:
                 break
             default:
                 XCTFail ("Expected .dirty")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (40, item.myInt)
                 XCTAssertEqual ("40", item.myString)
@@ -1909,13 +1909,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -1949,14 +1949,14 @@ class EntityCommitNewTests: XCTestCase {
             json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":30"))
             XCTAssertTrue (json.contains("\"myString\":\"30\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -1977,13 +1977,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2023,13 +2023,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .new:
                 break
             default:
                 XCTFail ("Expected .new")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -2037,13 +2037,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2090,13 +2090,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2130,13 +2130,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2145,13 +2145,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2192,13 +2192,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2232,13 +2232,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2247,13 +2247,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2281,13 +2281,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2322,13 +2322,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2336,13 +2336,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2366,14 +2366,14 @@ class EntityCommitNewTests: XCTestCase {
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":10"))
             XCTAssertTrue (json.contains("\"myString\":\"10\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
@@ -2398,13 +2398,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2440,13 +2440,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2454,13 +2454,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2484,14 +2484,14 @@ class EntityCommitNewTests: XCTestCase {
             json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":10"))
             XCTAssertTrue (json.contains("\"myString\":\"10\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -2512,13 +2512,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2558,13 +2558,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2572,13 +2572,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2616,13 +2616,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2655,13 +2655,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2670,13 +2670,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2724,13 +2724,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2764,13 +2764,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2779,13 +2779,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2820,13 +2820,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2861,13 +2861,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -2875,13 +2875,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2912,14 +2912,14 @@ class EntityCommitNewTests: XCTestCase {
             let json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue (json.contains("\"item\":{"))
             XCTAssertTrue (json.contains("\"myInt\":10"))
             XCTAssertTrue (json.contains("\"myString\":\"10\""))
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -2940,13 +2940,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -2986,13 +2986,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -3000,13 +3000,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3050,13 +3050,13 @@ class EntityCommitNewTests: XCTestCase {
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3090,13 +3090,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (2, entity.getVersion())
+            XCTAssertEqual (2, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3105,13 +3105,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3162,13 +3162,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // error occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3202,13 +3202,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3217,13 +3217,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertFalse (accessor.has(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3261,13 +3261,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -3302,13 +3302,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (30, item.myInt)
                 XCTAssertEqual ("30", item.myString)
@@ -3316,13 +3316,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual ("20", item.myString)
@@ -3356,14 +3356,14 @@ class EntityCommitNewTests: XCTestCase {
             var json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue(json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue(json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue(json.contains("\"item\":{"))
             XCTAssertTrue(json.contains("\"myInt\":20"))
             XCTAssertTrue(json.contains("\"myString\":\"20\""))
             XCTAssertTrue(json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue(json.contains("\"version\":1"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
@@ -3388,13 +3388,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (2, entity.getVersion())
+        XCTAssertEqual (2, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -3430,13 +3430,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .pendingRemoval:
                 break
             default:
                 XCTFail ("Expected .pendingRemoval")
             }
-            XCTAssertEqual (3, entity.getVersion())
+            XCTAssertEqual (3, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (40, item.myInt)
                 XCTAssertEqual ("40", item.myString)
@@ -3444,13 +3444,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (3, entity.getVersion())
+        XCTAssertEqual (3, entity.version)
         entity.sync() { item in
             XCTAssertEqual (30, item.myInt)
             XCTAssertEqual ("30", item.myString)
@@ -3484,14 +3484,14 @@ class EntityCommitNewTests: XCTestCase {
             json = String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!
             XCTAssertTrue(json.contains("\"id\":\"\(entity.id.uuidString)\""))
             XCTAssertTrue(json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.getCreated())!)"))
+            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
             XCTAssertTrue(json.contains("\"item\":{"))
             XCTAssertTrue(json.contains("\"myInt\":30"))
             XCTAssertTrue(json.contains("\"myString\":\"30\""))
             XCTAssertTrue(json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue(json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.getCreated())!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collectionName, id: id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -3512,13 +3512,13 @@ class EntityCommitNewTests: XCTestCase {
         //
         // timeout occurs while firing the initial updateAction closure
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -3558,13 +3558,13 @@ class EntityCommitNewTests: XCTestCase {
             default:
                 XCTFail ("Expected .error")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .abandoned:
                 break
             default:
                 XCTFail ("Expected .abandoned")
             }
-            XCTAssertEqual (0, entity.getVersion())
+            XCTAssertEqual (0, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (20, item.myInt)
                 XCTAssertEqual ("20", item.myString)
@@ -3572,13 +3572,13 @@ class EntityCommitNewTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)

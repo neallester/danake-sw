@@ -47,8 +47,8 @@ class InMemoryAccessorTests: XCTestCase {
                 XCTAssertTrue (retrievedEntity === collection.cachedEntity(id: id1)!)
                 XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
                 XCTAssertEqual (5, retrievedEntity.getSchemaVersion()) // Schema version is taken from the collection, not the json
-                XCTAssertEqual (10, retrievedEntity.getVersion() )
-                switch retrievedEntity.getPersistenceState() {
+                XCTAssertEqual (10, retrievedEntity.version )
+                switch retrievedEntity.persistenceState {
                 case .new:
                     break
                 default:
@@ -59,7 +59,7 @@ class InMemoryAccessorTests: XCTestCase {
                     XCTAssertEqual("A \"Quoted\" String", item.myString)
                 }
                 try XCTAssertEqual (jsonEncodedDate (date: retrievedEntity.created)!, creationDateString1)
-                XCTAssertNil (retrievedEntity.getSaved())
+                XCTAssertNil (retrievedEntity.saved)
             } else {
                 XCTFail ("Expected retrievedEntity")
             }
@@ -87,7 +87,7 @@ class InMemoryAccessorTests: XCTestCase {
             item.myInt = 11
             item.myString = "11"
         }
-        retrievedEntity1!.setSaved(Date())
+        retrievedEntity1!.saved = Date()
         let wrapper = EntityPersistenceWrapper (collectionName: retrievedEntity1!.collection.name, item: retrievedEntity1!)
         switch accessor.updateAction(wrapper: wrapper) {
         case .ok (let updateClosure):
@@ -128,8 +128,8 @@ class InMemoryAccessorTests: XCTestCase {
                     retrievedEntity2 = entity
                     XCTAssertEqual (id2.uuidString, entity.id.uuidString)
                     XCTAssertEqual (5, entity.getSchemaVersion()) // Schema version is taken from the collection, not the json
-                    XCTAssertEqual (10, entity.getVersion() )
-                    switch entity.getPersistenceState() {
+                    XCTAssertEqual (10, entity.version )
+                    switch entity.persistenceState {
                     case .persistent:
                         break
                     default:
@@ -140,7 +140,7 @@ class InMemoryAccessorTests: XCTestCase {
                         XCTAssertEqual("20", item.myString)
                     }
                     try XCTAssertEqual (jsonEncodedDate (date: entity.created)!, creationDateString2)
-                    try XCTAssertEqual (jsonEncodedDate (date: entity.getSaved()!)!, savedDateString2)
+                    try XCTAssertEqual (jsonEncodedDate (date: entity.saved!)!, savedDateString2)
 
                 }
             }
@@ -233,7 +233,7 @@ class InMemoryAccessorTests: XCTestCase {
         // Second Entity added public add
         // Also test preFetch
         let entity3 = collection.new(batch: batch, item: MyStruct (myInt: 30, myString: "A String 3"))
-        entity3.setSaved (Date())
+        entity3.saved = Date()
         var prefetchUuid: String? = nil
         accessor.setPreFetch() { uuid in
             if uuid.uuidString == entity3.id.uuidString {
@@ -297,7 +297,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (found3)
         // Public add with errors
         var entity4 = collection.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
-        entity4.setSaved (Date())
+        entity4.saved = Date()
         accessor.setThrowError()
         switch accessor.addAction(wrapper: wrapper3) {
         case .error (let errorMessage):
@@ -333,7 +333,7 @@ class InMemoryAccessorTests: XCTestCase {
         // Public addAction with errors with setThrowOnlyRecoverableErrors(true)
         accessor.setThrowOnlyRecoverableErrors(true)
         entity4 = collection.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
-        entity4.setSaved (Date())
+        entity4.saved = Date()
         accessor.setThrowError()
         switch accessor.addAction(wrapper: wrapper3) {
         case .ok:

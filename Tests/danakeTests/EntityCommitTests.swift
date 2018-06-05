@@ -35,13 +35,13 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .persistent:
             break
         default:
@@ -63,13 +63,13 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .persistent:
             break
         default:
@@ -90,13 +90,13 @@ class EntityCommitTests: XCTestCase {
         let group = DispatchGroup()
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -118,13 +118,13 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -145,14 +145,14 @@ class EntityCommitTests: XCTestCase {
         var group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("Expected .new")
         }
         preFetchCount = 0
-        XCTAssertEqual (0, entity.getVersion())
+        XCTAssertEqual (0, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -186,13 +186,13 @@ class EntityCommitTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            switch entity.getPersistenceState() {
+            switch entity.persistenceState {
             case .persistent:
                 break
             default:
                 XCTFail ("Expected .persistent")
             }
-            XCTAssertEqual (1, entity.getVersion())
+            XCTAssertEqual (1, entity.version)
             entity.sync() { item in
                 XCTAssertEqual (10, item.myInt)
                 XCTAssertEqual ("10", item.myString)
@@ -201,13 +201,13 @@ class EntityCommitTests: XCTestCase {
             XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: id))
             group.leave()
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)
@@ -223,13 +223,13 @@ class EntityCommitTests: XCTestCase {
                 XCTFail ("Expected .ok")
             }
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
             XCTFail ("Expected .saving")
         }
-        XCTAssertEqual (1, entity.getVersion())
+        XCTAssertEqual (1, entity.version)
         entity.sync() { item in
             XCTAssertEqual (10, item.myInt)
             XCTAssertEqual ("10", item.myString)

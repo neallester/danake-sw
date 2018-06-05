@@ -21,9 +21,9 @@ class EntityTests: XCTestCase {
         let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.id.uuidString)
-        XCTAssertEqual (10, entity1.getVersion())
+        XCTAssertEqual (10, entity1.version)
         XCTAssertEqual (5, entity1.getSchemaVersion())
-        switch entity1.getPersistenceState() {
+        switch entity1.persistenceState {
         case .new:
             break
         default:
@@ -40,9 +40,9 @@ class EntityTests: XCTestCase {
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
         XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
-        XCTAssertEqual (20, entity2.getVersion())
+        XCTAssertEqual (20, entity2.version)
         XCTAssertEqual (5, entity1.getSchemaVersion())
-        switch entity2.getPersistenceState() {
+        switch entity2.persistenceState {
         case .new:
             break
         default:
@@ -65,18 +65,18 @@ class EntityTests: XCTestCase {
         let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
         let entity = Entity (collection: collection, id: id, version: 10, item: myStruct)
         XCTAssertEqual (5, entity.getSchemaVersion())
-        XCTAssertNil (entity.getSaved())
+        XCTAssertNil (entity.saved)
         let savedDate = Date()
-        entity.setSaved(savedDate)
-        XCTAssertEqual (savedDate.timeIntervalSince1970, entity.getSaved()!.timeIntervalSince1970)
-        switch entity.getPersistenceState() {
+        entity.saved = savedDate
+        XCTAssertEqual (savedDate.timeIntervalSince1970, entity.saved!.timeIntervalSince1970)
+        switch entity.persistenceState {
         case .new:
             break
         default:
             XCTFail ("expected .new")
         }
-        entity.setPersistenceState (.dirty)
-        switch entity.getPersistenceState() {
+        entity.persistenceState = .dirty
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -94,7 +94,7 @@ class EntityTests: XCTestCase {
         }
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -111,7 +111,7 @@ class EntityTests: XCTestCase {
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertEqual(10, itemInt)
         XCTAssertEqual("Test Completed", itemString)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -124,7 +124,7 @@ class EntityTests: XCTestCase {
         var batch = EventuallyConsistentBatch()
         var itemInt = 0
         var itemString = ""
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -139,7 +139,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -150,12 +150,12 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .dirty
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
@@ -165,7 +165,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -175,12 +175,12 @@ class EntityTests: XCTestCase {
         XCTAssertEqual("20", itemString)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .persistent
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
@@ -190,7 +190,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -201,12 +201,12 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .abandoned
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
@@ -216,7 +216,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -227,12 +227,12 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // sync: persistentState = .pendingRemoval
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
@@ -242,7 +242,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -253,12 +253,12 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .new
-        entity.setPersistenceState(.new)
+        entity.persistenceState = .new
         var waitFor = expectation(description: ".new")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 10
@@ -270,7 +270,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -281,13 +281,13 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .dirty
         waitFor = expectation(description: ".dirty")
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
@@ -299,7 +299,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -309,13 +309,13 @@ class EntityTests: XCTestCase {
         XCTAssertEqual("20", itemString)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .persistent
         waitFor = expectation(description: ".persistetnt")
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
@@ -327,7 +327,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -338,13 +338,13 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .abandoned
         waitFor = expectation(description: ".abandoned")
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
@@ -356,7 +356,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -367,13 +367,13 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
         // async: persistentState = .pendingRemoval
         waitFor = expectation(description: ".pendingRemoval")
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         batch = EventuallyConsistentBatch()
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
@@ -385,7 +385,7 @@ class EntityTests: XCTestCase {
             itemInt = item.myInt
             itemString = item.myString
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -396,7 +396,7 @@ class EntityTests: XCTestCase {
         
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
             XCTAssertEqual(1, entities.count)
-            XCTAssertEqual(0, entity.getVersion())
+            XCTAssertEqual(0, entity.version)
             let retrievedEntity = entities[entity.id]! as! Entity<MyStruct>
             XCTAssertTrue (entity === retrievedEntity)
         }
@@ -416,14 +416,14 @@ class EntityTests: XCTestCase {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .persistent:
             break
         default:
             XCTFail("Expected .persistent")
         }
         entity.setDirty(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -434,7 +434,7 @@ class EntityTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         entity.setDirty(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -445,9 +445,9 @@ class EntityTests: XCTestCase {
         }
         XCTAssertNil (entity.getPendingAction())
         batch = EventuallyConsistentBatch()
-        entity.setPersistenceState(.saving)
+        entity.persistenceState = .saving
         entity.setDirty(batch: batch)
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
@@ -506,8 +506,8 @@ class EntityTests: XCTestCase {
         XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
         XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
         XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
-        XCTAssertEqual (10, entity1.getVersion() )
-        switch entity1.getPersistenceState() {
+        XCTAssertEqual (10, entity1.version )
+        switch entity1.persistenceState {
         case .new:
             break
         default:
@@ -518,7 +518,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual("A \"Quoted\" String", item.myString)
         }
         try XCTAssertEqual (jsonEncodedDate (date: entity1.created)!, creationDateString1)
-        XCTAssertNil (entity1.getSaved())
+        XCTAssertNil (entity1.saved)
         do {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected exception")
@@ -563,8 +563,8 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (entity2 === collection.cachedEntity(id: id2)!)
             XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
             XCTAssertEqual (5, entity2.getSchemaVersion())
-            XCTAssertEqual (10, entity2.getVersion() )
-            switch entity2.getPersistenceState() {
+            XCTAssertEqual (10, entity2.version )
+            switch entity2.persistenceState {
             case .new:
                 break
             default:
@@ -583,8 +583,8 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (entity3 === collection.cachedEntity(id: id3)!)
             XCTAssertEqual (id3.uuidString, entity3.id.uuidString)
             XCTAssertEqual (5, entity3.getSchemaVersion())
-            XCTAssertEqual (10, entity3.getVersion() )
-            switch entity3.getPersistenceState() {
+            XCTAssertEqual (10, entity3.version )
+            switch entity3.persistenceState {
             case .new:
                 break
             default:
@@ -689,8 +689,8 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (entity4 === collection.cachedEntity(id: id4)!)
             XCTAssertEqual (id4.uuidString, entity4.id.uuidString)
             XCTAssertEqual (5, entity4.getSchemaVersion())
-            XCTAssertEqual (10, entity4.getVersion() )
-            switch entity4.getPersistenceState() {
+            XCTAssertEqual (10, entity4.version )
+            switch entity4.persistenceState {
             case .persistent:
                 break
             default:
@@ -701,7 +701,7 @@ class EntityTests: XCTestCase {
                 XCTAssertEqual("A \"Quoted\" String", item.myString)
             }
             try XCTAssertEqual (jsonEncodedDate (date: entity4.created)!, creationDateString1)
-            try XCTAssertEqual (jsonEncodedDate (date: entity4.getSaved()!)!, savedDateString)
+            try XCTAssertEqual (jsonEncodedDate (date: entity4.saved!)!, savedDateString)
             #if os(Linux)
                 json = try String (data: accessor.encoder.encode(entity4), encoding: .utf8)!
                 XCTAssertTrue (json.contains("\"schemaVersion\":5"))
@@ -740,7 +740,7 @@ class EntityTests: XCTestCase {
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
         let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
         let parent = parentCollection.get(id: parentId).item()!
-        var parentVersion = parent.getVersion()
+        var parentVersion = parent.version
         parent.sync() { item in
             XCTAssertNotNil(item.entityReference)
             item.entityReference.sync() { reference in
@@ -762,7 +762,7 @@ class EntityTests: XCTestCase {
 
         }
         let parent2 = parentCollection.get(id: parentId2).item()!
-        parentVersion = parent2.getVersion()
+        parentVersion = parent2.version
         parent2.sync() { item in
             XCTAssertNotNil(item.entityReference)
             item.entityReference.sync() { reference in
@@ -790,10 +790,10 @@ class EntityTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let anyEntity: AnyEntity = AnyEntity (item: entity)
         XCTAssertEqual (entity.id, anyEntity.id)
-        XCTAssertEqual (entity.getVersion(), anyEntity.getVersion())
-        XCTAssertEqual (entity.getPersistenceState(), anyEntity.getPersistenceState())
-        XCTAssertEqual (entity.getCreated(), anyEntity.getCreated())
-        XCTAssertEqual (entity.getSaved(), anyEntity.getSaved())
+        XCTAssertEqual (entity.version, anyEntity.version)
+        XCTAssertEqual (entity.persistenceState, anyEntity.persistenceState)
+        XCTAssertEqual (entity.created, anyEntity.created)
+        XCTAssertEqual (entity.saved, anyEntity.saved)
     }
 
     func testEntityPersistenceWrapper() throws {
@@ -818,7 +818,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .new
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -829,14 +829,14 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("20", item.myString)
         }
         // persistenceState = .dirty
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         action = PersistenceAction<MyStruct>.updateItem()  { item in
             item.myInt = 30
             item.myString = "30"
         }
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -847,14 +847,14 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("30", item.myString)
         }
         // persistenceState = .pendingRemoval
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         action = PersistenceAction<MyStruct>.updateItem()  { item in
             item.myInt = 40
             item.myString = "40"
         }
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -865,14 +865,14 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("40", item.myString)
         }
         // persistenceState = .abandoned
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         action = PersistenceAction<MyStruct>.updateItem()  { item in
             item.myInt = 50
             item.myString = "50"
         }
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -883,7 +883,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("50", item.myString)
         }
         // persistenceState = .saving
-        entity.setPersistenceState(.saving)
+        entity.persistenceState = .saving
         action = PersistenceAction<MyStruct>.updateItem()  { item in
             item.myInt = 60
             item.myString = "60"
@@ -895,7 +895,7 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
@@ -919,7 +919,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .new
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -930,11 +930,11 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .dirty
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         action = PersistenceAction<MyStruct>.setDirty
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -945,11 +945,11 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .pendingRemoval
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         action = PersistenceAction<MyStruct>.setDirty
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .dirty:
             break
         default:
@@ -960,11 +960,11 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .abandoned
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         action = PersistenceAction<MyStruct>.setDirty
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .new:
             break
         default:
@@ -975,7 +975,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .saving
-        entity.setPersistenceState(.saving)
+        entity.persistenceState = .saving
         action = PersistenceAction<MyStruct>.setDirty
         entity.handleAction(action)
         switch entity.getPendingAction()! {
@@ -984,7 +984,7 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .update")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
@@ -1010,7 +1010,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .new
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -1021,10 +1021,10 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .dirty
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -1035,10 +1035,10 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .pendingRemoval
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -1049,10 +1049,10 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .abandoned
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         entity.handleAction(action)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -1063,7 +1063,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .saving
-        entity.setPersistenceState(.saving)
+        entity.persistenceState = .saving
         entity.handleAction(action)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1071,7 +1071,7 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
@@ -1089,7 +1089,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .new
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -1105,10 +1105,10 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .dirty
         batch = EventuallyConsistentBatch()
-        entity.setPersistenceState(.dirty)
+        entity.persistenceState = .dirty
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -1123,11 +1123,11 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .pendingRemoval
-        entity.setPersistenceState(.pendingRemoval)
+        entity.persistenceState = .pendingRemoval
         batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .pendingRemoval:
             break
         default:
@@ -1142,11 +1142,11 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .abandoned
-        entity.setPersistenceState(.abandoned)
+        entity.persistenceState = .abandoned
         batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .abandoned:
             break
         default:
@@ -1161,7 +1161,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .saving
-        entity.setPersistenceState(.saving)
+        entity.persistenceState = .saving
         batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         switch entity.getPendingAction()! {
@@ -1170,7 +1170,7 @@ class EntityTests: XCTestCase {
         default:
             XCTFail ("Expected .remove")
         }
-        switch entity.getPersistenceState() {
+        switch entity.persistenceState {
         case .saving:
             break
         default:
@@ -1211,12 +1211,12 @@ class EntityTests: XCTestCase {
     func testEntityReferenceData() {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let entity2 = newTestEntity(myInt: 20, myString: "20")
-        let data1 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.getVersion())
-        var data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.getVersion())
+        let data1 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.version)
+        var data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.version)
         XCTAssertEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity2.collection, id: entity.id, version: entity.getVersion())
+        data2 = EntityReferenceData (collection: entity2.collection, id: entity.id, version: entity.version)
         XCTAssertNotEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity.collection, id: entity2.id, version: entity.getVersion())
+        data2 = EntityReferenceData (collection: entity.collection, id: entity2.id, version: entity.version)
         XCTAssertNotEqual (data1, data2)
         data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: 2)
         XCTAssertNotEqual (data1, data2)
@@ -1250,7 +1250,7 @@ class EntityTests: XCTestCase {
         data = entity.referenceData()
         XCTAssertEqual (entity.collection.qualifiedName, data.qualifiedCollectionName)
         XCTAssertEqual (entity.id, data.id)
-        XCTAssertEqual (entity.getVersion(), data.version)
+        XCTAssertEqual (entity.version, data.version)
     }
     
     func testReferenceManagerCycle() {

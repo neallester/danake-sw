@@ -9,10 +9,10 @@ import Foundation
 public protocol EntityProtocol : class {
 
     var id: UUID {get}
-    func getVersion() -> Int
-    func getPersistenceState() -> PersistenceState
-    func getCreated() -> Date
-    func getSaved() -> Date?
+    var version: Int { get }
+    var persistenceState: PersistenceState { get }
+    var created: Date { get }
+    var saved: Date? { get }
 
 }
 
@@ -83,20 +83,29 @@ public class AnyEntity : EntityProtocol {
     
     public let id: UUID
     
-    public func getVersion() -> Int {
-        return item.getVersion()
+    public var version: Int {
+        get {
+            return item.version
+        }
+
     }
     
-    public func getPersistenceState() -> PersistenceState {
-        return item.getPersistenceState()
+    public var persistenceState: PersistenceState {
+        return item.persistenceState
+    }
+
+    
+    public var created: Date {
+        get {
+            return item.created
+        }
+    
     }
     
-    public func getCreated() -> Date {
-        return item.getCreated()
-    }
-    
-    public func getSaved() -> Date? {
-        return item.getSaved()
+    public var saved: Date? {
+        get {
+            return item.saved
+        }
     }
     
     let item: EntityProtocol
@@ -201,10 +210,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     internal init (collection: EntityCache<T>, id: UUID, version: Int, item: T) {
         self.collection = collection
         self.id = id
-        self.version = version
+        self._version = version
         self.item = item
         self.schemaVersion = collection.database.schemaVersion
-        persistenceState = .new
+        _persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
         self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
         created = Date()
@@ -221,7 +230,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     deinit {
         collection.decache (id: id)
-        switch self.persistenceState {
+        switch self._persistenceState {
         case .persistent:
             let localItem = item
             if let itemData = itemData {
@@ -248,37 +257,49 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 // Metadata
     
     // Version is incremented each time the entity is stored in the persistent media
-    public func getVersion() -> Int {
-        var result: Int? = nil
-        queue.sync {
-            result = version
+    public var version: Int {
+        get {
+            var result: Int? = nil
+            queue.sync {
+                result = _version
+            }
+            return result!
         }
-        return result!
     }
     
     // For use when caller is being executed on queue
     internal func getVersionUnsafe() -> Int {
-        return version
+        return _version
     }
     
-    public func getPersistenceState() -> PersistenceState {
-        var result = PersistenceState.new
-        queue.sync {
-            result = self.persistenceState
+    public internal (set) var persistenceState: PersistenceState {
+        get {
+            var result = PersistenceState.new
+            queue.sync {
+                result = self._persistenceState
+            }
+            return result
         }
-        return result
-    }
-    
-    public func getCreated() -> Date {
-        return created
-    }
-    
-    public func getSaved() -> Date? {
-        var result: Date? = nil
-        queue.sync {
-            result = self.saved
+        set {
+            queue.sync {
+                self._persistenceState = newValue
+            }
         }
-        return result
+    }
+    
+    public internal(set) var saved: Date? {
+        get {
+            var result: Date? = nil
+            queue.sync {
+                result = self._saved
+            }
+            return result
+        }
+        set {
+            queue.sync {
+                self._saved = newValue
+            }
+        }
     }
     
     // EntityManagement
@@ -380,9 +401,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     public func referenceData() -> ReferenceManagerData {
         var localVersion = 0
-        queue.sync {
-            localVersion = version
-        }
+        localVersion = version
         return ReferenceManagerData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
     }
     
@@ -434,12 +453,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     internal func handleAction (_ action: PersistenceAction<T>) {
         switch action {
         case .updateItem(let closure):
-            switch self.persistenceState {
+            switch self._persistenceState {
             case .persistent, .pendingRemoval:
-                persistenceState = .dirty
+                self._persistenceState = .dirty
                 closure(&item)
             case .abandoned:
-                persistenceState = .new
+                self._persistenceState = .new
                 closure(&item)
             case .saving:
                 pendingAction = .update
@@ -448,29 +467,29 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 closure(&item)
             }
         case .setDirty:
-            switch self.persistenceState {
+            switch self._persistenceState {
             case .persistent, .pendingRemoval:
-                persistenceState = .dirty
+                self._persistenceState = .dirty
             case .abandoned:
-                persistenceState = .new
+                self._persistenceState = .new
             case .saving:
                 pendingAction = .update
             case .new, .dirty:
                 break
             }
         case .remove:
-            switch self.persistenceState {
+            switch self._persistenceState {
             case .persistent, .dirty:
-                self.persistenceState = .pendingRemoval
+                self._persistenceState = .pendingRemoval
             case .new:
-                self.persistenceState = .abandoned
+                self._persistenceState = .abandoned
             case .saving:
                 self.pendingAction = .remove
             case .pendingRemoval, .abandoned:
                 break
             }
         case .commit(let timeout, let completionHandler):
-            switch self.persistenceState {
+            switch self._persistenceState {
             case .persistent, .abandoned, .saving:
                 callCommitCompletionHandler (completionHandler: completionHandler, result: .ok)
             case .new:
@@ -491,8 +510,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     // Not thread safe: to be called on self.queue
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
-        persistenceState = successState
-        version = version + 1
+        _persistenceState = successState
+        _version = _version + 1
         let wrapper = EntityPersistenceWrapper (collectionName: collection.name, item: self)
         let actionSource = databaseActionSource (collection.database.accessor)
         let actionResult = actionSource (wrapper)
@@ -502,7 +521,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         } catch {}
         switch actionResult {
         case .ok (let action):
-            persistenceState = .saving
+            _persistenceState = .saving
             var result: DatabaseUpdateResult? = nil
             collection.database.workQueue.async {
                 let group = DispatchGroup()
@@ -524,11 +543,11 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                         if let result = result {
                             switch result {
                             case .ok:
-                                self.persistenceState = successState
+                                self._persistenceState = successState
                                 self.itemData = newItemData
                             case .error, .unrecoverableError:
-                                self.persistenceState = failureState
-                                self.version = self.version - 1
+                                self._persistenceState = failureState
+                                self._version = self._version - 1
                             }
                             if let pendingAction = self.pendingAction {
                                 self.pendingAction = nil
@@ -555,8 +574,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 }
             }
         case .error (let errorMessage):
-            self.version = self.version - 1
-            persistenceState = failureState
+            self._version = self._version - 1
+            _persistenceState = failureState
             self.callCommitCompletionHandler (completionHandler: completionHandler, result: .unrecoverableError(errorMessage))
         }
     }
@@ -583,13 +602,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode (id, forKey: .id)
-        try container.encode (version, forKey: .version)
+        try container.encode (_version, forKey: .version)
         try container.encode (schemaVersion, forKey: .schemaVersion)
         try container.encode(item, forKey: .item)
         try container.encode (created, forKey: .created)
-        try container.encode (persistenceState, forKey: .persistenceState)
-        if let saved = saved {
-            try container.encode (saved, forKey: .saved)
+        try container.encode (_persistenceState, forKey: .persistenceState)
+        if let _saved = _saved {
+            try container.encode (_saved, forKey: .saved)
         }
     }
     
@@ -609,7 +628,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 self.collection = collection
                 schemaVersion = collection.database.schemaVersion
                 let version = try values.decode(Int.self, forKey: .version)
-                self.version = version
+                self._version = version
                 if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer {
                     container.data = EntityReferenceData (collection: collection, id: id, version: version)
                     item = try values.decode (T.self, forKey: .item)
@@ -619,9 +638,9 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 }
                 created = try values.decode (Date.self, forKey: .created)
                 if values.contains(.saved) {
-                    saved = try values.decode (Date.self, forKey: .saved)
+                    _saved = try values.decode (Date.self, forKey: .saved)
                 }
-                persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
+                _persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
                 self.queue = DispatchQueue (label: id.uuidString)
                 self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
                 do {
@@ -660,18 +679,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return result
     }
     
-    internal func setSaved (_ saved: Date?) {
-        queue.sync {
-            self.saved = saved
-        }
-    }
-    
-    internal func setPersistenceState (_ persistenceState: PersistenceState) {
-        queue.sync {
-            self.persistenceState = persistenceState
-        }
-    }
-    
     internal func getPendingAction() -> PendingAction? {
         var result: PendingAction? = nil
         queue.sync {
@@ -703,13 +710,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 // Attributes
     
     public let id: UUID
-    private var version: Int
+    private var _version: Int
     public let created: Date
-    private var saved: Date?
+    private var _saved: Date?
     private var item: T
     private var itemData: Data?
     fileprivate let queue: DispatchQueue
-    private var persistenceState: PersistenceState
+    private var _persistenceState: PersistenceState
     internal let collection: EntityCache<T>
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
