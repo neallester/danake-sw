@@ -59,15 +59,7 @@ internal extension DispatchTimeInterval {
 */
 public class EventuallyConsistentBatch {
     
-    convenience init() {
-        self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: nil)
-    }
-    
-    convenience init(logger: Logger?) {
-        self.init (retryInterval: BatchDefaults.retryInterval, timeout: BatchDefaults.timeout, logger: logger)
-    }
-    
-    init(retryInterval: DispatchTimeInterval, timeout: DispatchTimeInterval, logger: Logger?) {
+    init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
         self.retryInterval = retryInterval
         self.timeout = timeout
         delegate = BatchDelegate(logger: logger)
