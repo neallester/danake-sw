@@ -130,22 +130,6 @@ extension EntityCommitTests {
   ]
 }
 
-extension EntityReferenceTests {
-  static var allTests = [
-    ("testCreationEncodeDecode", testCreationEncodeDecode),
-    ("testGetReference", testGetReference),
-    ("testWillUpdate", testWillUpdate),
-    ("testAddParentToBatch", testAddParentToBatch),
-    ("testSetEntity", testSetEntity),
-    ("testSetReferenceData", testSetReferenceData),
-    ("testSetReferenceDataIsEager", testSetReferenceDataIsEager),
-    ("testAsync", testAsync),
-    ("testGet", testGet),
-    ("testSetWithinEntity", testSetWithinEntity),
-    ("testDereference", testDereference),
-  ]
-}
-
 extension EntityTests {
   static var allTests = [
     ("testCreation", testCreation),
@@ -200,6 +184,22 @@ extension ParallelTests {
   ]
 }
 
+extension ReferenceManagerTests {
+  static var allTests = [
+    ("testCreationEncodeDecode", testCreationEncodeDecode),
+    ("testGetReference", testGetReference),
+    ("testWillUpdate", testWillUpdate),
+    ("testAddParentToBatch", testAddParentToBatch),
+    ("testSetEntity", testSetEntity),
+    ("testSetReferenceData", testSetReferenceData),
+    ("testSetReferenceDataIsEager", testSetReferenceDataIsEager),
+    ("testAsync", testAsync),
+    ("testGet", testGet),
+    ("testSetWithinEntity", testSetWithinEntity),
+    ("testDereference", testDereference),
+  ]
+}
+
 extension SampleTests {
   static var allTests = [
     ("testInMemorySample", testInMemorySample),
@@ -232,10 +232,10 @@ XCTMain([
   testCase(EntityCommitNewTests.allTests),
   testCase(EntityCommitPendingRemovalTests.allTests),
   testCase(EntityCommitTests.allTests),
-  testCase(EntityReferenceTests.allTests),
   testCase(EntityTests.allTests),
   testCase(InMemoryAccessorTests.allTests),
   testCase(LoggingTests.allTests),
   testCase(ParallelTests.allTests),
+  testCase(ReferenceManagerTests.allTests),
   testCase(SampleTests.allTests),
 ])
