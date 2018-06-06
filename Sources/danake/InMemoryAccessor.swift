@@ -127,7 +127,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
-    public func hashValue() -> String {
+    public var hashValue: String {
         return id.uuidString
     }
     

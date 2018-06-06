@@ -734,7 +734,7 @@ class EntityTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let json = "{\"id\":\"438AF59B-0CC1-46C1-8C73-336BDC2AA606\",\"schemaVersion\":5,\"created\":543967928.51027906,\"item\":{\"entityReference\":{\"isEager\":false,\"isNil\":true}},\"version\":10,\"persistenceState\":\"persistent\"}"
         let parentId = UUID (uuidString: "438AF59B-0CC1-46C1-8C73-336BDC2AA606")!
-        let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"qualifiedCollectionName\":\"\(accessor.hashValue()).childCollection\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
+        let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"qualifiedCollectionName\":\"\(accessor.hashValue).childCollection\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
         let parentId2 = UUID (uuidString: "BE6458D5-8762-4AEF-9748-94870B0BBCB1")!
         let parentCollection = EntityCache<EntityReferenceContainer> (database: database, name: "parentCollection")
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
@@ -771,7 +771,7 @@ class EntityTests: XCTestCase {
                 XCTAssertTrue (reference.parentData.collection === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
-                XCTAssertEqual (Database.qualifiedCollectionName(databaseHash: accessor.hashValue(), collectionName: "childCollection") , reference.referenceData!.qualifiedCollectionName)
+                XCTAssertEqual (Database.qualifiedCollectionName(databaseHash: accessor.hashValue, collectionName: "childCollection") , reference.referenceData!.qualifiedCollectionName)
                 XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
                 XCTAssertEqual (3, reference.referenceData!.version)
                 switch reference.state {

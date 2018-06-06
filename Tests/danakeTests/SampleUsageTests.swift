@@ -321,7 +321,7 @@ class SampleTests: XCTestCase {
         // Creating a database logs INFO
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.accessor.hashValue())", entries[0].asTestString())
+            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.accessor.hashValue)", entries[0].asTestString())
         }
 
         // Start test in known state by ensuring persistent media is empty
@@ -425,7 +425,7 @@ class SampleTests: XCTestCase {
             // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
-                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.accessor.hashValue());collection=company;id=\(badId.uuidString)", entries[1].asTestString())
+                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.accessor.hashValue);collection=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -622,7 +622,7 @@ class SampleTests: XCTestCase {
             XCTAssertEqual ("getError", errorMessage)
             logger.sync() { entries in
                 XCTAssertEqual (1, entries.count)
-                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.accessor.hashValue());collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.accessor.hashValue);collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         default:
             XCTFail ("Expected .error")
@@ -712,7 +712,7 @@ class SampleTests: XCTestCase {
             XCTFail ("Expected .ok")
         }
         let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
-        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue())\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"collectionName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
+        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue)\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"collectionName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
         switch inMemoryAccessor.add(name: collections.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
         case .ok:
             break
@@ -747,7 +747,7 @@ class SampleTests: XCTestCase {
                 XCTAssertTrue (employeeJson.contains("\"item\":{"))
                 XCTAssertTrue (employeeJson.contains("\"name\":\"Name Two\""))
                 XCTAssertTrue (employeeJson.contains("\"company\":{"))
-                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue())\""))
+                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
                 XCTAssertTrue (employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
                 XCTAssertTrue (employeeJson.contains("\"isEager\":true"))
                 XCTAssertTrue (employeeJson.contains("\"collectionName\":\"company\",\"version\":1}"))
@@ -794,7 +794,7 @@ class SampleTests: XCTestCase {
                 XCTAssertTrue (employeeJson.contains("\"item\":{"))
                 XCTAssertTrue (employeeJson.contains("\"name\":\"Name Two\""))
                 XCTAssertTrue (employeeJson.contains("\"company\":{"))
-                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue())\""))
+                XCTAssertTrue (employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
                 XCTAssertTrue (employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
                 XCTAssertTrue (employeeJson.contains("\"isEager\":true"))
                 XCTAssertTrue (employeeJson.contains("\"collectionName\":\"company\",\"version\":1}"))

@@ -35,23 +35,23 @@ class DatabaseTests: XCTestCase {
         var database: Database? = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         XCTAssertTrue (accessor === database!.accessor as! InMemoryAccessor)
         XCTAssertTrue (logger === database!.logger as! InMemoryLogger)
-        XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue()))
+        XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue))
         XCTAssertEqual (5, database?.schemaVersion)
         XCTAssertEqual (1, Database.registrar.count())
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("INFO|Database.init|created|hashValue=\(accessor.hashValue())", entries[0].asTestString())
+            XCTAssertEqual ("INFO|Database.init|created|hashValue=\(accessor.hashValue)", entries[0].asTestString())
         }
         let _ = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("EMERGENCY|Database.init|registrationFailed|hashValue=\(accessor.hashValue())", entries[1].asTestString())
+            XCTAssertEqual ("EMERGENCY|Database.init|registrationFailed|hashValue=\(accessor.hashValue)", entries[1].asTestString())
         }
         XCTAssertNotNil(database)
-        XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue()))
+        XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue))
         XCTAssertEqual (1, Database.registrar.count())
         database = nil
-        XCTAssertFalse (Database.registrar.isRegistered(key: accessor.hashValue()))
+        XCTAssertFalse (Database.registrar.isRegistered(key: accessor.hashValue))
         XCTAssertEqual (0, Database.registrar.count())
     }
     
@@ -259,7 +259,7 @@ class DatabaseTests: XCTestCase {
         XCTAssertEqual ("A.B", Database.qualifiedCollectionName (databaseHash: "A", collectionName: collectionName))
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        XCTAssertEqual ("\(accessor.hashValue()).\(standardCollectionName)", database.qualifiedCollectionName(standardCollectionName))
+        XCTAssertEqual ("\(accessor.hashValue).\(standardCollectionName)", database.qualifiedCollectionName(standardCollectionName))
     }
     
 }

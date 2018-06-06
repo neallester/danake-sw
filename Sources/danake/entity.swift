@@ -341,7 +341,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func referenceData() -> ReferenceManagerData {
         var localVersion = 0
         localVersion = version
-        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue(), collectionName: collection.name, id: id, version: localVersion)
+        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue, collectionName: collection.name, id: id, version: localVersion)
     }
     
     /*
@@ -585,7 +585,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 do {
                     self.itemData = try Database.encoder.encode(self.item)
                 } catch {
-                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue())), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
+                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue)), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
                 }
                 collection.cacheEntity(self)
             } else {

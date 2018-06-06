@@ -198,7 +198,7 @@ public class Database {
         self.referenceRetryInterval = referenceRetryInterval
         self.accessor = accessor
         self.logger = logger
-        self.hashValue = accessor.hashValue()
+        self.hashValue = accessor.hashValue
         self.schemaVersion = schemaVersion
         workQueue = DispatchQueue (label: "workQueue Database \(hashValue)", attributes: .concurrent)
         if Database.registrar.register(key: hashValue, value: self) {
@@ -209,7 +209,7 @@ public class Database {
     }
     
     internal func qualifiedCollectionName (_ collectionName: CollectionName) -> QualifiedCollectionName {
-        return Database.qualifiedCollectionName(databaseHash: accessor.hashValue(), collectionName: collectionName)
+        return Database.qualifiedCollectionName(databaseHash: accessor.hashValue, collectionName: collectionName)
     }
     
     public let accessor: DatabaseAccessor
@@ -254,7 +254,7 @@ public protocol DatabaseAccessor {
      A unique identifier for the specific instance of the database being accessed
      Ideally this should be stored in and retrieved from the storage medium
      */
-    func hashValue() -> String
+    var hashValue: String { get }
     
     /*
      The following ** DatabaseActionResult ** functions should return fast: The actual database

@@ -31,8 +31,8 @@ class EntityCacheTests: XCTestCase {
         let _ = EntityCache<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.accessor.hashValue());collectionName=myCollection", entries[0].asTestString())
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.accessor.hashValue()).myCollection", entries[1].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.accessor.hashValue);collectionName=myCollection", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.accessor.hashValue).myCollection", entries[1].asTestString())
         }
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
@@ -62,7 +62,7 @@ class EntityCacheTests: XCTestCase {
         let _ = EntityCache<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue());collectionName=", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue);collectionName=", entries[0].asTestString())
         }
     }
 
@@ -148,7 +148,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity.id)", entry)
+            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
         let _ = accessor.add(name: standardCollectionName, id: entity.id, data: data)
@@ -226,7 +226,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -242,7 +242,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;id=\(entity3.id);errorMessage=getError", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;id=\(entity3.id);errorMessage=getError", entry)
         }
     }
     
@@ -1070,9 +1070,9 @@ class EntityCacheTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 var entry = entries[0].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;errorMessage=scanError", entry)
                 entry = entries[1].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue());collection=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;errorMessage=scanError", entry)
             }
         }
     }
