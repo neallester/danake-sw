@@ -31,12 +31,8 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     typealias entityType = T
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public convenience init (database: Database, name: CollectionName) {
-        self.init (database: database, name: name, deserializationEnvironmentClosure: nil)
-    }
-    
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public init (database: Database, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())?) {
+    public init (database: Database, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())? = nil) {
         self.database = database
         self.name = name
         self.qualifiedName = database.qualifiedCollectionName(name)
