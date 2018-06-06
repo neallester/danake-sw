@@ -16,7 +16,7 @@ import Foundation
 
 public typealias CollectionName = String
 public typealias QualifiedCollectionName = String
-public class UntypedEntityCache {}
+open class UntypedEntityCache {}
 
 /*
  
@@ -26,7 +26,7 @@ public class UntypedEntityCache {}
  
 */
 
-public class EntityCache<T: Codable> : UntypedEntityCache {
+open class EntityCache<T: Codable> : UntypedEntityCache {
     
     typealias entityType = T
     

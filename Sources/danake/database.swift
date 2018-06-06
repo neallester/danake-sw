@@ -177,7 +177,7 @@ public enum DatabaseActionResult {
     case error (String)
 }
 
-public class Database {
+open class Database {
     
 /*
      Only one instance of the Database object associated with any particular persistent storage media (database) may be present in system.

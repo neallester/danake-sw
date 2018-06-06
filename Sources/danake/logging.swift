@@ -30,7 +30,7 @@ public protocol Logger {
     
 }
 
-public class LogEntryFormatter {
+open class LogEntryFormatter {
     
     static func formattedData (data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var result = ""
@@ -88,7 +88,7 @@ struct LogEntry {
     
 }
 
-public class ThreadSafeLogger : Logger {
+open class ThreadSafeLogger : Logger {
 
     public init() {
         level = .debug
@@ -113,7 +113,7 @@ public class ThreadSafeLogger : Logger {
     fileprivate let queue = DispatchQueue (label: UUID().uuidString)
 }
 
-public class InMemoryLogger : ThreadSafeLogger {
+open class InMemoryLogger : ThreadSafeLogger {
     
     override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
@@ -137,7 +137,7 @@ public class InMemoryLogger : ThreadSafeLogger {
     
 }
 
-public class ConsoleLogger : ThreadSafeLogger {
+open class ConsoleLogger : ThreadSafeLogger {
     
     override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         print (LogEntry (level: level, source: source, featureName: featureName, message: message, data: data).asTestString())
