@@ -139,7 +139,6 @@ extension EntityTests {
     ("testSetDirty", testSetDirty),
     ("testEncodeDecode", testEncodeDecode),
     ("testDecodeReferenceManager", testDecodeReferenceManager),
-    ("testAnyEntity", testAnyEntity),
     ("testEntityPersistenceWrapper", testEntityPersistenceWrapper),
     ("testHandleActionUpdateItem ", testHandleActionUpdateItem ),
     ("testHandleActionSetDirty ", testHandleActionSetDirty ),

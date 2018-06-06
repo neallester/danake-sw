@@ -786,16 +786,6 @@ class EntityTests: XCTestCase {
         }
     }
     
-    func testAnyEntity() {
-        let entity = newTestEntity(myInt: 10, myString: "A String")
-        let anyEntity: AnyEntity = AnyEntity (entity)
-        XCTAssertEqual (entity.id, anyEntity.id)
-        XCTAssertEqual (entity.version, anyEntity.version)
-        XCTAssertEqual (entity.persistenceState, anyEntity.persistenceState)
-        XCTAssertEqual (entity.created, anyEntity.created)
-        XCTAssertEqual (entity.saved, anyEntity.saved)
-    }
-
     func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
         let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.collection.name, entity: entity)

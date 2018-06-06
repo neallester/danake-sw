@@ -63,45 +63,6 @@ internal class DataContainer {
     
 }
 
-// type erased access to the metadata for any Entity
-public class AnyEntity : EntityProtocol {
-    
-    init (_ item: EntityProtocol) {
-        self.item = item
-        self.id = item.id
-    }
-    
-    public let id: UUID
-    
-    public var version: Int {
-        get {
-            return item.version
-        }
-
-    }
-    
-    public var persistenceState: PersistenceState {
-        return item.persistenceState
-    }
-
-    
-    public var created: Date {
-        get {
-            return item.created
-        }
-    
-    }
-    
-    public var saved: Date? {
-        get {
-            return item.saved
-        }
-    }
-    
-    let item: EntityProtocol
-    
-}
-
 /*
     Type erased wrapper for Entity providing access to metadata and
     functionality needed for persistent management
@@ -304,18 +265,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
 
-    // Type Erased Access
-    // TODO Add and test
-    //    public lazy var asAnyEntity: AnyEntity = {
-    //        return AnyEntity(item: self)
-    //    }()
-    
-    // Write Access to item
-    
-
-    // Read Only Access to item
-
-    
 /*
 
      *** IMPORTANT NOTES ***
