@@ -39,11 +39,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         case qualifiedCollectionName
     }
     
-    convenience init (parent: EntityReferenceData<P>, entity: Entity<T>?) {
-        self.init (parent: parent, entity: entity, isEager: false)
-    }
-    
-    init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool) {
+    init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool = false) {
         self.parentData = parent
         self.entity = entity
         self.state = .loaded
@@ -55,11 +51,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
 
-    convenience init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?) {
-        self.init (parent: parent, referenceData: referenceData, isEager: false)
-    }
-
-    init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?, isEager: Bool) {
+    init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?, isEager: Bool = false) {
         self.parentData = parent
         self.referenceData = referenceData
         if let _ = referenceData {
