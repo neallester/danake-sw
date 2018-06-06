@@ -29,7 +29,7 @@ internal extension DispatchTimeInterval {
     }
 }
 
-/*
+/**
     Accumulates Entities whose state is different than their state in persistent memory. The framework will ensure these
     Entities are committed to persistent memory when the batch is pushed to persistent storage using .commit(). The batch
     object remains fully usable as a "new" empty batch after calling .commit. If a batch is dereferenced without a .commit()
@@ -43,22 +43,24 @@ internal extension DispatchTimeInterval {
     framework will try to save the Entity until it succeeds or the process ends. Errors which occur while serializing
     an Entity are treated as unrecoverable (the framework will not retry after an unrecoverable error). Provide a logger
     when creating a batch to learn of errors which occur while committing that batch.
- 
-    ** retryInterval: ** How long the framework waits until retrying a batch which experienced recoverable errors
-                         during processing.
-    ** timeout: **       The timeout for individual commit operations on Entities. Note that the database bindings used by
-                         an implementation of DatabaseAccessor may have their own timeouts which will govern if they are
-                         shorter than those specified here. All database operations are protected by this timeout, but some
-                         operations which occur during the commit process are not. Thus, if the Entity.queue is blocked or
-                         if Entity serialization causes an endless loop the individual Entity commit timeout will not
-                         fire. For these scenarios a timeout for the entire batch of 2x ** timeout ** is used. That is,
-                         if all individual commit operations on Entities within the batch do not complete within 2x timeout
-                         the batch will timeout. If the batch times out, any pending updates remaining in the batch are lost
-                         and logged if a logger has been provided. Successful database updates for other entities in the
-                         batch are NOT rolled back.
 */
 public class EventuallyConsistentBatch {
     
+    /**
+     - parameter retryInterval: How long the framework waits until retrying a batch which experienced recoverable errors
+                                during processing.
+     
+     - parameter timeout: The timeout for individual commit operations on Entities. Note that the database bindings used by
+                          an implementation of DatabaseAccessor may have their own timeouts which will govern if they are
+                          shorter than those specified here. All database operations are protected by this timeout, but some
+                          operations which occur during the commit process are not. Thus, if the Entity.queue is blocked or
+                          if Entity serialization causes an endless loop the individual Entity commit timeout will not
+                          fire. For these scenarios a timeout for the entire batch of 2x **timeout** is used. That is,
+                          if all individual commit operations on Entities within the batch do not complete within 2x timeout
+                          the batch will timeout. If the batch times out, any pending updates remaining in the batch are lost
+                          and logged if a logger has been provided. Successful database updates for other entities in the
+                          batch are NOT rolled back.
+ */
     init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
         self.retryInterval = retryInterval
         self.timeout = timeout
@@ -77,11 +79,14 @@ public class EventuallyConsistentBatch {
         }
     }
     
+    /// Asynchronously write contents to persistent media
     public func commit () {
         commit (completionHandler: nil)
     }
     
     // See https://github.com/neallester/danake-sw/issues/5
+    /// Asynchronously write contents to persistent media
+    /// - parameter completionHandler: The closure called when batch processing is complete
     public func commit (completionHandler: (() -> ())?) {
         queue.sync {
             let oldDelegate = delegate
@@ -90,7 +95,7 @@ public class EventuallyConsistentBatch {
         }
     }
     
-    // Waits until batch processing has completed
+    /// Write contents to persistent media waiting until batch processing is complete
     public func commitSync() {
         let group = DispatchGroup()
         group.enter()

@@ -25,23 +25,37 @@ internal protocol EntityManagement : EntityProtocol, Encodable {
     
 }
 
+/**
+    The state of an Entity with regard to persistent storage
+*/
 public enum PersistenceState : String, Codable {
     
-    case new                // Not yet in persistent media
-    case dirty              // Application version differs from persistent media
-    case persistent         // Application contents are the same as in persistent media
-    case pendingRemoval     // Application has requested this entity be removed from persistent media
-    case abandoned          // The entity was "removed" before being persisted (will be ignored when Batch is committed)
-    case saving             // Entity is currently being saved to persistent media
+    /// Not yet in persistent media
+    case new
+    
+    /// Application version differs from persistent media
+    case dirty
+    
+    /// Application contents are the same as in persistent media
+    case persistent
+    
+    /// Application has requested this entity be removed from persistent media
+    case pendingRemoval
+    
+    /// The entity was "removed" before being persisted (will be ignored when Batch is committed)
+    case abandoned
+    
+    /// Entity is currently being saved to persistent media
+    case saving
 
 }
 
-public enum PendingAction {
+internal enum PendingAction {
     case update
     case remove
 }
 
-public enum PersistenceAction<T: Codable> {
+internal enum PersistenceAction<T: Codable> {
 
     case setDirty
     case updateItem ((inout T) -> ())
@@ -50,7 +64,7 @@ public enum PersistenceAction<T: Codable> {
     
 }
 
-public enum EntityEncodingResult<R> {
+internal enum EntityEncodingResult<R> {
     case ok (R)
     case error (String)
 }
@@ -63,7 +77,7 @@ internal class DataContainer {
     
 }
 
-/*
+/**
     Type erased wrapper for Entity providing access to metadata and
     functionality needed for persistent management
  */
@@ -145,15 +159,14 @@ public enum EntityDeserializationError<T: Codable> : Error {
     case missingUserInfoValue (CodingUserInfoKey)
 }
 
-/*
-    **** Class Entity is the primary model object wrapper. ****
+/**
+    Class Entity is the primary model object wrapper.
  
     Danake does not support polymorphic retrieval of Entity items because Swift
     generics are invariant rather than covariant. If polymorphic behavior is required
     the recommended approach is to use a Codable (non-entity) polymorphic delegate
     See https://medium.com/tsengineering/swift-4-0-codable-decoding-subclasses-inherited-classes-heterogeneous-arrays-ee3e180eb556
     for one approach to implementing Codable polymorphic constructs
- 
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
     
@@ -205,9 +218,9 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
 
-// Metadata
+/// Mark - Metadata
     
-    // Version is incremented each time the entity is stored in the persistent media
+    /// Version is incremented each time the entity is stored in the persistent media
     public var version: Int {
         get {
             var result: Int? = nil
