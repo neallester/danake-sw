@@ -194,7 +194,7 @@ class DatabaseTests: XCTestCase {
         var json = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         // Create new
         decoder.userInfo[Database.collectionKey] = collection
         let creation = EntityCreation()
@@ -254,12 +254,12 @@ class DatabaseTests: XCTestCase {
         }
     }
     
-    public func testQualifiedCollectionName() {
-        let collectionName: CollectionName = "B"
-        XCTAssertEqual ("A.B", Database.qualifiedCollectionName (databaseHash: "A", collectionName: collectionName))
+    public func testQualifiedCacheName() {
+        let cacheName: CacheName = "B"
+        XCTAssertEqual ("A.B", Database.qualifiedCacheName (databaseHash: "A", cacheName: cacheName))
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        XCTAssertEqual ("\(accessor.hashValue).\(standardCollectionName)", database.qualifiedCollectionName(standardCollectionName))
+        XCTAssertEqual ("\(accessor.hashValue).\(standardCacheName)", database.qualifiedCacheName(standardCacheName))
     }
     
 }

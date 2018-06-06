@@ -17,10 +17,10 @@ class EntityCacheTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         database.collectionRegistrar.clear()
         Database.collectionRegistrar.clear()
-        let collectionName: CollectionName = "myCollection"
-        var collection: EntityCache<MyStruct>? = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        var collection: EntityCache<MyStruct>? = EntityCache<MyStruct>(database: database, name: cacheName)
         let _ = collection // Quite a spurious xcode warning
-        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: cacheName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
         XCTAssertTrue (Database.collectionRegistrar.isRegistered(key: collection!.qualifiedName))
         XCTAssertEqual (1, Database.collectionRegistrar.count())
@@ -28,23 +28,23 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
-        let _ = EntityCache<MyStruct>(database: database, name: collectionName)
+        let _ = EntityCache<MyStruct>(database: database, name: cacheName)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.accessor.hashValue);collectionName=myCollection", entries[0].asTestString())
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.accessor.hashValue).myCollection", entries[1].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.accessor.hashValue);cacheName=myCollection", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCacheName=\(database.accessor.hashValue).myCollection", entries[1].asTestString())
         }
         collection = nil
-        XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertFalse (database.collectionRegistrar.isRegistered(key: cacheName))
         XCTAssertEqual (0, database.collectionRegistrar.count())
-        XCTAssertFalse (Database.collectionRegistrar.isRegistered(key: collectionName))
+        XCTAssertFalse (Database.collectionRegistrar.isRegistered(key: cacheName))
         XCTAssertEqual (0, Database.collectionRegistrar.count())
         // Creation with closure
         let deserializationClosure: (inout [CodingUserInfoKey : Any]) -> () = { userInfo in
             userInfo[myKey] = "myValue"
         }
-        collection = EntityCache<MyStruct> (database: database, name: collectionName, deserializationEnvironmentClosure: deserializationClosure)
-        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: collectionName))
+        collection = EntityCache<MyStruct> (database: database, name: cacheName, deserializationEnvironmentClosure: deserializationClosure)
+        XCTAssertTrue (database.collectionRegistrar.isRegistered(key: cacheName))
         XCTAssertEqual (1, database.collectionRegistrar.count())
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
@@ -58,11 +58,11 @@ class EntityCacheTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = ""
-        let _ = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = ""
+        let _ = EntityCache<MyStruct>(database: database, name: cacheName)
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|Empty String is an illegal CollectionName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue);collectionName=", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|Empty String is an illegal CacheName|database=Database;accessor=InMemoryAccessor;databaseHashValue=\(database.accessor.hashValue);cacheName=", entries[0].asTestString())
         }
     }
 
@@ -70,7 +70,7 @@ class EntityCacheTests: XCTestCase {
         // Creation with item
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         var batch = EventuallyConsistentBatch()
         var entity: Entity<MyStruct>? = collection.new(batch: batch, item: myStruct)
         XCTAssertTrue (collection === entity!.collection)
@@ -140,7 +140,7 @@ class EntityCacheTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let data = try accessor.encoder.encode(entity)
         var result = collection.get (id: entity.id)
         XCTAssertTrue (result.isOk())
@@ -151,7 +151,7 @@ class EntityCacheTests: XCTestCase {
             XCTAssertEqual ("WARNING|EntityCache<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue);collection=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
-        let _ = accessor.add(name: standardCollectionName, id: entity.id, data: data)
+        let _ = accessor.add(name: standardCacheName, id: entity.id, data: data)
         result = collection.get(id: entity.id)
         let retrievedEntity = result.item()!
         XCTAssertEqual (entity.id.uuidString, retrievedEntity.id.uuidString)
@@ -191,7 +191,7 @@ class EntityCacheTests: XCTestCase {
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
-            XCTAssertTrue (data == storage[standardCollectionName]![entity.id]!)
+            XCTAssertTrue (data == storage[standardCacheName]![entity.id]!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
@@ -205,7 +205,7 @@ class EntityCacheTests: XCTestCase {
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
-            XCTAssertTrue (data == storage[standardCollectionName]![entity.id]!)
+            XCTAssertTrue (data == storage[standardCacheName]![entity.id]!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
@@ -214,7 +214,7 @@ class EntityCacheTests: XCTestCase {
         let json = "{}"
         let invalidData = json.data(using: .utf8)!
         let invalidDataUuid = UUID()
-        let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData)
+        let _ = accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData)
         let invalidEntity = collection.get(id: invalidDataUuid)
         switch invalidEntity {
         case .error (let errorMessage):
@@ -231,7 +231,7 @@ class EntityCacheTests: XCTestCase {
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
         let data3 = try JSONEncoder().encode(entity)
-        let _ = accessor.add(name: standardCollectionName, id: entity3.id, data: data3)
+        let _ = accessor.add(name: standardCacheName, id: entity3.id, data: data3)
         accessor.setThrowError()
         switch collection.get(id: entity3.id) {
         case .error (let errorMessage):
@@ -256,9 +256,9 @@ class EntityCacheTests: XCTestCase {
             let id2 = UUID()
             let data2 = "{\"id\":\"\(id2.uuidString)\",\"schemaVersion\":5,\"created\":1525732227.0376,\"saved\":1525732315.7534,\"item\":{\"myInt\":20,\"myString\":\"A String2\"},\"persistenceState\":\"persistent\",\"version\":20}".data(using: .utf8)!
             let dispatchGroup = DispatchGroup()
-            let _ = accessor.add(name: standardCollectionName, id: id1, data: data1)
-            let _ = accessor.add(name: standardCollectionName, id: id2, data: data2)
-            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+            let _ = accessor.add(name: standardCacheName, id: id1, data: data1)
+            let _ = accessor.add(name: standardCacheName, id: id2, data: data2)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
             let startSempaphore = DispatchSemaphore (value: 1)
             startSempaphore.wait()
             accessor.setPreFetch() { uuid in
@@ -364,7 +364,7 @@ class EntityCacheTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .warning)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
             var waitFor1 = expectation(description: "wait1.1")
             var waitFor2 = expectation(description: "wait2.1")
             var result1: RetrievalResult<Entity<MyStruct>>? = nil
@@ -388,8 +388,8 @@ class EntityCacheTests: XCTestCase {
             // Data In Cache=No; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.2")
             waitFor2 = expectation(description: "wait2.2")
-            let _ = accessor.add(name: standardCollectionName, id: entity1.id, data: data1)
-            let _ = accessor.add(name: standardCollectionName, id: entity2.id, data: data2)
+            let _ = accessor.add(name: standardCacheName, id: entity1.id, data: data1)
+            let _ = accessor.add(name: standardCacheName, id: entity2.id, data: data2)
             collection.get(id: entity1.id) { item in
                 result1 = item
                 waitFor1.fulfill()
@@ -468,9 +468,9 @@ class EntityCacheTests: XCTestCase {
                 XCTAssertTrue (entity4 === cache[entity4.id]!.codable!)
             }
             accessor.sync() { storage in
-                XCTAssertEqual (2, storage[standardCollectionName]!.count)
-                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.id]!)
-                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.id]!)
+                XCTAssertEqual (2, storage[standardCacheName]!.count)
+                XCTAssertTrue (data1 == storage[standardCacheName]![entity1.id]!)
+                XCTAssertTrue (data2 == storage[standardCacheName]![entity2.id]!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -499,9 +499,9 @@ class EntityCacheTests: XCTestCase {
                 XCTAssertTrue (entity4 === cache[entity4.id]!.codable!)
             }
             accessor.sync() { storage in
-                XCTAssertEqual (2, storage[standardCollectionName]!.count)
-                XCTAssertTrue (data1 == storage[standardCollectionName]![entity1.id]!)
-                XCTAssertTrue (data2 == storage[standardCollectionName]![entity2.id]!)
+                XCTAssertEqual (2, storage[standardCacheName]!.count)
+                XCTAssertTrue (data1 == storage[standardCacheName]![entity1.id]!)
+                XCTAssertTrue (data2 == storage[standardCacheName]![entity2.id]!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -515,8 +515,8 @@ class EntityCacheTests: XCTestCase {
             let invalidData2 = json2.data(using: .utf8)!
             let invalidDataUuid1 = UUID()
             let invalidDataUuid2 = UUID()
-            let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid1, data: invalidData1)
-            let _ = accessor.add(name: standardCollectionName, id: invalidDataUuid2, data: invalidData2)
+            let _ = accessor.add(name: standardCacheName, id: invalidDataUuid1, data: invalidData1)
+            let _ = accessor.add(name: standardCacheName, id: invalidDataUuid2, data: invalidData2)
             collection.get(id: invalidDataUuid1) { item in
                 result1 = item
                 waitFor1.fulfill()
@@ -552,8 +552,8 @@ class EntityCacheTests: XCTestCase {
             let data5 = try JSONEncoder().encode(entity1)
             let entity6 = newTestEntity(myInt: 60, myString: "A String6")
             let data6 = try JSONEncoder().encode(entity2)
-            let _ = accessor.add(name: standardCollectionName, id: entity5.id, data: data5)
-            let _ = accessor.add(name: standardCollectionName, id: entity6.id, data: data6)
+            let _ = accessor.add(name: standardCacheName, id: entity5.id, data: data5)
+            let _ = accessor.add(name: standardCacheName, id: entity6.id, data: data6)
             accessor.setThrowError()
             waitFor1 = expectation(description: "wait1.6")
             waitFor2 = expectation(description: "wait2.6")
@@ -591,7 +591,7 @@ class EntityCacheTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .warning)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
             var retrievedEntities = collection.scan(criteria: nil).item()!
             XCTAssertEqual (0, retrievedEntities.count)
             retrievedEntities = collection.scan().item()!
@@ -606,7 +606,7 @@ class EntityCacheTests: XCTestCase {
             entity1.persistenceState = .persistent
             entity1.saved = Date()
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
+            switch accessor.add(name: standardCacheName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -617,7 +617,7 @@ class EntityCacheTests: XCTestCase {
             entity2.persistenceState = .persistent
             entity2.saved = Date()
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
+            switch accessor.add(name: standardCacheName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -628,7 +628,7 @@ class EntityCacheTests: XCTestCase {
             entity3.persistenceState = .persistent
             entity3.saved = Date()
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
+            switch accessor.add(name: standardCacheName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
@@ -639,7 +639,7 @@ class EntityCacheTests: XCTestCase {
             entity4.persistenceState = .persistent
             entity4.saved = Date()
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
+            switch accessor.add(name: standardCacheName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
@@ -650,7 +650,7 @@ class EntityCacheTests: XCTestCase {
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            switch accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData) {
             case .ok:
                 break
             default:
@@ -804,14 +804,14 @@ class EntityCacheTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .error)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
     
             entity1.persistenceState = .persistent
             entity1.saved = Date()
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
+            switch accessor.add(name: standardCacheName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -822,7 +822,7 @@ class EntityCacheTests: XCTestCase {
             entity2.persistenceState = .persistent
             entity2.saved = Date()
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
+            switch accessor.add(name: standardCacheName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -833,7 +833,7 @@ class EntityCacheTests: XCTestCase {
             entity3.persistenceState = .persistent
             entity3.saved = Date()
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
+            switch accessor.add(name: standardCacheName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
@@ -844,7 +844,7 @@ class EntityCacheTests: XCTestCase {
             entity4.persistenceState = .persistent
             entity4.saved = Date()
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
+            switch accessor.add(name: standardCacheName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
@@ -855,7 +855,7 @@ class EntityCacheTests: XCTestCase {
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            switch accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData) {
             case .ok:
                 break
             default:
@@ -900,14 +900,14 @@ class EntityCacheTests: XCTestCase {
                 let accessor = InMemoryAccessor()
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-                let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+                let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
                 // entity1, entity2: Data in accessor
                 let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
         
                 entity1.persistenceState = .persistent
                 entity1.saved = Date()
                 let data1 = try accessor.encoder.encode(entity1)
-                switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
+                switch accessor.add(name: standardCacheName, id: entity1.id, data: data1) {
                 case .ok:
                     break
                 default:
@@ -918,7 +918,7 @@ class EntityCacheTests: XCTestCase {
                 entity2.persistenceState = .persistent
                 entity2.saved = Date()
                 let data2 = try accessor.encoder.encode(entity2)
-                switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
+                switch accessor.add(name: standardCacheName, id: entity2.id, data: data2) {
                 case .ok:
                     break
                 default:
@@ -929,7 +929,7 @@ class EntityCacheTests: XCTestCase {
                 entity3.persistenceState = .persistent
                 entity3.saved = Date()
                 let data3 = try accessor.encoder.encode(entity3)
-                switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
+                switch accessor.add(name: standardCacheName, id: entity3.id, data: data3) {
                 case .ok:
                     break
                 default:
@@ -940,7 +940,7 @@ class EntityCacheTests: XCTestCase {
                 entity4.persistenceState = .persistent
                 entity4.saved = Date()
                 let data4 = try accessor.encoder.encode(entity4)
-                switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
+                switch accessor.add(name: standardCacheName, id: entity4.id, data: data4) {
                 case .ok:
                     break
                 default:
@@ -951,7 +951,7 @@ class EntityCacheTests: XCTestCase {
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
                 let invalidDataUuid = UUID()
-                switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+                switch accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData) {
                 case .ok:
                     break
                 default:
@@ -990,14 +990,14 @@ class EntityCacheTests: XCTestCase {
             let accessor = InMemoryAccessor()
             let logger = InMemoryLogger(level: .error)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-            let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+            let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
             // entity1, entity2: Data in accessor
             let entity1 = newTestEntity(myInt: 10, myString: "A String 1")
     
             entity1.persistenceState = .persistent
             entity1.saved = Date()
             let data1 = try accessor.encoder.encode(entity1)
-            switch accessor.add(name: standardCollectionName, id: entity1.id, data: data1) {
+            switch accessor.add(name: standardCacheName, id: entity1.id, data: data1) {
             case .ok:
                 break
             default:
@@ -1008,7 +1008,7 @@ class EntityCacheTests: XCTestCase {
             entity2.persistenceState = .persistent
             entity2.saved = Date()
             let data2 = try accessor.encoder.encode(entity2)
-            switch accessor.add(name: standardCollectionName, id: entity2.id, data: data2) {
+            switch accessor.add(name: standardCacheName, id: entity2.id, data: data2) {
             case .ok:
                 break
             default:
@@ -1019,7 +1019,7 @@ class EntityCacheTests: XCTestCase {
             entity3.persistenceState = .persistent
             entity3.saved = Date()
             let data3 = try accessor.encoder.encode(entity3)
-            switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
+            switch accessor.add(name: standardCacheName, id: entity3.id, data: data3) {
             case .ok:
                 break
             default:
@@ -1030,7 +1030,7 @@ class EntityCacheTests: XCTestCase {
             entity4.persistenceState = .persistent
             entity4.saved = Date()
             let data4 = try accessor.encoder.encode(entity4)
-            switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
+            switch accessor.add(name: standardCacheName, id: entity4.id, data: data4) {
             case .ok:
                 break
             default:
@@ -1041,7 +1041,7 @@ class EntityCacheTests: XCTestCase {
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
             let invalidDataUuid = UUID()
-            switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+            switch accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData) {
             case .ok:
                 break
             default:
@@ -1085,12 +1085,12 @@ class EntityCacheTests: XCTestCase {
                 let accessor = InMemoryAccessor()
                 let logger = InMemoryLogger(level: .error)
                 let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-                let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+                let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
                 let dispatchGroup = DispatchGroup()
                 // entity1, entity2: Data in accessor
                 let id1 = UUID()
                 let data1 = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":5,\"created\":1525735252.2328,\"saved\":1525735368.8345,\"item\":{\"myInt\":10,\"myString\":\"A String 1\"},\"persistenceState\":\"persistent\",\"version\":1}".data(using: .utf8)!
-                switch accessor.add(name: standardCollectionName, id: id1, data: data1) {
+                switch accessor.add(name: standardCacheName, id: id1, data: data1) {
                 case .ok:
                     break
                 default:
@@ -1098,7 +1098,7 @@ class EntityCacheTests: XCTestCase {
                 }
                 let id2 = UUID()
                 let data2 = "{\"id\":\"\(id2.uuidString)\",\"schemaVersion\":5,\"created\":1525735262.2330,\"saved\":1525735311.3375,\"item\":{\"myInt\":20,\"myString\":\"A String 2\"},\"persistenceState\":\"persistent\",\"version\":2}".data(using: .utf8)!
-                switch accessor.add(name: standardCollectionName, id: id2, data: data2) {
+                switch accessor.add(name: standardCacheName, id: id2, data: data2) {
                 case .ok:
                     break
                 default:
@@ -1109,7 +1109,7 @@ class EntityCacheTests: XCTestCase {
                 entity3.persistenceState = .persistent
                 entity3.saved = Date()
                 let data3 = try accessor.encoder.encode(entity3)
-                switch accessor.add(name: standardCollectionName, id: entity3.id, data: data3) {
+                switch accessor.add(name: standardCacheName, id: entity3.id, data: data3) {
                 case .ok:
                     break
                 default:
@@ -1120,7 +1120,7 @@ class EntityCacheTests: XCTestCase {
                 entity4.persistenceState = .persistent
                 entity4.saved = Date()
                 let data4 = try accessor.encoder.encode(entity4)
-                switch accessor.add(name: standardCollectionName, id: entity4.id, data: data4) {
+                switch accessor.add(name: standardCacheName, id: entity4.id, data: data4) {
                 case .ok:
                     break
                 default:
@@ -1131,7 +1131,7 @@ class EntityCacheTests: XCTestCase {
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
                 let invalidDataUuid = UUID()
-                switch accessor.add(name: standardCollectionName, id: invalidDataUuid, data: invalidData) {
+                switch accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData) {
                 case .ok:
                     break
                 default:
@@ -1316,7 +1316,7 @@ class EntityCacheTests: XCTestCase {
     public func testRegisterOnCache() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         var didFire1 = false
         var didFire2 = false
         let id = UUID()

@@ -87,7 +87,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         do {
             let data = try self.encoder.encode (wrapper)
             let result = { () -> DatabaseUpdateResult in
-                return self.add (name: wrapper.collectionName, id: wrapper.id, data: data)
+                return self.add (name: wrapper.cacheName, id: wrapper.id, data: data)
             }
             return .ok (result)
         } catch {
@@ -114,16 +114,16 @@ public class InMemoryAccessor: DatabaseAccessor {
             return errorResult
         }
         let result = { () -> DatabaseUpdateResult in
-            return self.remove(name: wrapper.collectionName, id: wrapper.id)
+            return self.remove(name: wrapper.cacheName, id: wrapper.id)
         }
         return .ok (result)
     }
     
-    public func isValidCollectionName(_ name: CollectionName) -> ValidationResult {
+    public func isValidCacheName(_ name: CacheName) -> ValidationResult {
         if name.count > 0 {
             return .ok
         } else {
-            return .error ("Empty String is an illegal CollectionName")
+            return .error ("Empty String is an illegal CacheName")
         }
     }
     
@@ -133,7 +133,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     // Access to internals (may be used within tests)
     
-    public func add (name: CollectionName, id: UUID, data: Data) -> DatabaseUpdateResult {
+    public func add (name: CacheName, id: UUID, data: Data) -> DatabaseUpdateResult {
         var result = DatabaseUpdateResult.ok
         queue.sync {
             if let preFetch = preFetch {
@@ -154,7 +154,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func remove (name: CollectionName, id: UUID) -> DatabaseUpdateResult {
+    public func remove (name: CacheName, id: UUID) -> DatabaseUpdateResult {
         var result = DatabaseUpdateResult.ok
         queue.sync {
             if let preFetch = preFetch {
@@ -171,7 +171,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         
     }
     
-    public func has (name: CollectionName, id: UUID) -> Bool {
+    public func has (name: CacheName, id: UUID) -> Bool {
         var result = false
         queue.sync {
             result = self.storage[name]?[id] != nil
@@ -179,7 +179,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func count (name: CollectionName) -> Int {
+    public func count (name: CacheName) -> Int {
         var result = 0
         queue.sync {
             if let collectionStorage = self.storage[name] {
@@ -189,7 +189,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
 
-    public func getData (name: CollectionName, id: UUID) -> Data? {
+    public func getData (name: CacheName, id: UUID) -> Data? {
         var result: Data? = nil
         queue.sync() {
             result = storage[name]?[id]
@@ -231,7 +231,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         }        
     }
     
-    func sync (closure: (Dictionary<CollectionName, Dictionary<UUID, Data>>) -> Void) {
+    func sync (closure: (Dictionary<CacheName, Dictionary<UUID, Data>>) -> Void) {
         queue.sync () {
             closure (storage)
         }
@@ -257,7 +257,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     private var preFetch: ((UUID) -> Void)? = nil
     internal var throwError = false
     internal var throwOnlyRecoverableErrors = false
-    private var storage = Dictionary<CollectionName, Dictionary<UUID, Data>>()
+    private var storage = Dictionary<CacheName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue
     private let entityCreator = EntityCreation()

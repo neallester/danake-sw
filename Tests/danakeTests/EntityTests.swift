@@ -499,7 +499,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch EntityDeserializationError<MyStruct>.NoCollectionInDecoderUserInfo {}
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         // With correct collection (success)
         decoder.userInfo[Database.collectionKey] = collection
         let entity1 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
@@ -734,7 +734,7 @@ class EntityTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let json = "{\"id\":\"438AF59B-0CC1-46C1-8C73-336BDC2AA606\",\"schemaVersion\":5,\"created\":543967928.51027906,\"item\":{\"entityReference\":{\"isEager\":false,\"isNil\":true}},\"version\":10,\"persistenceState\":\"persistent\"}"
         let parentId = UUID (uuidString: "438AF59B-0CC1-46C1-8C73-336BDC2AA606")!
-        let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"qualifiedCollectionName\":\"\(accessor.hashValue).childCollection\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
+        let json2 = "{\"id\":\"BE6458D5-8762-4AEF-9748-94870B0BBCB1\",\"schemaVersion\":5,\"created\":1522279213.187017,\"item\":{\"entityReference\":{\"qualifiedCacheName\":\"\(accessor.hashValue).childCollection\",\"id\":\"A7E75632-9780-42EE-BD4C-6D4A61943285\",\"isEager\":false,\"version\":3}},\"persistenceState\":\"new\",\"version\":0}"
         let parentId2 = UUID (uuidString: "BE6458D5-8762-4AEF-9748-94870B0BBCB1")!
         let parentCollection = EntityCache<EntityReferenceContainer> (database: database, name: "parentCollection")
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
@@ -771,7 +771,7 @@ class EntityTests: XCTestCase {
                 XCTAssertTrue (reference.parentData.collection === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
-                XCTAssertEqual (Database.qualifiedCollectionName(databaseHash: accessor.hashValue, collectionName: "childCollection") , reference.referenceData!.qualifiedCollectionName)
+                XCTAssertEqual (Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: "childCollection") , reference.referenceData!.qualifiedCacheName)
                 XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
                 XCTAssertEqual (3, reference.referenceData!.version)
                 switch reference.state {
@@ -788,9 +788,9 @@ class EntityTests: XCTestCase {
     
     func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (collectionName: entity.collection.name, entity: entity)
+        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (cacheName: entity.collection.name, entity: entity)
         XCTAssertEqual (entity.id, wrapper.id)
-        XCTAssertEqual (entity.collection.name, wrapper.collectionName)
+        XCTAssertEqual (entity.collection.name, wrapper.cacheName)
         let encoder = JSONEncoder()
         let entityData = try encoder.encode(entity)
         let wrapperData = try encoder.encode (wrapper)
@@ -1214,31 +1214,31 @@ class EntityTests: XCTestCase {
     
     func testReferenceManagerSerializationData() {
         let id = UUID()
-        var data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
-        XCTAssertEqual (Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), data.qualifiedCollectionName)
+        var data = ReferenceManagerData (databaseId: "dbId", cacheName: "cacheName", id: id, version: 10)
+        XCTAssertEqual (Database.qualifiedCacheName(databaseHash: "dbId", cacheName: "cacheName"), data.qualifiedCacheName)
         XCTAssertEqual (id.uuidString, data.id.uuidString)
         XCTAssertEqual (10, data.version)
-        let data2 = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 10)
+        let data2 = ReferenceManagerData (databaseId: "dbId", cacheName: "cacheName", id: id, version: 10)
         XCTAssertEqual (data, data2)
-        data = ReferenceManagerData (databaseId: "dbId1", collectionName: "collectionName", id: id, version: 10)
+        data = ReferenceManagerData (databaseId: "dbId1", cacheName: "cacheName", id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName1", id: id, version: 10)
+        data = ReferenceManagerData (databaseId: "dbId", cacheName: "cacheName1", id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: UUID(), version: 10)
+        data = ReferenceManagerData (databaseId: "dbId", cacheName: "cacheName", id: UUID(), version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (databaseId: "dbId", collectionName: "collectionName", id: id, version: 11)
+        data = ReferenceManagerData (databaseId: "dbId", cacheName: "cacheName", id: id, version: 11)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId1", collectionName: "collectionName"), id: id, version: 10)
+        data = ReferenceManagerData (qualifiedCacheName: Database.qualifiedCacheName(databaseHash: "dbId1", cacheName: "cacheName"), id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName1"), id: id, version: 10)
+        data = ReferenceManagerData (qualifiedCacheName: Database.qualifiedCacheName(databaseHash: "dbId", cacheName: "cacheName1"), id: id, version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: UUID(), version: 10)
+        data = ReferenceManagerData (qualifiedCacheName: Database.qualifiedCacheName(databaseHash: "dbId", cacheName: "cacheName"), id: UUID(), version: 10)
         XCTAssertNotEqual(data, data2)
-        data = ReferenceManagerData (qualifiedCollectionName: Database.qualifiedCollectionName(databaseHash: "dbId", collectionName: "collectionName"), id: id, version: 11)
+        data = ReferenceManagerData (qualifiedCacheName: Database.qualifiedCacheName(databaseHash: "dbId", cacheName: "cacheName"), id: id, version: 11)
         XCTAssertNotEqual(data, data2)
         let entity = newTestEntity(myInt: 10, myString: "20")
         data = entity.referenceData()
-        XCTAssertEqual (entity.collection.qualifiedName, data.qualifiedCollectionName)
+        XCTAssertEqual (entity.collection.qualifiedName, data.qualifiedCacheName)
         XCTAssertEqual (entity.id, data.id)
         XCTAssertEqual (entity.version, data.version)
     }
@@ -1595,7 +1595,7 @@ class EntityTests: XCTestCase {
             }
         }
         logger.sync() { entries in
-            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|collectionName=\(collection.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|cacheName=\(collection.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
         }
     }
     

@@ -15,8 +15,8 @@ class EntityCommitTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -47,7 +47,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
         group.enter()
         entity.commit() { result in
             switch result {
@@ -75,7 +75,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
 
     // Test calling entity.commit() when entity is PersistenceState.abandoned
@@ -83,8 +83,8 @@ class EntityCommitTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -102,7 +102,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
         group.enter()
         entity.commit() { result in
             switch result {
@@ -130,7 +130,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .abandoned")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
     }
     
     // Test calling entity.commit() when entity is PersistenceState.saving
@@ -138,8 +138,8 @@ class EntityCommitTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         var group = DispatchGroup()
@@ -198,7 +198,7 @@ class EntityCommitTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: id))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: id))
             group.leave()
         }
         switch entity.persistenceState {

@@ -83,8 +83,8 @@ internal class DataContainer {
  */
 public class EntityPersistenceWrapper : Encodable {
     
-    init (collectionName: CollectionName, entity: EntityManagement) {
-        self.collectionName = collectionName
+    init (cacheName: CacheName, entity: EntityManagement) {
+        self.cacheName = cacheName
         self.entity = entity
         self.id = entity.id
     }
@@ -96,7 +96,7 @@ public class EntityPersistenceWrapper : Encodable {
     
     let id: UUID
     
-    public let collectionName: CollectionName
+    public let cacheName: CacheName
     private let entity: EntityManagement
     
    
@@ -127,25 +127,25 @@ public struct EntityReferenceData<T: Codable> : Equatable {
 // Data for serializing the reference state of a ReferenceManager
 public struct ReferenceManagerData: Equatable {
     
-    internal init (databaseId: String, collectionName: CollectionName, id: UUID, version: Int) {
-        self.qualifiedCollectionName = Database.qualifiedCollectionName(databaseHash: databaseId, collectionName: collectionName)
+    internal init (databaseId: String, cacheName: CacheName, id: UUID, version: Int) {
+        self.qualifiedCacheName = Database.qualifiedCacheName(databaseHash: databaseId, cacheName: cacheName)
         self.id = id
         self.version = version
     }
     
-    internal init (qualifiedCollectionName: QualifiedCollectionName, id: UUID, version: Int) {
-        self.qualifiedCollectionName = qualifiedCollectionName
+    internal init (qualifiedCacheName: QualifiedCacheName, id: UUID, version: Int) {
+        self.qualifiedCacheName = qualifiedCacheName
         self.id = id
         self.version = version
     }
 
-    public let qualifiedCollectionName: QualifiedCollectionName
+    public let qualifiedCacheName: QualifiedCacheName
     public let id: UUID
     public let version: Int
     
     public static func == (lhs: ReferenceManagerData, rhs: ReferenceManagerData) -> Bool {
         return
-            lhs.qualifiedCollectionName == rhs.qualifiedCollectionName &&
+            lhs.qualifiedCacheName == rhs.qualifiedCacheName &&
             lhs.id == rhs.id &&
             lhs.version == rhs.version
     }
@@ -204,14 +204,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
-                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedWithoutSave", data: [(name:"collectionName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedWithoutSave", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
                         }
                     } catch {
-                        localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"collectionName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
+                        localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
                     }
                 }
             } else {
-                collection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"collectionName", value: collection.qualifiedName), (name: "entityId", value: self.id.uuidString)])
+                collection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: collection.qualifiedName), (name: "entityId", value: self.id.uuidString)])
             }
         default:
             break
@@ -354,7 +354,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func referenceData() -> ReferenceManagerData {
         var localVersion = 0
         localVersion = version
-        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue, collectionName: collection.name, id: id, version: localVersion)
+        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue, cacheName: collection.name, id: id, version: localVersion)
     }
     
     /*
@@ -464,7 +464,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
         _persistenceState = successState
         _version = _version + 1
-        let wrapper = EntityPersistenceWrapper (collectionName: collection.name, entity: self)
+        let wrapper = EntityPersistenceWrapper (cacheName: collection.name, entity: self)
         let actionSource = databaseActionSource (collection.database.accessor)
         let actionResult = actionSource (wrapper)
         var newItemData: Data? = nil
@@ -598,7 +598,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 do {
                     self.itemData = try Database.encoder.encode(self.item)
                 } catch {
-                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue)), (name: "collectionName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
+                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue)), (name: "cacheName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
                 }
                 collection.cacheEntity(self)
             } else {

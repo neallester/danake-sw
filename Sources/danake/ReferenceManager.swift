@@ -36,7 +36,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         case isEager
         case id
         case version
-        case qualifiedCollectionName
+        case qualifiedCacheName
     }
     
     init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool = false) {
@@ -44,7 +44,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         self.entity = entity
         self.state = .loaded
         self.isEager = isEager
-        queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
+        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
         parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if let entity = entity {
             collection = entity.collection
@@ -60,7 +60,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
             self.state = .loaded
         }        
         self.isEager = isEager
-        queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
+        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
         parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
         if self.isEager {
             queue.async {
@@ -74,17 +74,17 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         if let parentContainer = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentData = parentContainer.data as? EntityReferenceData<P> {
             self.parentData = parentData
             self.isEager = try values.decode (Bool.self, forKey: .isEager)
-            queue = DispatchQueue (label: ReferenceManager.queueName(collectionName: parentData.collection.name))
+            queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
             let isNil = try values.contains (.isNil) && values.decode (Bool.self, forKey: .isNil)
             if isNil {
                 state = .loaded
             } else {
-                let qualifiedCollectionName = try values.decode (String.self, forKey: .qualifiedCollectionName)
+                let qualifiedCacheName = try values.decode (String.self, forKey: .qualifiedCacheName)
                 let version = try values.decode (Int.self, forKey: .version)
                 let idString = try values.decode (String.self, forKey: .id)
                 let id = UUID (uuidString: idString)
                 if let id = id {
-                    self.referenceData = ReferenceManagerData (qualifiedCollectionName: qualifiedCollectionName, id: id, version: version)
+                    self.referenceData = ReferenceManagerData (qualifiedCacheName: qualifiedCacheName, id: id, version: version)
                 } else {
                     throw ReferenceManagerSerializationError.illegalId(idString)
                 }
@@ -106,11 +106,11 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         try queue.sync {
             try container.encode (isEager, forKey: .isEager)
             if let entity = entity {
-                try container.encode(entity.collection.qualifiedName, forKey: .qualifiedCollectionName)
+                try container.encode(entity.collection.qualifiedName, forKey: .qualifiedCacheName)
                 try container.encode (entity.id, forKey: .id)
                 try container.encode (entity.getVersionUnsafe(), forKey: .version)
             } else if let referenceData = referenceData {
-                try container.encode(referenceData.qualifiedCollectionName, forKey: .qualifiedCollectionName)
+                try container.encode(referenceData.qualifiedCacheName, forKey: .qualifiedCacheName)
                 try container.encode (referenceData.id, forKey: .id)
                 try container.encode (referenceData.version, forKey: .version)
             } else {
@@ -189,14 +189,14 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     internal func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {
             if collection == nil {
-                if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCollectionName) {
+                if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCacheName) {
                     if let collection = candidateCollection as? EntityCache<T> {
                         self.collection = collection
                     } else {
-                        closure (.error ("collectionName: \(referenceData.qualifiedCollectionName) returns wrong type: \(type (of: candidateCollection))"))
+                        closure (.error ("cacheName: \(referenceData.qualifiedCacheName) returns wrong type: \(type (of: candidateCollection))"))
                     }
                 } else {
-                    closure (.error ("Unknown collectionName: \(referenceData.qualifiedCollectionName)"))
+                    closure (.error ("Unknown cacheName: \(referenceData.qualifiedCacheName)"))
                 }
             }
             if let collection = collection {
@@ -293,7 +293,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                 case .retrieving, .retrievalError:
                     self.retrieve() { result in }
                 case .dereferenced:
-                    collection?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCollectionName), (name: "referenceDataId", value: referenceData?.id)])
+                    collection?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCacheName), (name: "referenceDataId", value: referenceData?.id)])
                 }
             }
         }
@@ -310,7 +310,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         if let parent = self.parent {
             parent.setDirty(batch: batch)
         } else {
-            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"collectionName", value: self.parentData.collection.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
+            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"cacheName", value: self.parentData.collection.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
         }
     }
     
@@ -370,8 +370,8 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     
     public let isEager: Bool
     
-    static func queueName (collectionName: String) -> String {
-        return "ReferenceManager.parent: " + collectionName
+    static func queueName (cacheName: String) -> String {
+        return "ReferenceManager.parent: " + cacheName
     }
     
     // Not Thread Safe

@@ -14,8 +14,8 @@ import Foundation
 //    }
 //}
 
-public typealias CollectionName = String
-public typealias QualifiedCollectionName = String
+public typealias CacheName = String
+public typealias QualifiedCacheName = String
 open class UntypedEntityCache {}
 
 /*
@@ -32,24 +32,24 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
     // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    public init (database: Database, name: CollectionName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())? = nil) {
+    public init (database: Database, name: CacheName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())? = nil) {
         self.database = database
         self.name = name
-        self.qualifiedName = database.qualifiedCollectionName(name)
+        self.qualifiedName = database.qualifiedCacheName(name)
         self.deserializationEnvironmentClosure = deserializationEnvironmentClosure
         cache = Dictionary<UUID, WeakCodable<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         self.workQueue = database.workQueue
         super.init()
         if !database.collectionRegistrar.register(key: name, value: self) {
-            database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "collectionName", value: name)])
+            database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
         }
         if !Database.collectionRegistrar.register(key: qualifiedName, value: self) {
-            database.logger?.log(level: .error, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCollectionName", value: self.qualifiedName)])
+            database.logger?.log(level: .error, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCacheName", value: self.qualifiedName)])
         }
-        let nameValidationResult = database.accessor.isValidCollectionName(name)
+        let nameValidationResult = database.accessor.isValidCacheName(name)
         if !nameValidationResult.isOk() {
-            database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.accessor))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "collectionName", value: name)])
+            database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.accessor))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
         }
 
     }
@@ -243,8 +243,8 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
 // Attributes
     
     internal let database: Database
-    public let name: CollectionName
-    public let qualifiedName: QualifiedCollectionName
+    public let name: CacheName
+    public let qualifiedName: QualifiedCacheName
     private var cache: Dictionary<UUID, WeakCodable<T>>
     private var onEntityCached: Dictionary<UUID, [(Entity<T>) -> ()]> = [:]
     private let cacheQueue: DispatchQueue

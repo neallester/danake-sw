@@ -15,8 +15,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         var group = DispatchGroup()
@@ -37,7 +37,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        let savedData = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData = accessor.getData(name: cacheName, id: entity.id)!
         let batch = EventuallyConsistentBatch()
         entity.remove(batch: batch)
         // .pendingRemoval building removeAction throws error
@@ -80,7 +80,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+            XCTAssertEqual (savedData, accessor.getData(name: cacheName, id: id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -155,7 +155,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+            XCTAssertEqual (savedData, accessor.getData(name: cacheName, id: id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -177,7 +177,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+        XCTAssertEqual (savedData, accessor.getData(name: cacheName, id: id))
         // .pendingRemoval firing removeAction timesout
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -268,7 +268,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (savedData, accessor.getData(name: collectionName, id: id))
+        XCTAssertEqual (savedData, accessor.getData(name: cacheName, id: id))
         // .pendingRemoval Success
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -317,7 +317,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -346,8 +346,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -428,7 +428,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: entity.asData(encoder: accessor.encoder)!, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: entity.asData(encoder: accessor.encoder)!, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -460,7 +460,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: entity.asData(encoder: accessor.encoder)!, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: entity.asData(encoder: accessor.encoder)!, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
     
     
@@ -469,8 +469,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -496,7 +496,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         // building the initial removeAction closure occurs in the same block as the
         // state change to .saving so it is not possible for a pending update to post
         // if an error occurs when building the initial removeActionClosure
@@ -558,7 +558,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -590,7 +590,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
         entity.remove(batch: batch)
@@ -648,7 +648,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -680,7 +680,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
         // Error occurs when firing the pending updateAction closure
         
         group.enter()
@@ -754,7 +754,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("40", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -787,7 +787,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending update and timeouts
@@ -795,8 +795,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -822,7 +822,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         // building the initial removeAction closure occurs in the same block as the
         // state change to .saving so it is not possible for a pending update to post
         // if an error occurs when building the initial removeActionClosure
@@ -921,7 +921,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with 2 pending updates
@@ -929,8 +929,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1010,7 +1010,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -1052,7 +1052,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with 2 pending updates and errors
@@ -1060,8 +1060,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1100,7 +1100,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1141,7 +1141,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -1183,7 +1183,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending updateAction closure
         preFetchCount = 0
         entity.remove(batch: batch)
@@ -1241,7 +1241,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("50", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -1283,7 +1283,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
         // Error occurs when firing the pending updateAction closure
         XCTAssertFalse (accessor.isThrowError())
         accessor.setPreFetch (nil)
@@ -1358,7 +1358,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("70", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -1408,7 +1408,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with 2 pending updates and timeouts
@@ -1416,8 +1416,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -1456,7 +1456,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1545,7 +1545,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with pending remove followed by pending update
@@ -1553,8 +1553,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1634,7 +1634,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -1673,7 +1673,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: collectionName, id: entity.id))
+        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with pending remove followed by pending update and errors
@@ -1681,8 +1681,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -1723,7 +1723,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -1764,7 +1764,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -1803,7 +1803,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending updateAction closure
         entity.remove(batch: batch)
         switch entity.persistenceState {
@@ -1861,7 +1861,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -1900,7 +1900,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
         // Error occurs when firing the pending updateAction closure
         accessor.setPreFetch() { id in }
         group.enter()
@@ -2013,7 +2013,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with pending remove followed by pending update and timeouts
@@ -2021,8 +2021,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -2063,7 +2063,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2149,7 +2149,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending remove
@@ -2157,8 +2157,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2234,7 +2234,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -2263,7 +2263,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending remove and errors
@@ -2271,8 +2271,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2312,7 +2312,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .pendingRemoval")
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2353,7 +2353,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -2382,7 +2382,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -2466,7 +2466,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
         entity.update(batch: batch) { item in
@@ -2544,7 +2544,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -2573,7 +2573,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending remove and timeouts
@@ -2581,8 +2581,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -2622,7 +2622,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .pendingRemoval")
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2698,7 +2698,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.dirty state with 2 pending removes
@@ -2706,8 +2706,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2782,7 +2782,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -2818,7 +2818,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with two pending removes and errors
@@ -2826,8 +2826,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -2866,7 +2866,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .pendingRemoval")
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -2908,7 +2908,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -2944,7 +2944,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -3000,7 +3000,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -3036,7 +3036,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch() { id in }
         entity.update(batch: batch) { item in
@@ -3114,7 +3114,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -3150,7 +3150,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has (name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with two pending removes and timeouts
@@ -3158,8 +3158,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -3198,7 +3198,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected .pendingRemoval")
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3282,7 +3282,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with pending update followed by a pending remove
@@ -3290,8 +3290,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -3366,7 +3366,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -3405,7 +3405,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
         
     }
     
@@ -3414,8 +3414,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
@@ -3456,7 +3456,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3497,7 +3497,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+            XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
             group.leave()
         }
         switch entity.persistenceState {
@@ -3536,7 +3536,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
         // Error occurs when building the pending removeAction closure
         XCTAssertEqual (1, entity.version)
         entity.sync() { item in
@@ -3592,7 +3592,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -3631,7 +3631,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
         // Error occurs when firing the pending removeAction closure
         accessor.setPreFetch (nil)
         entity.update(batch: batch) { item in
@@ -3709,7 +3709,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
                 XCTAssertEqual ("50", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+            XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
             group.leave()
         }
         switch entity.persistenceState {
@@ -3748,7 +3748,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertFalse (accessor.has(name: collectionName, id: entity.id))
+        XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state with a pending update followed by a pending remove and timeouts
@@ -3756,8 +3756,8 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        let collectionName: CollectionName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: collectionName)
+        let cacheName: CacheName = "myCollection"
+        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
         let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
@@ -3798,7 +3798,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         XCTAssertNil (entity.getPendingAction())
-        let savedData0 = accessor.getData(name: collectionName, id: entity.id)!
+        let savedData0 = accessor.getData(name: cacheName, id: entity.id)!
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
@@ -3883,6 +3883,6 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         semaphore.signal()
-        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: collectionName, id: entity.id)!, encoding: .utf8)!)
+        XCTAssertEqual (String (data: savedData0, encoding: .utf8)!, String (data: accessor.getData(name: cacheName, id: entity.id)!, encoding: .utf8)!)
     }
 }

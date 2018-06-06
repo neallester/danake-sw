@@ -204,8 +204,8 @@ open class Database {
         }
     }
     
-    internal func qualifiedCollectionName (_ collectionName: CollectionName) -> QualifiedCollectionName {
-        return Database.qualifiedCollectionName(databaseHash: accessor.hashValue, collectionName: collectionName)
+    internal func qualifiedCacheName (_ cacheName: CacheName) -> QualifiedCacheName {
+        return Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: cacheName)
     }
     
     public let accessor: DatabaseAccessor
@@ -214,18 +214,18 @@ open class Database {
     public let workQueue: DispatchQueue
     public let referenceRetryInterval: TimeInterval
     private let hashValue: String
-    let collectionRegistrar = Registrar<CollectionName, AnyObject>()
+    let collectionRegistrar = Registrar<CacheName, AnyObject>()
     
     deinit {
         Database.registrar.deRegister(key: hashValue)
     }
     
-    internal static func qualifiedCollectionName (databaseHash: String,  collectionName: CollectionName) -> QualifiedCollectionName {
-        return "\(databaseHash).\(collectionName)"
+    internal static func qualifiedCacheName (databaseHash: String,  cacheName: CacheName) -> QualifiedCacheName {
+        return "\(databaseHash).\(cacheName)"
     }
 
     static let registrar = Registrar<String, Database>()
-    static let collectionRegistrar = Registrar<QualifiedCollectionName, UntypedEntityCache>()
+    static let collectionRegistrar = Registrar<QualifiedCacheName, UntypedEntityCache>()
     public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
     internal static let encoder: JSONEncoder = {
@@ -241,10 +241,10 @@ public protocol DatabaseAccessor {
     func scan<T> (type: Entity<T>.Type, collection: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>>
     
     /*
-     Is the format of ** name ** a valid CollectionName in this storage medium and,
+     Is the format of ** name ** a valid CacheName in this storage medium and,
      is ** name ** NOT a reserved word in this storage medium?
      */
-    func isValidCollectionName (_ name: CollectionName) -> ValidationResult
+    func isValidCacheName (_ name: CacheName) -> ValidationResult
     
     /*
      A unique identifier for the specific instance of the database being accessed

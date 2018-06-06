@@ -13,7 +13,7 @@ class InMemoryAccessorTests: XCTestCase {
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let uuid = UUID()
         switch accessor.get(type: Entity<MyStruct>.self, collection: collection as EntityCache<MyStruct>, id: uuid) {
         case .ok (let retrievedData):
@@ -31,14 +31,14 @@ class InMemoryAccessorTests: XCTestCase {
         let id1 = UUID()
         let creationDateString1 = try jsonEncodedDate(date: Date())!
         let json1 = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
-        switch accessor.add(name: standardCollectionName, id: id1, data: json1.data (using: .utf8)!) {
+        switch accessor.add(name: standardCacheName, id: id1, data: json1.data (using: .utf8)!) {
         case .ok:
             break
         default:
             XCTFail ("Expected .ok")
         }
-        XCTAssertTrue (accessor.has(name: standardCollectionName, id: id1))
-        XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: id1)!, encoding: .utf8), json1)
+        XCTAssertTrue (accessor.has(name: standardCacheName, id: id1))
+        XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: id1)!, encoding: .utf8), json1)
         var retrievedEntity1: Entity<MyStruct>? = nil
         switch accessor.get(type: Entity<MyStruct>.self, collection: collection as EntityCache<MyStruct>, id: id1) {
         case .ok (let retrievedEntity):
@@ -88,7 +88,7 @@ class InMemoryAccessorTests: XCTestCase {
             item.myString = "11"
         }
         retrievedEntity1!.saved = Date()
-        let wrapper = EntityPersistenceWrapper (collectionName: retrievedEntity1!.collection.name, entity: retrievedEntity1!)
+        let wrapper = EntityPersistenceWrapper (cacheName: retrievedEntity1!.collection.name, entity: retrievedEntity1!)
         switch accessor.updateAction(wrapper: wrapper) {
         case .ok (let updateClosure):
             switch updateClosure() {
@@ -105,14 +105,14 @@ class InMemoryAccessorTests: XCTestCase {
         let creationDateString2 = try jsonEncodedDate(date: Date())!
         let savedDateString2 = try jsonEncodedDate(date: Date())!
         let json2 = "{\"id\":\"\(id2.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString2),\"saved\":\(savedDateString2),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":10}"
-        switch accessor.add(name: standardCollectionName, id: id2, data: json2.data (using: .utf8)!) {
+        switch accessor.add(name: standardCacheName, id: id2, data: json2.data (using: .utf8)!) {
         case .ok:
             break
         default:
             XCTFail ("Expected .ok")
         }
-        XCTAssertTrue (accessor.has(name: standardCollectionName, id: id2))
-        XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: id2)!, encoding: .utf8), json2)
+        XCTAssertTrue (accessor.has(name: standardCacheName, id: id2))
+        XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: id2)!, encoding: .utf8), json2)
         var found1 = false
         var retrievedEntity2: Entity<MyStruct>? = nil
         switch accessor.scan(type: Entity<MyStruct>.self, collection: collection as EntityCache<MyStruct>) {
@@ -240,7 +240,7 @@ class InMemoryAccessorTests: XCTestCase {
                 prefetchUuid = uuid.uuidString
             }
         }
-        let wrapper3 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity3)
+        let wrapper3 = EntityPersistenceWrapper (cacheName: collection.name, entity: entity3)
         switch accessor.addAction(wrapper: wrapper3) {
         case .ok (let closure):
             switch closure() {
@@ -254,7 +254,7 @@ class InMemoryAccessorTests: XCTestCase {
         }
         XCTAssertEqual (3, accessor.count(name: collection.name))
         XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
-        XCTAssertEqual (String (data: accessor.getData (name: standardCollectionName, id: entity3.id)!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
+        XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: entity3.id)!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
         XCTAssertTrue (entity3 === collection.cachedEntity(id: entity3.id))
         prefetchUuid = nil
         switch accessor.get(type: Entity<MyStruct>.self, collection: collection, id: entity3.id) {
@@ -306,7 +306,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .error")
         }
         XCTAssertEqual (3, accessor.count(name: collection.name))
-        var wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity4)
+        var wrapper4 = EntityPersistenceWrapper (cacheName: collection.name, entity: entity4)
         switch accessor.addAction(wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (3, accessor.count(name: collection.name))
@@ -342,7 +342,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         XCTAssertEqual (4, accessor.count(name: collection.name))
-        wrapper4 = EntityPersistenceWrapper (collectionName: collection.name, entity: entity4)
+        wrapper4 = EntityPersistenceWrapper (cacheName: collection.name, entity: entity4)
         switch accessor.addAction(wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (4, accessor.count(name: collection.name))
@@ -454,7 +454,7 @@ class InMemoryAccessorTests: XCTestCase {
     func testDecoder() {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCollectionName)
+        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let decoder = accessor.decoder(collection: collection)
         XCTAssertTrue (decoder.userInfo[Database.collectionKey] as! EntityCache<MyStruct> === collection)
         switch decoder.dateDecodingStrategy {
@@ -477,11 +477,11 @@ class InMemoryAccessorTests: XCTestCase {
     
     func testCount() {
         let accessor = InMemoryAccessor()
-        XCTAssertEqual (0, accessor.count (name: standardCollectionName))
+        XCTAssertEqual (0, accessor.count (name: standardCacheName))
         let data = Data (base64Encoded: "")!
         let id = UUID()
-        let _ = accessor.add(name: standardCollectionName, id: id, data: data)
-        XCTAssertEqual (1, accessor.count (name: standardCollectionName))
+        let _ = accessor.add(name: standardCacheName, id: id, data: data)
+        XCTAssertEqual (1, accessor.count (name: standardCacheName))
     }
 
     func testSetThrowError() {
@@ -517,7 +517,7 @@ class InMemoryAccessorTests: XCTestCase {
         let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        var collection = EntityCache<MyStructContainer>(database: database, name: standardCollectionName)
+        var collection = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
         switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as EntityCache<MyStructContainer>, id: id) {
         case .error(let errorMessage):
@@ -526,7 +526,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail ("Expected .error")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
-        collection = EntityCache<MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+        collection = EntityCache<MyStructContainer>(database: database, name: standardCacheName) { userInfo in
             userInfo[MyStructContainer.structKey] = myStruct
         }
         switch accessor.get(type: Entity<MyStructContainer>.self, collection: collection as EntityCache<MyStructContainer>, id: id) {
@@ -547,7 +547,7 @@ class InMemoryAccessorTests: XCTestCase {
         let json = "{\"id\":\"\(id.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        var collection = EntityCache<MyStructContainer>(database: database, name: standardCollectionName)
+        var collection = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: collection.name, id: id, data: json.data(using: .utf8)!)
         switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as EntityCache<MyStructContainer>) {
         case .ok(let result):
@@ -556,7 +556,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail ("Expected .ok")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
-        collection = EntityCache<MyStructContainer>(database: database, name: standardCollectionName) { userInfo in
+        collection = EntityCache<MyStructContainer>(database: database, name: standardCacheName) { userInfo in
             userInfo[MyStructContainer.structKey] = myStruct
         }
         switch accessor.scan(type: Entity<MyStructContainer>.self, collection: collection as EntityCache<MyStructContainer>) {

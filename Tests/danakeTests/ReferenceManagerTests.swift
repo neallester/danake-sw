@@ -227,7 +227,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         waitFor = expectation(description: "wait1a")
-        testReference = RetrieveControlledReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: ReferenceManagerData(databaseId: accessor.hashValue, collectionName: collection.name, id: persistentChildId1, version: 10), isEager: true)
+        testReference = RetrieveControlledReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: ReferenceManagerData(databaseId: accessor.hashValue, cacheName: collection.name, id: persistentChildId1, version: 10), isEager: true)
         parent = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         reference = testReference
         switch testReference.contentsReadyGroup.wait(timeout: DispatchTime.now() + 10) {
@@ -410,9 +410,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\""))
+            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":false"))
             XCTAssertTrue (json.contains("\"version\":10"))
@@ -465,7 +465,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait1")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -519,7 +519,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\""))
+            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":true"))
             XCTAssertTrue (json.contains("\"version\":10"))
@@ -656,9 +656,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\""))
+            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":false"))
             XCTAssertTrue (json.contains("\"version\":10"))
@@ -696,7 +696,7 @@ class ReferenceManagerTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
-        json = "{\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
         waitFor = expectation(description: "wait3")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -750,7 +750,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\""))
+            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
             XCTAssertTrue (json.contains("\"id\":\"\(persistentChildId2.uuidString)\""))
             XCTAssertTrue (json.contains("\"isEager\":true"))
             XCTAssertTrue (json.contains("\"version\":10"))
@@ -758,7 +758,7 @@ class ReferenceManagerTests: XCTestCase {
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
         // Decoding with isNil:false
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10,\"isNil\":false}"
         waitFor = expectation(description: "wait1")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: parent.collection, id: parentId, version: 10)
@@ -818,18 +818,18 @@ class ReferenceManagerTests: XCTestCase {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCacheName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCacheName\\\", intValue: nil) (\\\"qualifiedCacheName\\\").\", underlyingError: nil))", "\(error)")
         }
-        // No qualifiedCollectionName
+        // No qualifiedCacheName
         json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"version\":10}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCollectionName\\\", intValue: nil) (\\\"qualifiedCollectionName\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"qualifiedCacheName\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"qualifiedCacheName\\\", intValue: nil) (\\\"qualifiedCacheName\\\").\", underlyingError: nil))", "\(error)")
         }
         // No id
-        json = "{\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -837,7 +837,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal id
-        json = "{\"databaseId\":\"\",\"id\":\"AAA\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"databaseId\":\"\",\"id\":\"AAA\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10,\"isNil\":false}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -845,7 +845,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual ("illegalId(\"AAA\")", "\(error)")
         }
         // isEager missing
-        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"id\":\"\(child.id.uuidString)\",\"collectionName\":\"myCollection\",\"version\":10,\"isNil\":false}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"id\":\"\(child.id.uuidString)\",\"cacheName\":\"myCollection\",\"version\":10,\"isNil\":false}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -853,23 +853,23 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"isEager\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"isEager\\\", intValue: nil) (\\\"isEager\\\").\", underlyingError: nil))", "\(error)")
         }
         // illegal isEager
-        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"id\":\"\(child.id.uuidString)\",\"isEager\":\"what?\",\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"id\":\"\(child.id.uuidString)\",\"isEager\":\"what?\",\"cacheName\":\"myCollection\",\"version\":10}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.Bool, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"isEager\", intValue: nil)], debugDescription: \"Expected to decode Bool but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
-        // illegal qualifiedCollectionName
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":false,\"version\":10}"
+        // illegal qualifiedCacheName
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":false,\"version\":10}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"qualifiedCollectionName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"qualifiedCacheName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
         }
         // Missing Version
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\"}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\"}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
@@ -877,14 +877,14 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
         }
         // Illegal Version
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCollectionName\":\"\(database.accessor.hashValue).myCollection\",\"version\":\"10\"}"
+        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":\"10\"}"
         do {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"version\", intValue: nil)], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
-        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"isEager\":true,\"collectionName\":\"myCollection\",\"version\":10}"
+        json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"isEager\":true,\"cacheName\":\"myCollection\",\"version\":10}"
         // No parentData
         decoder.userInfo[Database.parentDataKey] = nil
         do {
@@ -981,7 +981,7 @@ class ReferenceManagerTests: XCTestCase {
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.addParentTo|lostData:noParent|collectionName=\(collection.qualifiedName);parentId=\(parentId.uuidString);parentVersion=10", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.addParentTo|lostData:noParent|cacheName=\(collection.qualifiedName);parentId=\(parentId.uuidString);parentVersion=10", entries[0].asTestString())
         }
         XCTAssertEqual (1, collection.onCacheCount())
         // Valid parent
@@ -1662,7 +1662,7 @@ class ReferenceManagerTests: XCTestCase {
         }
         let entityId = UUID(uuidString: "D8691B27-C99B-4CA9-BBBE-689AEDE5464B")!
         let entityData = "{\"id\":\"D8691B27-C99B-4CA9-BBBE-689AEDE5464B\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entityReferenceData = ReferenceManagerData (databaseId: accessor.hashValue, collectionName: collection.name, id: entityId, version: 10)
+        let entityReferenceData = ReferenceManagerData (databaseId: accessor.hashValue, cacheName: collection.name, id: entityId, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId, data: entityData)
         var waitFor = expectation(description: "wait1")
         reference.appendClosure() { result in
@@ -1746,7 +1746,7 @@ class ReferenceManagerTests: XCTestCase {
         // referenceData -> new referenceData
         let entityId2 = UUID(uuidString: "45097C35-DF05-4C13-84CC-087E72BC2D0E")!
         let entityData2 = "{\"id\":\"45097C35-DF05-4C13-84CC-087E72BC2D0E\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entity2ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue, collectionName: collection.name, id: entityId2, version: 10)
+        let entity2ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue, cacheName: collection.name, id: entityId2, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId2, data: entityData2)
         batch = EventuallyConsistentBatch()
         waitFor = expectation(description: "wait2")
@@ -1860,7 +1860,7 @@ class ReferenceManagerTests: XCTestCase {
         // entity -> new referenceData
         let entityId3 = UUID()
         let entityData3 = "{\"id\":\"\(entityId3.uuidString)\",\"schemaVersion\":5,\"created\":1524348993.021544,\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
-        let entity3ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue, collectionName: collection.name, id: entityId3, version: 10)
+        let entity3ReferenceData = ReferenceManagerData(databaseId: accessor.hashValue, cacheName: collection.name, id: entityId3, version: 10)
         let _ = accessor.add(name: collection.name, id: entityId3, data: entityData3)
 
         batch = EventuallyConsistentBatch()
@@ -2061,7 +2061,7 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         // Decoded with invalid reference
-        let invalidReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: UUID(), version: 1)
+        let invalidReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: UUID(), version: 1)
         reference = ReferenceManager (parent: parentData, referenceData: invalidReferenceData)
         reference.sync() { contents in
             switch contents.state {
@@ -2149,7 +2149,7 @@ class ReferenceManagerTests: XCTestCase {
         let savedDateString = try! jsonEncodedDate (date: Date())!
         var json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        var persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: persistentUUID, version: 10)
+        var persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         reference.setState(state: .retrievalError(oldTime, "Test Error"))
         waitFor = expectation(description: "wait7")
@@ -2192,7 +2192,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2215,7 +2215,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2235,7 +2235,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2265,7 +2265,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2288,7 +2288,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2308,7 +2308,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2336,7 +2336,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2358,7 +2358,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2378,7 +2378,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2407,7 +2407,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2429,7 +2429,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (1, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2449,7 +2449,7 @@ class ReferenceManagerTests: XCTestCase {
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
-                XCTAssertEqual (collection.qualifiedName, data.qualifiedCollectionName)
+                XCTAssertEqual (collection.qualifiedName, data.qualifiedCacheName)
                 XCTAssertEqual (2, contents.pendingEntityClosureCount)
             default:
                 XCTFail ("Expected .retrieving")
@@ -2473,7 +2473,7 @@ class ReferenceManagerTests: XCTestCase {
         let entityId = UUID()
         let json = "{\"id\":\"\(entityId.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: entityId, data: json.data(using: .utf8)!)
-        let persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, collectionName: collection.name, id: entityId, version: 10)
+        let persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: collection.name, id: entityId, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch reference.get() {
         case .ok(let retrievedEntity):

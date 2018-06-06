@@ -26,7 +26,7 @@ extension DatabaseTests {
     ("testRegistrar", testRegistrar),
     ("testValidationResult", testValidationResult),
     ("testEntityCreation", testEntityCreation),
-    ("testQualifiedCollectionName", testQualifiedCollectionName),
+    ("testQualifiedCacheName", testQualifiedCacheName),
   ]
 }
 

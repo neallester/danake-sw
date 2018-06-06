@@ -9,7 +9,7 @@ import XCTest
 import Foundation
 @testable import danake
 
-let standardCollectionName = "myCollection"
+let standardCacheName = "myCollection"
 
 class MyClass : Codable {
     
