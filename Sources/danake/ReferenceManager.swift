@@ -127,7 +127,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
     
-    public func getReference() -> ReferenceManagerData? {
+    public func getReferenceData() -> ReferenceManagerData? {
         var result: ReferenceManagerData? = nil
         queue.sync {
             if let entity = self.entity {

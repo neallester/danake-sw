@@ -903,19 +903,19 @@ class ReferenceManagerTests: XCTestCase {
         // Nil
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
-        XCTAssertNil (reference.getReference())
+        XCTAssertNil (reference.getReferenceData())
         // Creation with entity
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: child)
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
-        XCTAssertEqual (child.referenceData(), reference.getReference()!)
+        XCTAssertEqual (child.referenceData(), reference.getReferenceData()!)
         // Creation with reference Data
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (collection: collection, id: parentId, version: 10)
         reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: child.referenceData())
         let _ = Entity (collection: collection, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
-        XCTAssertEqual (child.referenceData(), reference.getReference()!)
+        XCTAssertEqual (child.referenceData(), reference.getReferenceData()!)
     }
     
     func testWillUpdate() {
