@@ -194,16 +194,16 @@ class DatabaseTests: XCTestCase {
         var json = "{\"id\":\"\(id1.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         // Create new
-        decoder.userInfo[Database.collectionKey] = collection
+        decoder.userInfo[Database.cacheKey] = cache
         let creation = EntityCreation()
         var entity: Entity<MyStruct>? = nil
         switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
         case .ok (let entity1):
-            XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
+            XCTAssertTrue (entity1 === cache.cachedEntity(id: id1)!)
             XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
-            XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
+            XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the cache, not the json
             XCTAssertEqual (10, entity1.version )
             switch entity1.persistenceState {
             case .persistent:
@@ -224,9 +224,9 @@ class DatabaseTests: XCTestCase {
         // Create existing
         switch creation.entity (creator: { try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!) }) {
         case .ok (let entity2):
-            XCTAssertTrue (entity2 === collection.cachedEntity(id: id1)!)
+            XCTAssertTrue (entity2 === cache.cachedEntity(id: id1)!)
             XCTAssertEqual (id1.uuidString, entity2.id.uuidString)
-            XCTAssertEqual (5, entity2.getSchemaVersion()) // Schema version is taken from the collection, not the json
+            XCTAssertEqual (5, entity2.getSchemaVersion()) // Schema version is taken from the cache, not the json
             XCTAssertEqual (10, entity2.version )
             switch entity2.persistenceState {
             case .persistent:

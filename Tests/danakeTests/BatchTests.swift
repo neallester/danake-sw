@@ -121,10 +121,10 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let batch = EventuallyConsistentBatch()
-        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
-        let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
+        let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let entity2 = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         let waitFor = expectation (description: "waitFor")
         batch.commit() {
             waitFor.fulfill()
@@ -155,12 +155,12 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
-        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity1Id = entity1.id.uuidString
-        let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
+        let entity2 = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         let waitFor = expectation (description: "waitFor")
         let prefetch: (UUID) -> () = { id in
             if id.uuidString == entity1Id {
@@ -198,11 +198,11 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
-        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
-        let entity2 = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
+        let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let entity2 = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         let id1 = entity1.id.uuidString
         let waitFor = expectation (description: "waitFor")
         var preFetchCount = 0
@@ -279,12 +279,12 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .error)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let slowCacheName: CacheName = "slowCollection"
         let slowCollection = EntityCache<SlowCodable>(database: database, name: slowCacheName)
         let batch = EventuallyConsistentBatch(retryInterval: .microseconds(400000), timeout: .microseconds (100000), logger: logger)
         let batchDelegateId = batch.delegateId().uuidString
-        let entity1 = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let slowCodable = SlowCodable()
         let entity2 = slowCollection.new (batch: batch, item: slowCodable)
         let waitFor = expectation (description: "waitFor")
@@ -354,10 +354,10 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
-        let entity1 = collection.new (batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
-        let entity2 = collection.new (batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
+        let entity1 = cache.new (batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
+        let entity2 = cache.new (batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
         batch!.syncEntities() { entities in
             // Also forces this thread to wait on the batch queue
             XCTAssertEqual (2, entities.count)
@@ -379,10 +379,10 @@ class BatchTests: XCTestCase {
         let logger = InMemoryLogger(level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
-        let _ = collection.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
-        let _ = collection.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
+        let _ = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
+        let _ = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         batch.commitSync()
         XCTAssertEqual (2, accessor.count(name: cacheName))
     }

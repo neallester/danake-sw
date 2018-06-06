@@ -105,19 +105,19 @@ public class EntityPersistenceWrapper : Encodable {
 // Data for a reference to an Entity
 public struct EntityReferenceData<T: Codable> : Equatable {
     
-    public init (collection: EntityCache<T>, id: UUID, version: Int) {
-        self.collection = collection
+    public init (cache: EntityCache<T>, id: UUID, version: Int) {
+        self.cache = cache
         self.id = id
         self.version = version
     }
     
-    let collection: EntityCache<T>
+    let cache: EntityCache<T>
     let id: UUID
     let version: Int
     
     public static func == <T> (lhs: EntityReferenceData<T>, rhs: EntityReferenceData<T>) -> Bool {
         return
-            lhs.collection === rhs.collection &&
+            lhs.cache === rhs.cache &&
             lhs.id.uuidString == rhs.id.uuidString &&
             lhs.version == rhs.version
     }
@@ -171,36 +171,36 @@ public enum EntityDeserializationError<T: Codable> : Error {
 public class Entity<T: Codable> : EntityManagement, Codable {
     
     
-    internal init (collection: EntityCache<T>, id: UUID, version: Int, item: T) {
-        self.collection = collection
+    internal init (cache: EntityCache<T>, id: UUID, version: Int, item: T) {
+        self.cache = cache
         self.id = id
         self._version = version
         self.item = item
-        self.schemaVersion = collection.database.schemaVersion
+        self.schemaVersion = cache.database.schemaVersion
         _persistenceState = .new
         self.queue = DispatchQueue (label: id.uuidString)
         self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
         created = Date()
-        collection.cacheEntity(self)
+        cache.cacheEntity(self)
     }
 
-    internal convenience init (collection: EntityCache<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
-        let selfReference = EntityReferenceData (collection: collection, id: id, version: version)
+    internal convenience init (cache: EntityCache<T>, id: UUID, version: Int, itemClosure: (EntityReferenceData<T>) -> T) {
+        let selfReference = EntityReferenceData (cache: cache, id: id, version: version)
         let item = itemClosure(selfReference)
-        self.init (collection: collection, id: id, version: version, item: item)
+        self.init (cache: cache, id: id, version: version, item: item)
     }
     
     // deiniitalize
     
     deinit {
-        collection.decache (id: id)
+        cache.decache (id: id)
         switch self._persistenceState {
         case .persistent:
             let localItem = item
             if let itemData = itemData {
-                let localCollection = collection
+                let localCollection = cache
                 let localId = id
-                collection.database.workQueue.async {
+                cache.database.workQueue.async {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
@@ -211,7 +211,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     }
                 }
             } else {
-                collection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: collection.qualifiedName), (name: "entityId", value: self.id.uuidString)])
+                cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
             }
         default:
             break
@@ -354,7 +354,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     public func referenceData() -> ReferenceManagerData {
         var localVersion = 0
         localVersion = version
-        return ReferenceManagerData (databaseId: collection.database.accessor.hashValue, cacheName: collection.name, id: id, version: localVersion)
+        return ReferenceManagerData (databaseId: cache.database.accessor.hashValue, cacheName: cache.name, id: id, version: localVersion)
     }
     
     /*
@@ -464,8 +464,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
         _persistenceState = successState
         _version = _version + 1
-        let wrapper = EntityPersistenceWrapper (cacheName: collection.name, entity: self)
-        let actionSource = databaseActionSource (collection.database.accessor)
+        let wrapper = EntityPersistenceWrapper (cacheName: cache.name, entity: self)
+        let actionSource = databaseActionSource (cache.database.accessor)
         let actionResult = actionSource (wrapper)
         var newItemData: Data? = nil
         do {
@@ -475,17 +475,17 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         case .ok (let action):
             _persistenceState = .saving
             var result: DatabaseUpdateResult? = nil
-            collection.database.workQueue.async {
+            cache.database.workQueue.async {
                 let group = DispatchGroup()
                 group.enter()
-                self.collection.database.workQueue.async {
+                self.cache.database.workQueue.async {
                     let tempResult = action()
                     self.queue.sync {
                         result = tempResult
                         group.leave()
                     }
                 }
-                self.collection.database.workQueue.async {
+                self.cache.database.workQueue.async {
                     self.timeoutTestingHook()
                     let _ = group.wait(timeout: DispatchTime.now() + timeout)
                     self.queue.async {
@@ -533,7 +533,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
     
     private func callCommitCompletionHandler (completionHandler: @escaping (DatabaseUpdateResult) -> (), result: DatabaseUpdateResult) {
-        collection.database.workQueue.async {
+        cache.database.workQueue.async {
             completionHandler (result)
         }
     }
@@ -568,21 +568,21 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // it from the EntityReferenceData stored in userInfo[Database.parentKeyData]
     public required init (from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        let collection = decoder.userInfo[Database.collectionKey] as? EntityCache<T>
-        if let collection = collection {
+        let cache = decoder.userInfo[Database.cacheKey] as? EntityCache<T>
+        if let cache = cache {
             let idString = try values.decode(String.self, forKey: .id)
             let id = UUID (uuidString: idString)
             if let id = id {
-                if let cachedVersion = collection.cachedEntity(id: id) {
+                if let cachedVersion = cache.cachedEntity(id: id) {
                     throw EntityDeserializationError<T>.alreadyCached(cachedVersion)
                 }
                 self.id = id
-                self.collection = collection
-                schemaVersion = collection.database.schemaVersion
+                self.cache = cache
+                schemaVersion = cache.database.schemaVersion
                 let version = try values.decode(Int.self, forKey: .version)
                 self._version = version
                 if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer {
-                    container.data = EntityReferenceData (collection: collection, id: id, version: version)
+                    container.data = EntityReferenceData (cache: cache, id: id, version: version)
                     item = try values.decode (T.self, forKey: .item)
                     container.data = nil
                 } else {
@@ -598,9 +598,9 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 do {
                     self.itemData = try Database.encoder.encode(self.item)
                 } catch {
-                    collection.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (collection.database.accessor.hashValue)), (name: "cacheName", value: collection.name), (name: "entityId", value: self.id.uuidString)])
+                    cache.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (cache.database.accessor.hashValue)), (name: "cacheName", value: cache.name), (name: "entityId", value: self.id.uuidString)])
                 }
-                collection.cacheEntity(self)
+                cache.cacheEntity(self)
             } else {
                 throw EntityDeserializationError<T>.illegalId(idString)
             }
@@ -614,7 +614,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     internal func isInitialized (onCollection: EntityCache<T>) -> Bool {
         var result = false
         queue.sync {
-            if self.collection === onCollection, collection.database.schemaVersion == self.schemaVersion {
+            if self.cache === onCollection, cache.database.schemaVersion == self.schemaVersion {
                 result = true
             }
         }
@@ -669,7 +669,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     private var itemData: Data?
     fileprivate let queue: DispatchQueue
     private var _persistenceState: PersistenceState
-    internal let collection: EntityCache<T>
+    internal let cache: EntityCache<T>
     private var schemaVersion: Int
     private var pendingAction: PendingAction? = nil
     private var onDatabaseUpdateStates: PersistenceStatePair? = nil

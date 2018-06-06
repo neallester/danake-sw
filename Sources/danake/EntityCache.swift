@@ -30,8 +30,8 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     
     typealias entityType = T
     
-    // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
-    // ** name ** must be unique within ** database ** and a valid collection/table identifier in all persistence media to be used
+    // ** name ** must be unique within ** database ** and a valid cache/table identifier in all persistence media to be used
+    // ** name ** must be unique within ** database ** and a valid cache/table identifier in all persistence media to be used
     public init (database: Database, name: CacheName, deserializationEnvironmentClosure: ((inout [CodingUserInfoKey : Any]) -> ())? = nil) {
         self.database = database
         self.name = name
@@ -41,10 +41,10 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         self.workQueue = database.workQueue
         super.init()
-        if !database.collectionRegistrar.register(key: name, value: self) {
-            database.logger?.log(level: .error, source: self, featureName: "init", message: "collectionAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
+        if !database.cacheRegistrar.register(key: name, value: self) {
+            database.logger?.log(level: .error, source: self, featureName: "init", message: "cacheAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
         }
-        if !Database.collectionRegistrar.register(key: qualifiedName, value: self) {
+        if !Database.cacheRegistrar.register(key: qualifiedName, value: self) {
             database.logger?.log(level: .error, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCacheName", value: self.qualifiedName)])
         }
         let nameValidationResult = database.accessor.isValidCacheName(name)
@@ -55,8 +55,8 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     }
 
     deinit {
-        Database.collectionRegistrar.deRegister(key: qualifiedName)
-        database.collectionRegistrar.deRegister(key: name)
+        Database.cacheRegistrar.deRegister(key: qualifiedName)
+        database.cacheRegistrar.deRegister(key: name)
     }
     
     internal func decache (id: UUID) {
@@ -76,16 +76,16 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
             result = cache[id]?.codable
         }
         if (result == nil) {
-            let retrievalResult = self.database.accessor.get(type: Entity<T>.self, collection: self, id: id)
+            let retrievalResult = self.database.accessor.get(type: Entity<T>.self, cache: self, id: id)
             switch retrievalResult {
             case .ok (let prospectEntity):
                 if let prospectEntity = prospectEntity {
                     result = prospectEntity
                 } else {
-                    self.database.logger?.log (level: .warning, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"collection", value: self.name), (name:"id",value: id.uuidString)])
+                    self.database.logger?.log (level: .warning, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
                 }
             case .error (let errorMessage):
-                self.database.logger?.log (level: .emergency, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"collection", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
+                self.database.logger?.log (level: .emergency, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
                 errorResult = retrievalResult
             }
         }
@@ -102,14 +102,14 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     }
     
     /*
-        Returns all Entities from this collection in the persistent media
+        Returns all Entities from this cache in the persistent media
         New objects which have not yet been persisted are not included in the results
      
         If ** criteria ** is provided, only those Entities whose item matches the criteria
         will be included in the results
     */
     public func scan (criteria: ((T) -> Bool)?) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.accessor.scan(type: Entity<T>.self, collection: self)
+        let retrievalResult = database.accessor.scan(type: Entity<T>.self, cache: self)
         switch retrievalResult {
         case .ok (let resultList):
             if let criteria = criteria  {
@@ -128,7 +128,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
                 return .ok (resultList)
             }
         case .error (let errorMessage):
-            self.database.logger?.log (level: .emergency, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"collection", value: self.name), (name: "errorMessage", errorMessage)])
+            self.database.logger?.log (level: .emergency, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name: "errorMessage", errorMessage)])
             return .error (errorMessage)
         }
     }
@@ -138,7 +138,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     }
     
     /*
-     Asynchronous access to all Entities from this collection in the persistent media
+     Asynchronous access to all Entities from this cache in the persistent media
      New objects which have not yet been persisted are not included in the results
      
      If ** criteria ** is provided, only those Entities whose item matches the criteria
@@ -157,7 +157,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
 // Entity Creation
     
     public func new (batch: EventuallyConsistentBatch, item: T) -> Entity<T> {
-        let result = Entity (collection: self, id: UUID(), version: 0, item: item)
+        let result = Entity (cache: self, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
             self.cache[result.id] = WeakCodable (result)
         }
@@ -174,7 +174,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      let parent: ReferenceManager<Parent>
      */
     public func new (batch: EventuallyConsistentBatch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
-        let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
+        let result = Entity (cache: self, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
             self.cache[result.id] = WeakCodable (result)
         }

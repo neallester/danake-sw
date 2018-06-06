@@ -214,7 +214,7 @@ open class Database {
     public let workQueue: DispatchQueue
     public let referenceRetryInterval: TimeInterval
     private let hashValue: String
-    let collectionRegistrar = Registrar<CacheName, AnyObject>()
+    let cacheRegistrar = Registrar<CacheName, AnyObject>()
     
     deinit {
         Database.registrar.deRegister(key: hashValue)
@@ -225,8 +225,8 @@ open class Database {
     }
 
     static let registrar = Registrar<String, Database>()
-    static let collectionRegistrar = Registrar<QualifiedCacheName, UntypedEntityCache>()
-    public static let collectionKey = CodingUserInfoKey (rawValue: "collection")!
+    static let cacheRegistrar = Registrar<QualifiedCacheName, UntypedEntityCache>()
+    public static let cacheKey = CodingUserInfoKey (rawValue: "cache")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
     internal static let encoder: JSONEncoder = {
         let result = JSONEncoder()
@@ -237,8 +237,8 @@ open class Database {
 
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, collection: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>>
-    func scan<T> (type: Entity<T>.Type, collection: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>>
+    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>>
+    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>>
     
     /*
      Is the format of ** name ** a valid CacheName in this storage medium and,

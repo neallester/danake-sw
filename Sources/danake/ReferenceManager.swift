@@ -44,10 +44,10 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         self.entity = entity
         self.state = .loaded
         self.isEager = isEager
-        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
-        parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
+        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.cache.name))
+        parent.cache.registerOnEntityCached(id: parent.id, closure: setParent)
         if let entity = entity {
-            collection = entity.collection
+            cache = entity.cache
         }
     }
 
@@ -60,8 +60,8 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
             self.state = .loaded
         }        
         self.isEager = isEager
-        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
-        parent.collection.registerOnEntityCached(id: parent.id, closure: setParent)
+        queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.cache.name))
+        parent.cache.registerOnEntityCached(id: parent.id, closure: setParent)
         if self.isEager {
             queue.async {
                 self.retrieve() { result in}
@@ -74,7 +74,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         if let parentContainer = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentData = parentContainer.data as? EntityReferenceData<P> {
             self.parentData = parentData
             self.isEager = try values.decode (Bool.self, forKey: .isEager)
-            queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.collection.name))
+            queue = DispatchQueue (label: ReferenceManager.queueName(cacheName: parentData.cache.name))
             let isNil = try values.contains (.isNil) && values.decode (Bool.self, forKey: .isNil)
             if isNil {
                 state = .loaded
@@ -90,7 +90,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                 }
                 state = .decoded
             }
-            parentData.collection.registerOnEntityCached(id: parentData.id, closure: setParent)
+            parentData.cache.registerOnEntityCached(id: parentData.id, closure: setParent)
             if self.isEager {
                 queue.async {
                     self.retrieve() { result in}
@@ -106,7 +106,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         try queue.sync {
             try container.encode (isEager, forKey: .isEager)
             if let entity = entity {
-                try container.encode(entity.collection.qualifiedName, forKey: .qualifiedCacheName)
+                try container.encode(entity.cache.qualifiedName, forKey: .qualifiedCacheName)
                 try container.encode (entity.id, forKey: .id)
                 try container.encode (entity.getVersionUnsafe(), forKey: .version)
             } else if let referenceData = referenceData {
@@ -136,7 +136,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
             switch self.state {
             case .loaded:
                 let result = self.entity
-                self.parentData.collection.database.workQueue.async {
+                self.parentData.cache.database.workQueue.async {
                     closure (.ok (result))
                 }
             case .decoded:
@@ -148,12 +148,12 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                 if now.timeIntervalSince1970 > retryTime.timeIntervalSince1970 {
                     self.retrieve (closure: closure)
                 } else {
-                    self.parentData.collection.database.workQueue.async {
+                    self.parentData.cache.database.workQueue.async {
                         closure (.error (errorMessage))
                     }
                 }
             case .dereferenced:
-                self.parentData.collection.database.workQueue.async {
+                self.parentData.cache.database.workQueue.async {
                     closure (.error ("alreadyDereferenced"))
                 }
             }
@@ -188,10 +188,10 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     // Not thread safe, must be called within queue
     internal func retrieve (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         if let referenceData = self.referenceData {
-            if collection == nil {
-                if let candidateCollection = Database.collectionRegistrar.value(key: referenceData.qualifiedCacheName) {
-                    if let collection = candidateCollection as? EntityCache<T> {
-                        self.collection = collection
+            if cache == nil {
+                if let candidateCollection = Database.cacheRegistrar.value(key: referenceData.qualifiedCacheName) {
+                    if let cache = candidateCollection as? EntityCache<T> {
+                        self.cache = cache
                     } else {
                         closure (.error ("cacheName: \(referenceData.qualifiedCacheName) returns wrong type: \(type (of: candidateCollection))"))
                     }
@@ -199,11 +199,11 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                     closure (.error ("Unknown cacheName: \(referenceData.qualifiedCacheName)"))
                 }
             }
-            if let collection = collection {
+            if let cache = cache {
                 pendingEntityClosures.append(closure)
                 self.state = .retrieving (referenceData)
                 self.retrievalGetHook()
-                collection.get(id: referenceData.id) { retrievalResult in
+                cache.get(id: referenceData.id) { retrievalResult in
                     self.queue.async {
                         switch self.state {
                         case .retrieving (let pendingReferenceData):
@@ -220,13 +220,13 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                                     } else {
                                         let errorMessage = "\(type (of: self)): Unknown id \(referenceData.id.uuidString)"
                                         finalResult = .error (errorMessage)
-                                        self.state = .retrievalError (Date() + collection.database.referenceRetryInterval, errorMessage)
+                                        self.state = .retrievalError (Date() + cache.database.referenceRetryInterval, errorMessage)
                                     }
                                     
                                 case .error(let errorMessage):
-                                    self.state = .retrievalError (Date() + collection.database.referenceRetryInterval, errorMessage)
+                                    self.state = .retrievalError (Date() + cache.database.referenceRetryInterval, errorMessage)
                                 }
-                                collection.database.workQueue.async {
+                                cache.database.workQueue.async {
                                     for closure in pendingClosures {
                                         closure (finalResult)
                                     }
@@ -241,7 +241,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
             }
         } else {
             state = .loaded
-            self.parentData.collection.database.workQueue.async {
+            self.parentData.cache.database.workQueue.async {
                 closure (.ok (nil))
             }
         }
@@ -251,19 +251,19 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         queue.sync {
             switch self.state {
             case .dereferenced:
-                collection?.database.logger?.log(level: .error, source: self, featureName: "set(entity:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "entityCollection", value: entity?.collection.qualifiedName), (name: "entityId", value: entity?.id)])
+                cache?.database.logger?.log(level: .error, source: self, featureName: "set(entity:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "entityCollection", value: entity?.cache.qualifiedName), (name: "entityId", value: entity?.id)])
             default:
                 let wasUpdated = self.willUpdate(newId: entity?.id)
                 self.entity = entity
                 self.referenceData = nil
                 self.state = .loaded
                 for closure in self.pendingEntityClosures {
-                    self.parentData.collection.database.workQueue.async {
+                    self.parentData.cache.database.workQueue.async {
                         closure (.ok (entity))
                     }
                 }
                 if let entity = entity {
-                    self.collection = entity.collection
+                    self.cache = entity.cache
                 }
                 self.pendingEntityClosures = []
                 if wasUpdated {
@@ -293,7 +293,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
                 case .retrieving, .retrievalError:
                     self.retrieve() { result in }
                 case .dereferenced:
-                    collection?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCacheName), (name: "referenceDataId", value: referenceData?.id)])
+                    cache?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCacheName), (name: "referenceDataId", value: referenceData?.id)])
                 }
             }
         }
@@ -310,7 +310,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         if let parent = self.parent {
             parent.setDirty(batch: batch)
         } else {
-            self.parentData.collection.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"cacheName", value: self.parentData.collection.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
+            self.parentData.cache.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"cacheName", value: self.parentData.cache.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
         }
     }
     
@@ -362,7 +362,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     private weak var parent: EntityManagement?
     private var parentData: EntityReferenceData<P>
     private var referenceData: ReferenceManagerData?
-    private var collection: EntityCache<T>?
+    private var cache: EntityCache<T>?
     private var state: ReferenceManagerState
     internal let queue: DispatchQueue
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
@@ -376,7 +376,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     
     // Not Thread Safe
     internal func contents() -> ReferenceManagerContents<P, T> {
-        return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, collection: self.collection, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
+        return (entity: self.entity, parent: self.parent, parentData: self.parentData, referenceData: self.referenceData, cache: self.cache, state: self.state, isEager: self.isEager, pendingEntityClosureCount: self.pendingEntityClosures.count)
     }
     
     internal func sync (closure: (ReferenceManagerContents<P, T>) -> ()) {
@@ -409,4 +409,4 @@ internal struct ClosureContainer<T: Codable> {
     
 }
 
-internal typealias ReferenceManagerContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: ReferenceManagerData?, collection: EntityCache<T>?, state: ReferenceManagerState, isEager: Bool, pendingEntityClosureCount: Int)
+internal typealias ReferenceManagerContents<P: Codable, T: Codable> = (entity: Entity<T>?, parent: EntityManagement?, parentData: EntityReferenceData<P>, referenceData: ReferenceManagerData?, cache: EntityCache<T>?, state: ReferenceManagerState, isEager: Bool, pendingEntityClosureCount: Int)

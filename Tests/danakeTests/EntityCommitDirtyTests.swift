@@ -16,9 +16,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         var group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -398,9 +398,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -523,9 +523,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         group.enter()
@@ -856,7 +856,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
             XCTAssertTrue (json.contains("\"version\":3"))
         #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: collection.name, id: entity.id)!, encoding: .utf8)!)
+            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":40,\"myString\":\"40\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cache.name, id: entity.id)!, encoding: .utf8)!)
         #endif
     }
 
@@ -866,9 +866,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         group.enter()
@@ -1002,9 +1002,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -1136,9 +1136,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -1476,7 +1476,7 @@ class EntityCommitDirtyTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         do {
-            let _ = try accessor.decoder (collection: collection).decode(Entity<MyStruct>.self, from: accessor.getData(name: cacheName, id: id)!)
+            let _ = try accessor.decoder (cache: cache).decode(Entity<MyStruct>.self, from: accessor.getData(name: cacheName, id: id)!)
             XCTFail ("Expected exception")
         } catch EntityDeserializationError<MyStruct>.alreadyCached(let cachedEntity) {
             XCTAssertTrue (cachedEntity === entity)
@@ -1491,9 +1491,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -1637,9 +1637,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -1768,9 +1768,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -2119,9 +2119,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -2262,9 +2262,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -2383,9 +2383,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -2711,9 +2711,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -2844,9 +2844,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -2972,9 +2972,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -3317,9 +3317,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -3452,9 +3452,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -3579,9 +3579,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the
@@ -3923,9 +3923,9 @@ class EntityCommitDirtyTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial updateAction closure occurs in the same block as the

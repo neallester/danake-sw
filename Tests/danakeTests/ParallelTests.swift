@@ -94,7 +94,7 @@ class ParallelTests: XCTestCase {
             setupGroup.wait()
             persistenceObjects = nil
             Database.registrar.clear()
-            Database.collectionRegistrar.clear()
+            Database.cacheRegistrar.clear()
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             let test1 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
@@ -281,7 +281,7 @@ class ParallelTests: XCTestCase {
             }
             persistenceObjects = nil
             Database.registrar.clear()
-            Database.collectionRegistrar.clear()
+            Database.cacheRegistrar.clear()
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             // Test 1
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
@@ -601,7 +601,7 @@ class ParallelTests: XCTestCase {
             }
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             Database.registrar.clear()
-            Database.collectionRegistrar.clear()
+            Database.cacheRegistrar.clear()
             testCount = testCount + 1
         }
     }
@@ -1067,13 +1067,13 @@ class ParallelTests: XCTestCase {
     
     // MyContainer -> Update + Edit Struct independent in parallel with preloading
     private static func containerTest300prpl (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
-        let containerPreload = preLoad(collection: persistenceObjects.containerCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: containers)
+        let containerPreload = preLoad(cache: persistenceObjects.containerCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: containers)
         let _ = containerPreload.count
         var structIds: [UUID] = []
         for ref in structRefs {
             structIds.append(ref.id)
         }
-        let myStructPreload = preLoad(collection: persistenceObjects.myStructCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: structIds)
+        let myStructPreload = preLoad(cache: persistenceObjects.myStructCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: structIds)
         let _ = myStructPreload.count
         let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
@@ -1129,12 +1129,12 @@ class ParallelTests: XCTestCase {
         group.leave()
     }
 
-    private static func preLoad<T> (collection: EntityCache<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
+    private static func preLoad<T> (cache: EntityCache<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
         logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "start." + label, data: nil)
         var result: [Entity<T>] = []
         var badIds: [UUID] = []
         for id in ids {
-            switch collection.get(id: id) {
+            switch cache.get(id: id) {
             case .ok (let retrievedEntity):
                 result.append (retrievedEntity!)
             case .error (let errorMessage):
@@ -1146,7 +1146,7 @@ class ParallelTests: XCTestCase {
             logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "end." + label, data: [(name: "resultCount", value: result.count)])
             return result
         } else {
-            let interimResult: [Entity<T>] = preLoad(collection: collection, logger: logger, label: label, ids: badIds)
+            let interimResult: [Entity<T>] = preLoad(cache: cache, logger: logger, label: label, ids: badIds)
             return result + interimResult
         }
     }

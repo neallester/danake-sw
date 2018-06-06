@@ -16,9 +16,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         var group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -347,9 +347,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -470,9 +470,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         group.enter()
@@ -796,9 +796,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         group.enter()
@@ -930,9 +930,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -1061,9 +1061,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -1417,9 +1417,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -1554,9 +1554,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -1682,9 +1682,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -2022,9 +2022,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -2158,9 +2158,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         group.enter()
@@ -2272,9 +2272,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -2582,9 +2582,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -2707,9 +2707,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -2827,9 +2827,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -3159,9 +3159,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -3291,9 +3291,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         var preFetchCount = 0
@@ -3415,9 +3415,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = Entity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
+        let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the
@@ -3757,9 +3757,9 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         let logger = InMemoryLogger()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
-        let collection = EntityCache<MyStruct>(database: database, name: cacheName)
+        let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let id = UUID()
-        let entity = TimeoutHookEntity<MyStruct> (collection: collection, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
+        let entity = TimeoutHookEntity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"), semaphoreValue: 1)
         let group = DispatchGroup()
         let semaphore = DispatchSemaphore (value: 1)
         // building the initial removeAction closure occurs in the same block as the

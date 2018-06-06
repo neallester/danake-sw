@@ -18,8 +18,8 @@ class EntityTests: XCTestCase {
         myStruct.myString = "Test String 1"
         let id = UUID()
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
-        let entity1 = Entity (collection: collection, id: id, version: 10, item: myStruct)
+        let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
+        let entity1 = Entity (cache: cache, id: id, version: 10, item: myStruct)
         XCTAssertEqual (id.uuidString, entity1.id.uuidString)
         XCTAssertEqual (10, entity1.version)
         XCTAssertEqual (5, entity1.getSchemaVersion())
@@ -33,10 +33,10 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (100, item.myInt)
             XCTAssertEqual ("Test String 1", item.myString)
         }
-        XCTAssertTrue (entity1 === collection.cachedEntity(id: entity1.id))
+        XCTAssertTrue (entity1 === cache.cachedEntity(id: entity1.id))
         // Creation with itemClosure
         let id2 = UUID()
-        let entity2 = Entity (collection: collection, id: id2, version: 20) { reference in
+        let entity2 = Entity (cache: cache, id: id2, version: 20) { reference in
             return MyStruct (myInt: reference.version, myString: reference.id.uuidString)
         }
         XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
@@ -52,7 +52,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (20, item.myInt)
             XCTAssertEqual (entity2.id.uuidString, item.myString)
         }
-        XCTAssertTrue (entity2 === collection.cachedEntity(id: entity2.id))
+        XCTAssertTrue (entity2 === cache.cachedEntity(id: entity2.id))
     }
 
     func testSettersGetters() {
@@ -62,8 +62,8 @@ class EntityTests: XCTestCase {
         myStruct.myString = "Test String 1"
         let id = UUID()
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
-        let entity = Entity (collection: collection, id: id, version: 10, item: myStruct)
+        let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
+        let entity = Entity (cache: cache, id: id, version: 10, item: myStruct)
         XCTAssertEqual (5, entity.getSchemaVersion())
         XCTAssertNil (entity.saved)
         let savedDate = Date()
@@ -408,10 +408,10 @@ class EntityTests: XCTestCase {
         myStruct.myInt = 100
         myStruct.myString = "Test String 1"
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-        let collection = EntityCache<MyStruct> (database: database, name: "myCollection")
+        let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
         var batch = EventuallyConsistentBatch()
         let waitFor = expectation(description: "wait1")
-        let entity = collection.new(batch: batch, item: myStruct)
+        let entity = cache.new(batch: batch, item: myStruct)
         batch.commit() {
             waitFor.fulfill()
         }
@@ -470,10 +470,10 @@ class EntityTests: XCTestCase {
         return result
     }()
     
-    public func decoder <T> (collection: EntityCache<T>) -> JSONDecoder {
+    public func decoder <T> (cache: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
-        result.userInfo[Database.collectionKey] = collection
+        result.userInfo[Database.cacheKey] = cache
         return result
     }
     
@@ -490,22 +490,22 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch EntityDeserializationError<MyStruct>.NoCollectionInDecoderUserInfo {}
-        // Wrong collection
+        // Wrong cache
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let wrongCollection = EntityCache<String>(database: database, name: "wrongCollection")
-        decoder.userInfo[Database.collectionKey] = wrongCollection
+        decoder.userInfo[Database.cacheKey] = wrongCollection
         do {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch EntityDeserializationError<MyStruct>.NoCollectionInDecoderUserInfo {}
-        let collection = EntityCache<MyStruct>(database: database, name: standardCacheName)
-        // With correct collection (success)
-        decoder.userInfo[Database.collectionKey] = collection
+        let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
+        // With correct cache (success)
+        decoder.userInfo[Database.cacheKey] = cache
         let entity1 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
-        XCTAssertTrue (entity1 === collection.cachedEntity(id: id1)!)
+        XCTAssertTrue (entity1 === cache.cachedEntity(id: id1)!)
         XCTAssertEqual (id1.uuidString, entity1.id.uuidString)
-        XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the collection, not the json
+        XCTAssertEqual (5, entity1.getSchemaVersion()) // Schema version is taken from the cache, not the json
         XCTAssertEqual (10, entity1.version )
         switch entity1.persistenceState {
         case .new:
@@ -560,7 +560,7 @@ class EntityTests: XCTestCase {
         json = "{\"id\":\"\(id2.uuidString)\",\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         do {
             let entity2 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTAssertTrue (entity2 === collection.cachedEntity(id: id2)!)
+            XCTAssertTrue (entity2 === cache.cachedEntity(id: id2)!)
             XCTAssertEqual (id2.uuidString, entity2.id.uuidString)
             XCTAssertEqual (5, entity2.getSchemaVersion())
             XCTAssertEqual (10, entity2.version )
@@ -580,7 +580,7 @@ class EntityTests: XCTestCase {
         json = "{\"id\":\"\(id3.uuidString)\",\"schemaVersion\":\"A\",\"created\":\(creationDateString1),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
         do {
             let entity3 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTAssertTrue (entity3 === collection.cachedEntity(id: id3)!)
+            XCTAssertTrue (entity3 === cache.cachedEntity(id: id3)!)
             XCTAssertEqual (id3.uuidString, entity3.id.uuidString)
             XCTAssertEqual (5, entity3.getSchemaVersion())
             XCTAssertEqual (10, entity3.version )
@@ -686,7 +686,7 @@ class EntityTests: XCTestCase {
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         do {
             let entity4 = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTAssertTrue (entity4 === collection.cachedEntity(id: id4)!)
+            XCTAssertTrue (entity4 === cache.cachedEntity(id: id4)!)
             XCTAssertEqual (id4.uuidString, entity4.id.uuidString)
             XCTAssertEqual (5, entity4.getSchemaVersion())
             XCTAssertEqual (10, entity4.version )
@@ -746,7 +746,7 @@ class EntityTests: XCTestCase {
             item.entityReference.sync() { reference in
                 XCTAssertNil (reference.entity)
                 XCTAssertTrue (reference.parent === parent)
-                XCTAssertTrue (reference.parentData.collection === parentCollection)
+                XCTAssertTrue (reference.parentData.cache === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parent.id.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
                 XCTAssertNil (reference.referenceData)
@@ -768,7 +768,7 @@ class EntityTests: XCTestCase {
             item.entityReference.sync() { reference in
                 XCTAssertNil (reference.entity)
                 XCTAssertTrue (reference.parent === parent2)
-                XCTAssertTrue (reference.parentData.collection === parentCollection)
+                XCTAssertTrue (reference.parentData.cache === parentCollection)
                 XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
                 XCTAssertEqual (parentVersion, reference.parentData.version)
                 XCTAssertEqual (Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: "childCollection") , reference.referenceData!.qualifiedCacheName)
@@ -788,9 +788,9 @@ class EntityTests: XCTestCase {
     
     func testEntityPersistenceWrapper() throws {
         let entity = newTestEntity(myInt: 10, myString: "A String")
-        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (cacheName: entity.collection.name, entity: entity)
+        let wrapper: EntityPersistenceWrapper = EntityPersistenceWrapper (cacheName: entity.cache.name, entity: entity)
         XCTAssertEqual (entity.id, wrapper.id)
-        XCTAssertEqual (entity.collection.name, wrapper.cacheName)
+        XCTAssertEqual (entity.cache.name, wrapper.cacheName)
         let encoder = JSONEncoder()
         let entityData = try encoder.encode(entity)
         let wrapperData = try encoder.encode (wrapper)
@@ -1201,14 +1201,14 @@ class EntityTests: XCTestCase {
     func testEntityReferenceData() {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let entity2 = newTestEntity(myInt: 20, myString: "20")
-        let data1 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.version)
-        var data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: entity.version)
+        let data1 = EntityReferenceData (cache: entity.cache, id: entity.id, version: entity.version)
+        var data2 = EntityReferenceData (cache: entity.cache, id: entity.id, version: entity.version)
         XCTAssertEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity2.collection, id: entity.id, version: entity.version)
+        data2 = EntityReferenceData (cache: entity2.cache, id: entity.id, version: entity.version)
         XCTAssertNotEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity.collection, id: entity2.id, version: entity.version)
+        data2 = EntityReferenceData (cache: entity.cache, id: entity2.id, version: entity.version)
         XCTAssertNotEqual (data1, data2)
-        data2 = EntityReferenceData (collection: entity.collection, id: entity.id, version: 2)
+        data2 = EntityReferenceData (cache: entity.cache, id: entity.id, version: 2)
         XCTAssertNotEqual (data1, data2)
     }
     
@@ -1238,7 +1238,7 @@ class EntityTests: XCTestCase {
         XCTAssertNotEqual(data, data2)
         let entity = newTestEntity(myInt: 10, myString: "20")
         data = entity.referenceData()
-        XCTAssertEqual (entity.collection.qualifiedName, data.qualifiedCacheName)
+        XCTAssertEqual (entity.cache.qualifiedName, data.qualifiedCacheName)
         XCTAssertEqual (entity.id, data.id)
         XCTAssertEqual (entity.version, data.version)
     }
@@ -1260,9 +1260,9 @@ class EntityTests: XCTestCase {
         }
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
-        let collection = EntityCache<Node>(database: database, name: "node")
+        let cache = EntityCache<Node>(database: database, name: "node")
         let batch = EventuallyConsistentBatch()
-        var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
+        var parent: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
         var timeout = Date().timeIntervalSince1970 + 10.0
@@ -1278,15 +1278,15 @@ class EntityTests: XCTestCase {
         }
         batch.commitSync()
         let parentId = parent!.id.uuidString
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (1, entities.count)
         }
         parent = nil
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        parent = collection.get(id: UUID (uuidString: parentId)!).item()!
-        var child: Entity<Node>? = collection.new(batch: batch) { parentData in
+        parent = cache.get(id: UUID (uuidString: parentId)!).item()!
+        var child: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
         let childId = child!.id.uuidString
@@ -1294,27 +1294,27 @@ class EntityTests: XCTestCase {
             node.parent.set(entity: parent, batch: batch)
         }
         batch.commitSync()
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
         parent = nil
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
         child = nil
-        var collectionHasEntities = true
+        var cacheHasEntities = true
         timeout = Date().timeIntervalSince1970 + 30.0
-        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+        while (cacheHasEntities && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
-            collection.sync() { entities in
-                collectionHasEntities = entities.count > 0
+            cache.sync() { entities in
+                cacheHasEntities = entities.count > 0
             }
             
         }
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child = cache.get(id: UUID (uuidString: childId)!).item()!
         child?.sync() { node in
             parent = node.parent.get().item()!
         }
@@ -1327,10 +1327,10 @@ class EntityTests: XCTestCase {
         batch.commitSync()
         child = nil
         parent = nil
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
-        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child = cache.get(id: UUID (uuidString: childId)!).item()!
         child!.sync() { node in
             parent = node.parent.get().item()!
         }
@@ -1341,26 +1341,26 @@ class EntityTests: XCTestCase {
         child = nil
         parent!.breakReferences()
         parent = nil
-        collectionHasEntities = true
+        cacheHasEntities = true
         timeout = Date().timeIntervalSince1970 + 30.0
-        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+        while (cacheHasEntities && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
-            collection.sync() { entities in
-                collectionHasEntities = entities.count > 0
+            cache.sync() { entities in
+                cacheHasEntities = entities.count > 0
             }
 
         }
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = collection.get(id: UUID (uuidString: childId)!).item()!
+        child = cache.get(id: UUID (uuidString: childId)!).item()!
         child!.sync() { node in
             parent = node.parent.get().item()!
         }
         parent!.sync() { node in
             child = node.parent.get().item()!
         }
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
         // Test Recursive Dereferencing
@@ -1398,35 +1398,35 @@ class EntityTests: XCTestCase {
         XCTAssertTrue (wereBothDereferenced)
         child = nil
         parent = nil
-        collectionHasEntities = true
+        cacheHasEntities = true
         timeout = Date().timeIntervalSince1970 + 30.0
-        while (collectionHasEntities && Date().timeIntervalSince1970 < timeout) {
+        while (cacheHasEntities && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
-            collection.sync() { entities in
-                collectionHasEntities = entities.count > 0
+            cache.sync() { entities in
+                cacheHasEntities = entities.count > 0
             }
             
         }
-        collection.sync() { entities in
+        cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
         // Test creation of parent with existing child
         // Registers the ReferenceManager with parent
-        let child2: Entity<Node> = collection.new(batch: batch) { parentData in
+        let child2: Entity<Node> = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
-        let parent2: Entity<Node> = collection.new(batch: batch) { parentData in
+        let parent2: Entity<Node> = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData, child: child2)
         }
         var childReference: ReferenceManager<Node, Node>? = nil
         parent2.sync() { node in
             childReference = node.parent
         }
-        var collectionHasOnCache = true
+        var cacheHasOnCache = true
         timeout = Date().timeIntervalSince1970 + 30.0
-        while (collectionHasOnCache && Date().timeIntervalSince1970 < timeout) {
+        while (cacheHasOnCache && Date().timeIntervalSince1970 < timeout) {
             usleep (100)
-            collectionHasOnCache = collection.onCacheCount() > 0
+            cacheHasOnCache = cache.onCacheCount() > 0
         }
         parent2.referenceContainers() { containers in
             XCTAssertEqual (1, containers.count)
@@ -1455,9 +1455,9 @@ class EntityTests: XCTestCase {
         }
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
-        let collection = EntityCache<Node>(database: database, name: "node")
+        let cache = EntityCache<Node>(database: database, name: "node")
         let batch = EventuallyConsistentBatch()
-        var parent: Entity<Node>? = collection.new(batch: batch) { parentData in
+        var parent: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
         var timeout = Date().timeIntervalSince1970 + 10.0
@@ -1490,13 +1490,13 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (found2)
         }
         batch.commitSync()
-        let c1: Entity<Node> = collection.new(batch: batch) { parentData in
+        let c1: Entity<Node> = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
-        let c2: Entity<Node> = collection.new(batch: batch) { parentData in
+        let c2: Entity<Node> = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
-        parent = collection.new(batch: batch) { parentData in
+        parent = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData, n1: c1, n2: c2)
         }
         timeout = Date().timeIntervalSince1970 + 10.0
@@ -1569,9 +1569,9 @@ class EntityTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger (level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
-        let collection = EntityCache<SneakyUpdater>(database: database, name: "sneak")
+        let cache = EntityCache<SneakyUpdater>(database: database, name: "sneak")
         let batch = EventuallyConsistentBatch()
-        var updaterEntity: Entity<SneakyUpdater>? = collection.new(batch: batch, item: SneakyUpdater())
+        var updaterEntity: Entity<SneakyUpdater>? = cache.new(batch: batch, item: SneakyUpdater())
         let updaterId = updaterEntity!.id.uuidString
         updaterEntity!.update(batch: batch) { updater in
             updater.setLabel ("1")
@@ -1595,7 +1595,7 @@ class EntityTests: XCTestCase {
             }
         }
         logger.sync() { entries in
-            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|cacheName=\(collection.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|cacheName=\(cache.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
         }
     }
     

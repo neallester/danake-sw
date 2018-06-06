@@ -24,7 +24,7 @@ func newTestClassEntity (myInt: Int, myString: String) -> Entity<MyClass> {
     myClass.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    return Entity (collection: EntityCache<MyClass>(database: database, name: "myCollection"), id: id, version: 0, item: myClass)
+    return Entity (cache: EntityCache<MyClass>(database: database, name: "myCollection"), id: id, version: 0, item: myClass)
     
 }
 
@@ -41,8 +41,8 @@ func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    let collection = EntityCache<MyStruct>(database: database, name: "myCollection")
-    return Entity (collection: collection, id: id, version: 0, item: myStruct)
+    let cache = EntityCache<MyStruct>(database: database, name: "myCollection")
+    return Entity (cache: cache, id: id, version: 0, item: myStruct)
 }
 
 func newTestEntitySchema5 (myInt: Int, myString: String) -> Entity<MyStruct> {
@@ -51,8 +51,8 @@ func newTestEntitySchema5 (myInt: Int, myString: String) -> Entity<MyStruct> {
     myStruct.myString = myString
     let id = UUID()
     let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
-    let collection = EntityCache<MyStruct>(database: database, name: "myCollection")
-    return Entity (collection: collection, id: id, version: 5, item: myStruct)
+    let cache = EntityCache<MyStruct>(database: database, name: "myCollection")
+    return Entity (cache: cache, id: id, version: 5, item: myStruct)
 }
 
 
@@ -87,9 +87,9 @@ func msRounded (date: Date) -> Double {
 */
 class TimeoutHookEntity<T: Codable> : Entity<T> {
     
-    internal init (collection: EntityCache<T>, id: UUID, version: Int, item: T, semaphoreValue: Int) {
+    internal init (cache: EntityCache<T>, id: UUID, version: Int, item: T, semaphoreValue: Int) {
         self.timeoutSemaphore = DispatchSemaphore (value: semaphoreValue)
-        super.init (collection: collection, id: id, version: version, item: item)
+        super.init (cache: cache, id: id, version: version, item: item)
     }
     
     required init(from decoder: Decoder) throws {

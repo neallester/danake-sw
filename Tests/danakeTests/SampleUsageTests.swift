@@ -143,7 +143,7 @@ struct Address : Codable {
     These classes demonstrate the persistence system implementing persistence for the previously introduced sample model.
  
     protocol DatabaseAccessor:      Interface for the adapter used to access persistent media (an implementation is provided for each
-                                    supported media). Lookup by Entity.id and collection scan (with optional selection criteria) are
+                                    supported media). Lookup by Entity.id and cache scan (with optional selection criteria) are
                                     included.
  
     protocol SampleAccessor:        Application specific extension to DatabaseAccessor which adds specialized queries (e.g. lookups
@@ -196,12 +196,12 @@ class SampleDatabase : Database {
 }
 
 protocol SampleAccessor : DatabaseAccessor {
-    func employeesForCompany (collection: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>>
+    func employeesForCompany (cache: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>>
 }
 
 class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
-    func employeesForCompany (collection: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>> {
-        let retrievalResult = scan (type: Entity<Employee>.self, collection: collection)
+    func employeesForCompany (cache: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>> {
+        let retrievalResult = scan (type: Entity<Employee>.self, cache: cache)
         switch retrievalResult {
         case .ok(let allEmployees):
             var result: [Entity<Employee>] = []
@@ -244,8 +244,8 @@ class CompanyCollection : EntityCache<Company> {
 class EmployeeCollection : EntityCache<Employee> {
 
     init(database: SampleDatabase) {
-        forCompanyClosure = { collection, company in
-            return database.sampleAccessor.employeesForCompany (collection: collection, company: company)
+        forCompanyClosure = { cache, company in
+            return database.sampleAccessor.employeesForCompany (cache: cache, company: company)
         }
         super.init (database: database, name: "employee", deserializationEnvironmentClosure: nil)
     }
@@ -316,16 +316,16 @@ class SampleTests: XCTestCase {
         // Declare SampleCollections with `let'
         // See class Database header comment for explanation of `schemaVersion'
         let logger = InMemoryLogger()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: logger)
         
         // Creating a database logs INFO
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.accessor.hashValue)", entries[0].asTestString())
+            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(caches.employees.database.accessor.hashValue)", entries[0].asTestString())
         }
 
         // Start test in known state by ensuring persistent media is empty
-        removeAll(collections: collections)
+        removeAll(caches: caches)
         
         var company1id: UUID?
 
@@ -336,14 +336,14 @@ class SampleTests: XCTestCase {
             // batch retry and timeout intervals are also settable; see
             // EventuallyConsistentBatch class header comment for these and other details
             // In application code always create batches with a logger
-            let batch = EventuallyConsistentBatch(logger: collections.logger)
+            let batch = EventuallyConsistentBatch(logger: caches.logger)
             
-            let company1 = collections.companies.new(batch: batch)
+            let company1 = caches.companies.new(batch: batch)
             company1id = company1.id
-            let company2 = collections.companies.new(batch: batch)
+            let company2 = caches.companies.new(batch: batch)
             
             // new objects are not available in persistent media until batch is committed
-            if let companies = collections.companies.scan().item() {
+            if let companies = caches.companies.scan().item() {
                 XCTAssertEqual (0, companies.count)
             } else {
                 // Retrieval error
@@ -361,7 +361,7 @@ class SampleTests: XCTestCase {
             group.wait()
             
             // After commit our companies are in the persistent media
-            if let companies = collections.companies.scan().item() {
+            if let companies = caches.companies.scan().item() {
                 XCTAssertEqual (2, companies.count)
             } else {
                 // Retrieval error
@@ -373,7 +373,7 @@ class SampleTests: XCTestCase {
             // However, `scan' queries retrieving already cached entities are
             // still expensive as they still go persistent media (cache normalization for scans does
             // not occur until after the persistent objects are retrieved and partially deserialized)
-            if let entity = collections.companies.get(id: company1.id).item() {
+            if let entity = caches.companies.get(id: company1.id).item() {
                 XCTAssertTrue (company1 === entity)
             } else {
                 // Retrieval error
@@ -383,7 +383,7 @@ class SampleTests: XCTestCase {
             // Because EntityCache.get() can be expensive,
             // use asynchronous version when possible
             group.enter()
-            collections.companies.get(id: company2.id) { retrievalResult in
+            caches.companies.get(id: company2.id) { retrievalResult in
                 if let company = retrievalResult.item() {
                     XCTAssertTrue (company === company2)
                 } else {
@@ -396,7 +396,7 @@ class SampleTests: XCTestCase {
             
             // Asynchronous version is also preferred for EntityCache.scan()
             group.enter()
-            collections.companies.scan() { retrievalResult in
+            caches.companies.scan() { retrievalResult in
                 if let companies = retrievalResult.item() {
                     XCTAssertEqual (2, companies.count)
                 } else {
@@ -410,7 +410,7 @@ class SampleTests: XCTestCase {
             // If a successful query may return nil, explicitly use retrievialResult instead of .item()
             group.enter()
             let badId = UUID()
-            collections.companies.get(id: badId) { retrievalResult in
+            caches.companies.get(id: badId) { retrievalResult in
                 switch retrievalResult {
                 case .ok (let company):
                     XCTAssertNil (company)
@@ -425,13 +425,13 @@ class SampleTests: XCTestCase {
             // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
-                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.accessor.hashValue);collection=company;id=\(badId.uuidString)", entries[1].asTestString())
+                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
-            // The default implementation retrieves and deserializes all entries in a collection/table
+            // The default implementation retrieves and deserializes all entries in a cache/table
             // before filtering the results.
-            let scanResult = collections.companies.scan() { company in
+            let scanResult = caches.companies.scan() { company in
                 company.id.uuidString == company2.id.uuidString
             }
             if let companies = scanResult.item() {
@@ -443,13 +443,13 @@ class SampleTests: XCTestCase {
             }
 
             // after commit() the batch is left as a fresh empty batch and may be reused
-            let _ = collections.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
-            var employee2: Entity<Employee>? = collections.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
+            let _ = caches.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
+            var employee2: Entity<Employee>? = caches.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
             batch.commitSync()
             // Updating the name attribute of Employee and setting a new reference for its address
-            let address1 = collections.addresses.new (batch: batch, item: Address(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
-            let address2 = collections.addresses.new (batch: batch, item: Address(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
-            let address3 = collections.addresses.new (batch: batch, item: Address(street: "Street 3", city: "City 3", state: "CA", zipCode: "94377"))
+            let address1 = caches.addresses.new (batch: batch, item: Address(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
+            let address2 = caches.addresses.new (batch: batch, item: Address(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
+            let address3 = caches.addresses.new (batch: batch, item: Address(street: "Street 3", city: "City 3", state: "CA", zipCode: "94377"))
             batch.commitSync()
             employee2!.update(batch: batch) { employee in
                 employee.name = "Name Updated2"
@@ -532,7 +532,7 @@ class SampleTests: XCTestCase {
         var lostChangesEmployeeUuidString = ""
         do {
             let batch = EventuallyConsistentBatch (logger: logger)
-            if let companyEntity = collections.companies.get (id: company1id!).item() {
+            if let companyEntity = caches.companies.get (id: company1id!).item() {
                 
                 
                 companyEntity.sync() { company in
@@ -561,7 +561,7 @@ class SampleTests: XCTestCase {
         var hasCached = true
         let lostChangesEmployeeUUID = UUID(uuidString: lostChangesEmployeeUuidString)!
         while hasCached {
-            collections.employees.sync() { entities in
+            caches.employees.sync() { entities in
                 hasCached = entities[lostChangesEmployeeUUID]?.codable != nil
                 usleep(100)
             }
@@ -573,7 +573,7 @@ class SampleTests: XCTestCase {
             XCTAssertEqual ("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
         }
         do {
-            if let companyEntity = collections.companies.get (id: company1id!).item() {
+            if let companyEntity = caches.companies.get (id: company1id!).item() {
                 companyEntity.sync() { company in
                     if let employeeEntity = company.employees().item()?[0] {
                         
@@ -593,7 +593,7 @@ class SampleTests: XCTestCase {
         }
 
         // Clean up
-        removeAll(collections: collections)
+        removeAll(caches: caches)
     }
     
 /*
@@ -605,11 +605,11 @@ class SampleTests: XCTestCase {
     public func testDemonstrateThrowError() {
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
-        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        switch inMemoryAccessor.add(name: caches.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
         case .ok:
             break
         default:
@@ -617,18 +617,18 @@ class SampleTests: XCTestCase {
         }
         // Use InMemoryAccessor.setThrowError() to simulate persistent media errors for testing
         inMemoryAccessor.setThrowError()
-        switch collections.companies.get(id: companyId) {
+        switch caches.companies.get(id: companyId) {
         case .error(let errorMessage):
             XCTAssertEqual ("getError", errorMessage)
             logger.sync() { entries in
                 XCTAssertEqual (1, entries.count)
-                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.accessor.hashValue);collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         default:
             XCTFail ("Expected .error")
         }
         // Only one error will be thrown; subsequent operations will succeed
-        switch collections.companies.get(id: companyId) {
+        switch caches.companies.get(id: companyId) {
         case .ok (let company):
             XCTAssertEqual (company!.id.uuidString, companyId.uuidString)
             logger.sync() { entries in
@@ -645,11 +645,11 @@ class SampleTests: XCTestCase {
     public func testDemonstratePrefetchWithGet () {
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
-        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        switch inMemoryAccessor.add(name: caches.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
         case .ok:
             break
         default:
@@ -668,7 +668,7 @@ class SampleTests: XCTestCase {
         var retrievedCompany: Entity<Company>? = nil
         let group = DispatchGroup()
         group.enter()
-        collections.companies.get(id: companyId) { retrievalResult in
+        caches.companies.get(id: companyId) { retrievalResult in
             switch retrievalResult {
             case .ok (let company):
                 XCTAssertEqual (company!.id.uuidString, companyId.uuidString)
@@ -701,11 +701,11 @@ class SampleTests: XCTestCase {
     public func testDemonstrateUpdateErrors () {
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let collections = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
-        switch inMemoryAccessor.add(name: collections.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
+        switch inMemoryAccessor.add(name: caches.companies.name, id: companyId, data: companyJson.data (using: .utf8)!) {
         case .ok:
             break
         default:
@@ -713,7 +713,7 @@ class SampleTests: XCTestCase {
         }
         let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
         let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue)\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"cacheName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
-        switch inMemoryAccessor.add(name: collections.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
+        switch inMemoryAccessor.add(name: caches.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
         case .ok:
             break
         default:
@@ -722,7 +722,7 @@ class SampleTests: XCTestCase {
         let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
         var batchIdString = batch.delegateId().uuidString
         
-        if let employeeEntity = collections.employees.get(id: employeeId).item() {
+        if let employeeEntity = caches.employees.get(id: employeeId).item() {
             // Update employee name
             employeeEntity.update(batch: batch) { employee in
                 employee.name = "Name Updated1"
@@ -757,7 +757,7 @@ class SampleTests: XCTestCase {
                 XCTAssertTrue (employeeJson.contains("\"isNil\":true"))
                 XCTAssertTrue (employeeJson.contains("\"persistenceState\":\"persistent\""))
             #else
-                XCTAssertEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
+                XCTAssertEqual (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8))
             #endif
             XCTAssertFalse (inMemoryAccessor.isThrowError())
 
@@ -804,20 +804,20 @@ class SampleTests: XCTestCase {
                 XCTAssertTrue (employeeJson.contains("\"isNil\":true"))
                 XCTAssertTrue (employeeJson.contains("\"persistenceState\":\"persistent\""))
             #else
-                XCTAssertNotEqual (employeeJson, String (data: inMemoryAccessor.getData(name: collections.employees.name, id: employeeId)!, encoding: .utf8))
+                XCTAssertNotEqual (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8))
             #endif
         }
     }
 
-    static func removeAll (collections: SampleCollections) {
+    static func removeAll (caches: SampleCollections) {
         let batch = EventuallyConsistentBatch()
-        for entity in collections.companies.scan(criteria: nil).item()! {
+        for entity in caches.companies.scan(criteria: nil).item()! {
             entity.remove(batch: batch)
         }
-        for entity in collections.employees.scan(criteria: nil).item()! {
+        for entity in caches.employees.scan(criteria: nil).item()! {
             entity.remove(batch: batch)
         }
-        for entity in collections.addresses.scan(criteria: nil).item()! {
+        for entity in caches.addresses.scan(criteria: nil).item()! {
             entity.remove(batch: batch)
         }
         batch.commitSync()
@@ -830,9 +830,9 @@ class SampleTests: XCTestCase {
 */
     
     func testCompanyCreation() {
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let uuid = UUID()
-        let company = Company (employeeCollection: collections.employees, id: uuid)
+        let company = Company (employeeCollection: caches.employees, id: uuid)
         XCTAssertEqual (uuid.uuidString, company.id.uuidString)
     }
     
@@ -841,7 +841,7 @@ class SampleTests: XCTestCase {
         var jsonData = json.data(using: .utf8)!
         let decoder = JSONDecoder()
         jsonData = json.data(using: .utf8)!
-        // Decoding With no collection or parentData
+        // Decoding With no cache or parentData
         do {
             let _ = try decoder.decode(Company.self, from: jsonData)
             XCTFail("Expected error")
@@ -850,9 +850,9 @@ class SampleTests: XCTestCase {
         } catch {
             XCTFail("Expected missingUserInfoValue")
         }
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        // Decoding with collection and no parent data
-        decoder.userInfo[Company.employeeCollectionKey] = collections.employees
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        // Decoding with cache and no parent data
+        decoder.userInfo[Company.employeeCollectionKey] = caches.employees
         do {
             let _ = try decoder.decode(Company.self, from: jsonData)
             XCTFail("Expected error")
@@ -861,9 +861,9 @@ class SampleTests: XCTestCase {
         } catch {
             XCTFail("Expected missingUserInfoValue")
         }
-        // Decoding with collection and parentdata
+        // Decoding with cache and parentdata
         let uuid = UUID (uuidString: "30288A21-4798-4134-9F35-6195BEC7F352")!
-        let parentData = EntityReferenceData<Company>(collection: collections.companies, id: uuid, version: 1)
+        let parentData = EntityReferenceData<Company>(cache: caches.companies, id: uuid, version: 1)
         let container = DataContainer ()
         container.data = parentData
         decoder.userInfo[Database.parentDataKey] = container
@@ -880,15 +880,15 @@ class SampleTests: XCTestCase {
     
     func testCompanyEmployees() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let companyEntity3 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let companyEntity3 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         let waitFor = expectation(description: "wait1")
         batch.commit() {
             waitFor.fulfill()
@@ -912,15 +912,15 @@ class SampleTests: XCTestCase {
 
     func testCompanyEmployeesAsync() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let companyEntity3 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let _ = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let companyEntity3 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         let waitFor1 = expectation(description: "wait1")
         batch.commit() {
             waitFor1.fulfill()
@@ -956,9 +956,9 @@ class SampleTests: XCTestCase {
     }
 
     func testCompanyCollectionNew() {
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        XCTAssertNotNil (collections.companies.new(batch: batch))
+        XCTAssertNotNil (caches.companies.new(batch: batch))
     }
     
     func testAddressCreation() {
@@ -970,10 +970,10 @@ class SampleTests: XCTestCase {
     }
 
     func testAddressFromCollection() {
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
-        let addressEntity = collections.addresses.new(batch: batch, item: address)
+        let addressEntity = caches.addresses.new(batch: batch, item: address)
         addressEntity.sync() { address in
             XCTAssertEqual ("Street", address.street)
             XCTAssertEqual ("City", address.city)
@@ -983,11 +983,11 @@ class SampleTests: XCTestCase {
     }
 
     func testEmployeeCreation() {
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = Company(employeeCollection: collections.employees, id: UUID())
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let company = Company(employeeCollection: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
-        let companyEntity = collections.companies.new(batch: batch, item: company)
-        let selfReference = EntityReferenceData<Employee> (collection: collections.employees, id: UUID(), version: 0)
+        let companyEntity = caches.companies.new(batch: batch, item: company)
+        let selfReference = EntityReferenceData<Employee> (cache: caches.employees, id: UUID(), version: 0)
         // Without address
         var employee = Employee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: nil)
         var referencedCompanyEntity = employee.company.get().item()!
@@ -998,7 +998,7 @@ class SampleTests: XCTestCase {
         XCTAssertNil (employee.address.get().item())
         // With address
         let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
-        let addressEntity = collections.addresses.new(batch: batch, item: address)
+        let addressEntity = caches.addresses.new(batch: batch, item: address)
         employee = Employee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: addressEntity)
         referencedCompanyEntity = employee.company.get().item()!
         referencedCompanyEntity.sync() { referencedCompany in
@@ -1012,20 +1012,20 @@ class SampleTests: XCTestCase {
     }
     
     func testEmployeeFromCollection() {
-        let collections = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = Company(employeeCollection: collections.employees, id: UUID())
+        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let company = Company(employeeCollection: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
-        let companyEntity = collections.companies.new(batch: batch, item: company)
+        let companyEntity = caches.companies.new(batch: batch, item: company)
         // Without address
-        var employeeEntity = collections.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: nil)
+        var employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: nil)
         employeeEntity.sync() { employee in
             XCTAssertTrue (employee.company.get().item()! === companyEntity)
             XCTAssertEqual ("Bob Carol", employee.name)
             XCTAssertNil (employee.address.get().item())
         }
         let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
-        let addressEntity = collections.addresses.new(batch: batch, item: address)
-        employeeEntity = collections.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: addressEntity)
+        let addressEntity = caches.addresses.new(batch: batch, item: address)
+        employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: addressEntity)
         employeeEntity.sync() { employee in
             XCTAssertTrue (employee.company.get().item()! === companyEntity)
             XCTAssertEqual ("Bob Carol", employee.name)
@@ -1035,22 +1035,22 @@ class SampleTests: XCTestCase {
     
     func testInMemoryAccessorEmployeesForCompany() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let companyEntity3 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let companyEntity3 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         let waitFor = expectation(description: "wait1")
         batch.commit() {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10, handler: nil)
         companyEntity1.sync() { company in
-            switch accessor.employeesForCompany(collection: collections.employees, company: company) {
+            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
             case .ok (let company1Employees):
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
@@ -1060,7 +1060,7 @@ class SampleTests: XCTestCase {
             }
         }
         companyEntity2.sync() { company in
-            switch accessor.employeesForCompany(collection: collections.employees, company: company) {
+            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
             case .ok (let company2Employees):
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
@@ -1070,7 +1070,7 @@ class SampleTests: XCTestCase {
             }
         }
         companyEntity3.sync() { company in
-            switch accessor.employeesForCompany(collection: collections.employees, company: company) {
+            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
             case .ok (let company3Employees):
                 XCTAssertEqual (0, company3Employees.count)
             default:
@@ -1081,21 +1081,21 @@ class SampleTests: XCTestCase {
 
     func testEmployeeCollectionForCompany() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         let waitFor = expectation(description: "wait1")
         batch.commit() {
             waitFor.fulfill()
         }
         waitForExpectations(timeout: 10, handler: nil)
         companyEntity1.sync() { company in
-            switch collections.employees.forCompany(company) {
+            switch caches.employees.forCompany(company) {
             case .ok (let company1Employees):
                 XCTAssertEqual (2, company1Employees!.count)
                 XCTAssertTrue (company1Employees![0] === employeeEntity1 || company1Employees![0] === employeeEntity2)
@@ -1105,7 +1105,7 @@ class SampleTests: XCTestCase {
             }
         }
         companyEntity2.sync() { company in
-            switch collections.employees.forCompany(company) {
+            switch caches.employees.forCompany(company) {
             case .ok (let company2Employees):
                 XCTAssertEqual (2, company2Employees!.count)
                 XCTAssertTrue (company2Employees![0] === employeeEntity3 || company2Employees![0] === employeeEntity4)
@@ -1118,14 +1118,14 @@ class SampleTests: XCTestCase {
 
     func testEmployeeCollectionForCompanyAsync() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         let waitFor1 = expectation(description: "wait1")
         batch.commit() {
             waitFor1.fulfill()
@@ -1134,7 +1134,7 @@ class SampleTests: XCTestCase {
         let waitFor2a = expectation(description: "wait2a")
         let waitFor2b = expectation(description: "wait2b")
         companyEntity1.sync() { company in
-            collections.employees.forCompany(company) { result in
+            caches.employees.forCompany(company) { result in
                 switch result {
                 case .ok (let company1Employees):
                     XCTAssertEqual (2, company1Employees!.count)
@@ -1147,7 +1147,7 @@ class SampleTests: XCTestCase {
             }
         }
         companyEntity2.sync() { company in
-            collections.employees.forCompany(company) { result in
+            caches.employees.forCompany(company) { result in
                 switch result {
                 case .ok (let company2Employees):
                     XCTAssertEqual (2, company2Employees!.count)
@@ -1164,18 +1164,18 @@ class SampleTests: XCTestCase {
 
     func testRemoveAll() {
         let accessor = SampleInMemoryAccessor()
-        let collections = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let companyEntity1 = collections.companies.new(batch: batch)
-        let companyEntity2 = collections.companies.new(batch: batch)
-        let employeeEntity1 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
-        let employeeEntity2 = collections.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
-        let employeeEntity3 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
-        let employeeEntity4 = collections.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let address1 = collections.addresses.new(batch: batch, item: Address(street: "S1", city: "C1", state: "St1", zipCode: "Z1"))
-        let address2 = collections.addresses.new(batch: batch, item: Address(street: "S2", city: "C2", state: "St2", zipCode: "Z2"))
-        let address3 = collections.addresses.new(batch: batch, item: Address(street: "S3", city: "C3", state: "St3", zipCode: "Z3"))
-        let address4 = collections.addresses.new(batch: batch, item: Address(street: "S4", city: "C4", state: "St4", zipCode: "Z4"))
+        let companyEntity1 = caches.companies.new(batch: batch)
+        let companyEntity2 = caches.companies.new(batch: batch)
+        let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
+        let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
+        let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
+        let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
+        let address1 = caches.addresses.new(batch: batch, item: Address(street: "S1", city: "C1", state: "St1", zipCode: "Z1"))
+        let address2 = caches.addresses.new(batch: batch, item: Address(street: "S2", city: "C2", state: "St2", zipCode: "Z2"))
+        let address3 = caches.addresses.new(batch: batch, item: Address(street: "S3", city: "C3", state: "St3", zipCode: "Z3"))
+        let address4 = caches.addresses.new(batch: batch, item: Address(street: "S4", city: "C4", state: "St4", zipCode: "Z4"))
         employeeEntity1.update(batch: batch) { employee in
             employee.address.set(entity: address1, batch: batch)
         }
@@ -1189,13 +1189,13 @@ class SampleTests: XCTestCase {
             employee.address.set(entity: address4, batch: batch)
         }
         batch.commitSync()
-        XCTAssertEqual (2, collections.companies.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (4, collections.employees.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (4, collections.addresses.scan(criteria: nil).item()!.count)
-        SampleTests.removeAll(collections: collections)
-        XCTAssertEqual (0, collections.companies.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (0, collections.employees.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (0, collections.addresses.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (2, caches.companies.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (4, caches.employees.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (4, caches.addresses.scan(criteria: nil).item()!.count)
+        SampleTests.removeAll(caches: caches)
+        XCTAssertEqual (0, caches.companies.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (0, caches.employees.scan(criteria: nil).item()!.count)
+        XCTAssertEqual (0, caches.addresses.scan(criteria: nil).item()!.count)
     }
     
 }

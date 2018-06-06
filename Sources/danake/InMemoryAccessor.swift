@@ -18,7 +18,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     // Implement protocol DatabaseAccessor
     
-    public func get<T, E: Entity<T>> (type: E.Type, collection: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>> {
+    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>> {
         var result: Entity<T>? = nil
         var errorMessage: String? = nil
         if let preFetch = preFetch {
@@ -29,10 +29,10 @@ public class InMemoryAccessor: DatabaseAccessor {
             if self.throwError {
                 errorMessage = "getError"
                 self.throwError = false
-            } else if let collectionDictionary = storage[collection.name] {
-                let data = collectionDictionary[id]
+            } else if let cacheDictionary = storage[cache.name] {
+                let data = cacheDictionary[id]
                 if let data = data {
-                    switch entityCreator.entity(creator: {try decoder (collection: collection).decode(type, from: data)} ) {
+                    switch entityCreator.entity(creator: {try decoder (cache: cache).decode(type, from: data)} ) {
                     case .ok (let entity):
                         result = entity
                     case .error (let creationError):
@@ -47,17 +47,17 @@ public class InMemoryAccessor: DatabaseAccessor {
         return .ok (result)
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, collection: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>> {
+    public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>> {
         var resultList: [Entity<T>] = []
         var result = DatabaseAccessListResult<Entity<T>>.ok (resultList)
         queue.sync {
             if self.throwError {
                 result = .error ("scanError")
                 self.throwError = false
-            } else if let collectionDictionary = storage [collection.name] {
-                resultList.reserveCapacity (collectionDictionary.count)
-                for item in collectionDictionary.values {
-                    switch entityCreator.entity(creator: {try decoder (collection: collection).decode(type, from: item)} ) {
+            } else if let cacheDictionary = storage [cache.name] {
+                resultList.reserveCapacity (cacheDictionary.count)
+                for item in cacheDictionary.values {
+                    switch entityCreator.entity(creator: {try decoder (cache: cache).decode(type, from: item)} ) {
                     case .ok (let entity):
                         resultList.append (entity)
                     case .error:
@@ -145,8 +145,8 @@ public class InMemoryAccessor: DatabaseAccessor {
                 result = .error ("addError")
             } else {
                 if self.storage[name] == nil {
-                    let collectionDictionary = Dictionary<UUID, Data>()
-                    self.storage[name] = collectionDictionary
+                    let cacheDictionary = Dictionary<UUID, Data>()
+                    self.storage[name] = cacheDictionary
                 }
                 self.storage[name]![id] = data
             }
@@ -182,8 +182,8 @@ public class InMemoryAccessor: DatabaseAccessor {
     public func count (name: CacheName) -> Int {
         var result = 0
         queue.sync {
-            if let collectionStorage = self.storage[name] {
-                result = collectionStorage.count
+            if let cacheStorage = self.storage[name] {
+                result = cacheStorage.count
             }
         }
         return result
@@ -243,12 +243,12 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }()
     
-    public func decoder <T> (collection: EntityCache<T>) -> JSONDecoder {
+    public func decoder <T> (cache: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
-        result.userInfo[Database.collectionKey] = collection
+        result.userInfo[Database.cacheKey] = cache
         result.userInfo[Database.parentDataKey] = DataContainer()
-        if let closure = collection.getDeserializationEnvironmentClosure() {
+        if let closure = cache.getDeserializationEnvironmentClosure() {
             closure (&result.userInfo)
         }
         return result
