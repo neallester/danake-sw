@@ -190,11 +190,7 @@ public class Database {
      ** schemaVersion **. The ** schemaVersion ** at the time an Entity.item was stored is available to the model object's deserialization
      routine via the EntityReferenceData stored in userInfo[Database.parentKeyData] (see Entity.init (from decoder:)
 */
-    convenience init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?) {
-        self.init (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 120.0)
-    }
-
-    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger?, referenceRetryInterval: TimeInterval) {
+    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger? = nil, referenceRetryInterval: TimeInterval = 120.0) {
         self.referenceRetryInterval = referenceRetryInterval
         self.accessor = accessor
         self.logger = logger
