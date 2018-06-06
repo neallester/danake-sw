@@ -37,7 +37,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
         self.name = name
         self.qualifiedName = database.qualifiedCollectionName(name)
         self.deserializationEnvironmentClosure = deserializationEnvironmentClosure
-        cache = Dictionary<UUID, WeakItem<T>>()
+        cache = Dictionary<UUID, WeakCodable<T>>()
         cacheQueue = DispatchQueue(label: "Collection \(name)")
         self.workQueue = database.workQueue
         super.init()
@@ -61,7 +61,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     
     internal func decache (id: UUID) {
         cacheQueue.async() {
-            if let cachedEntity = self.cache[id], cachedEntity.item == nil {
+            if let cachedEntity = self.cache[id], cachedEntity.codable == nil {
                 self.cache.removeValue (forKey: id)
             }
         }
@@ -73,7 +73,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
         var result: Entity<T>? = nil
         var errorResult: RetrievalResult<Entity<T>>? = nil
         cacheQueue.sync {
-            result = cache[id]?.item
+            result = cache[id]?.codable
         }
         if (result == nil) {
             let retrievalResult = self.database.accessor.get(type: Entity<T>.self, collection: self, id: id)
@@ -159,7 +159,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     public func new (batch: EventuallyConsistentBatch, item: T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, item: item)
         cacheQueue.async() {
-            self.cache[result.id] = WeakItem (item:result)
+            self.cache[result.id] = WeakCodable (result)
         }
         batch.insertAsync(entity: result, closure: nil)
         return result
@@ -176,7 +176,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     public func new (batch: EventuallyConsistentBatch, itemClosure: (EntityReferenceData<T>) -> T) -> Entity<T> {
         let result = Entity (collection: self, id: UUID(), version: 0, itemClosure: itemClosure)
         cacheQueue.async() {
-            self.cache[result.id] = WeakItem (item:result)
+            self.cache[result.id] = WeakCodable (result)
         }
         batch.insertAsync(entity: result, closure: nil)
         return result
@@ -187,15 +187,15 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     internal func cachedEntity (id: UUID) -> Entity<T>? {
         var result: Entity<T>? = nil
         cacheQueue.sync() {
-            result = self.cache[id]?.item
+            result = self.cache[id]?.codable
         }
         return result
     }
     
     internal func cacheEntity (_ entity: Entity<T>) {
         cacheQueue.sync() {
-            precondition ( self.cache[entity.id]?.item == nil)
-            self.cache[entity.id] = WeakItem (item: entity)
+            precondition ( self.cache[entity.id]?.codable == nil)
+            self.cache[entity.id] = WeakCodable (entity)
             if let closureList = self.onEntityCached[entity.id] {
                 for closure in closureList {
                     closure(entity)
@@ -218,7 +218,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
 
     // For testing
     
-    internal func sync (closure: (Dictionary<UUID, WeakItem<T>>) -> Void) {
+    internal func sync (closure: (Dictionary<UUID, WeakCodable<T>>) -> Void) {
         cacheQueue.sync () {
             closure (cache)
         }
@@ -245,7 +245,7 @@ public class EntityCache<T: Codable> : UntypedEntityCache {
     internal let database: Database
     public let name: CollectionName
     public let qualifiedName: QualifiedCollectionName
-    private var cache: Dictionary<UUID, WeakItem<T>>
+    private var cache: Dictionary<UUID, WeakCodable<T>>
     private var onEntityCached: Dictionary<UUID, [(Entity<T>) -> ()]> = [:]
     private let cacheQueue: DispatchQueue
     private let workQueue: DispatchQueue

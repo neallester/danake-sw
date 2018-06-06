@@ -91,7 +91,7 @@ class EntityCacheTests: XCTestCase {
         }
         collection.sync() { cache in
             XCTAssertEqual(1, cache.count)
-            XCTAssertTrue (entity === cache[entity!.id]!.item!)
+            XCTAssertTrue (entity === cache[entity!.id]!.codable!)
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
@@ -122,7 +122,7 @@ class EntityCacheTests: XCTestCase {
         }
         collection.sync() { cache in
             XCTAssertEqual(1, cache.count)
-            XCTAssertTrue (entity === cache[entity!.id]!.item!)
+            XCTAssertTrue (entity === cache[entity!.id]!.codable!)
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
@@ -173,7 +173,7 @@ class EntityCacheTests: XCTestCase {
         }
         collection.sync() { cache in
             XCTAssertEqual (1, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.codable!)
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
@@ -186,8 +186,8 @@ class EntityCacheTests: XCTestCase {
         XCTAssertTrue (entity2.collection === collection)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
-            XCTAssertTrue (entity2 === cache[entity2.id]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.codable!)
+            XCTAssertTrue (entity2 === cache[entity2.id]!.codable!)
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
@@ -200,8 +200,8 @@ class EntityCacheTests: XCTestCase {
         XCTAssertTrue (retrievedEntity === collection.get(id: entity.id).item()!)
         collection.sync() { cache in
             XCTAssertEqual (2, cache.count)
-            XCTAssertTrue (retrievedEntity === cache[entity.id]!.item!)
-            XCTAssertTrue (entity2 === cache[entity2.id]!.item!)
+            XCTAssertTrue (retrievedEntity === cache[entity.id]!.codable!)
+            XCTAssertTrue (entity2 === cache[entity2.id]!.codable!)
         }
         accessor.sync() { storage in
             XCTAssertEqual (1, storage.count)
@@ -435,8 +435,8 @@ class EntityCacheTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.codable!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.codable!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
@@ -462,10 +462,10 @@ class EntityCacheTests: XCTestCase {
             XCTAssertTrue (entity4 === result2!.item()!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
-                XCTAssertTrue (entity3 === cache[entity3.id]!.item!)
-                XCTAssertTrue (entity4 === cache[entity4.id]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.codable!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.codable!)
+                XCTAssertTrue (entity3 === cache[entity3.id]!.codable!)
+                XCTAssertTrue (entity4 === cache[entity4.id]!.codable!)
             }
             accessor.sync() { storage in
                 XCTAssertEqual (2, storage[standardCollectionName]!.count)
@@ -493,10 +493,10 @@ class EntityCacheTests: XCTestCase {
             XCTAssertTrue (retrievedEntity2 === result2!.item()!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.item!)
-                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.item!)
-                XCTAssertTrue (entity3 === cache[entity3.id]!.item!)
-                XCTAssertTrue (entity4 === cache[entity4.id]!.item!)
+                XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.codable!)
+                XCTAssertTrue (retrievedEntity2 === cache[entity2.id]!.codable!)
+                XCTAssertTrue (entity3 === cache[entity3.id]!.codable!)
+                XCTAssertTrue (entity4 === cache[entity4.id]!.codable!)
             }
             accessor.sync() { storage in
                 XCTAssertEqual (2, storage[standardCollectionName]!.count)
@@ -658,8 +658,8 @@ class EntityCacheTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             // Retrieve Data
             retrievedEntities = collection.scan(criteria: nil).item()!
@@ -713,10 +713,10 @@ class EntityCacheTests: XCTestCase {
             XCTAssertTrue (entity4 === retrievedEntity4!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity1!)
-                XCTAssertTrue (cache[entity2.id]!.item! === retrievedEntity2!)
-                XCTAssertTrue (cache[entity3.id]!.item! === retrievedEntity3!)
-                XCTAssertTrue (cache[entity4.id]!.item! === retrievedEntity4!)
+                XCTAssertTrue (cache[entity1.id]!.codable! === retrievedEntity1!)
+                XCTAssertTrue (cache[entity2.id]!.codable! === retrievedEntity2!)
+                XCTAssertTrue (cache[entity3.id]!.codable! === retrievedEntity3!)
+                XCTAssertTrue (cache[entity4.id]!.codable! === retrievedEntity4!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
@@ -772,10 +772,10 @@ class EntityCacheTests: XCTestCase {
             XCTAssertTrue (entity4 === retrievedEntity4!)
             collection.sync() { cache in
                 XCTAssertEqual (4, cache.count)
-                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity1!)
-                XCTAssertTrue (cache[entity2.id]!.item! === retrievedEntity2!)
-                XCTAssertTrue (cache[entity3.id]!.item! === retrievedEntity3!)
-                XCTAssertTrue (cache[entity4.id]!.item! === retrievedEntity4!)
+                XCTAssertTrue (cache[entity1.id]!.codable! === retrievedEntity1!)
+                XCTAssertTrue (cache[entity2.id]!.codable! === retrievedEntity2!)
+                XCTAssertTrue (cache[entity3.id]!.codable! === retrievedEntity3!)
+                XCTAssertTrue (cache[entity4.id]!.codable! === retrievedEntity4!)
             }
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
@@ -863,8 +863,8 @@ class EntityCacheTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             // Retrieve Data
             let retrievedEntities = (collection.scan(){ item in
@@ -888,9 +888,9 @@ class EntityCacheTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (3, cache.count)
-                XCTAssertTrue (cache[entity1.id]!.item! === retrievedEntity)
-                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                XCTAssertTrue (cache[entity1.id]!.codable! === retrievedEntity)
+                XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
@@ -959,8 +959,8 @@ class EntityCacheTests: XCTestCase {
                 }
                 collection.sync() { cache in
                     XCTAssertEqual (2, cache.count)
-                    XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                    XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                    XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                    XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
                 }
                 // Retrieve Data
                 let retrievedEntities = (collection.scan(){ item in
@@ -977,8 +977,8 @@ class EntityCacheTests: XCTestCase {
                 }
                 XCTAssert (entity3 === retrievedEntity)
                 collection.sync() { cache in
-                    XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                    XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                    XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                    XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
                 }
                 logger.sync() { entries in
                     XCTAssertEqual (0, entries.count)
@@ -1049,8 +1049,8 @@ class EntityCacheTests: XCTestCase {
             }
             collection.sync() { cache in
                 XCTAssertEqual (2, cache.count)
-                XCTAssertTrue (cache[entity3.id]!.item! === entity3)
-                XCTAssertTrue (cache[entity4.id]!.item! === entity4)
+                XCTAssertTrue (cache[entity3.id]!.codable! === entity3)
+                XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             // Retrieve Data
             accessor.setThrowError()

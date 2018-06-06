@@ -31,13 +31,13 @@ public enum ValidationResult {
     }
 }
 
-struct WeakItem<T: Codable> {
+struct WeakCodable<T: Codable> {
     
-    init (item: Entity<T>) {
-        self.item = item
+    init (_ codable: Entity<T>) {
+        self.codable = codable
     }
     
-    weak var item: Entity<T>?
+    weak var codable: Entity<T>?
 }
 
 struct WeakObject<T: AnyObject> {

@@ -562,7 +562,7 @@ class SampleTests: XCTestCase {
         let lostChangesEmployeeUUID = UUID(uuidString: lostChangesEmployeeUuidString)!
         while hasCached {
             collections.employees.sync() { entities in
-                hasCached = entities[lostChangesEmployeeUUID]?.item != nil
+                hasCached = entities[lostChangesEmployeeUUID]?.codable != nil
                 usleep(100)
             }
         }
