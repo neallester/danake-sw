@@ -207,11 +207,6 @@ public class Database {
             logger?.log(level: .emergency, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
         }
     }
-
-    
-    func getAccessor() -> DatabaseAccessor {
-        return accessor
-    }
     
     internal func qualifiedCollectionName (_ collectionName: CollectionName) -> QualifiedCollectionName {
         return Database.qualifiedCollectionName(databaseHash: accessor.hashValue(), collectionName: collectionName)

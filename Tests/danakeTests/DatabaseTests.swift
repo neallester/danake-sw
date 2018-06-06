@@ -33,7 +33,7 @@ class DatabaseTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
         var database: Database? = Database (accessor: accessor, schemaVersion: 5, logger: logger)
-        XCTAssertTrue (accessor === database!.getAccessor() as! InMemoryAccessor)
+        XCTAssertTrue (accessor === database!.accessor as! InMemoryAccessor)
         XCTAssertTrue (logger === database!.logger as! InMemoryLogger)
         XCTAssertTrue (Database.registrar.isRegistered(key: accessor.hashValue()))
         XCTAssertEqual (5, database?.schemaVersion)

@@ -31,8 +31,8 @@ class EntityCacheTests: XCTestCase {
         let _ = EntityCache<MyStruct>(database: database, name: collectionName)
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.getAccessor().hashValue());collectionName=myCollection", entries[0].asTestString())
-            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.getAccessor().hashValue()).myCollection", entries[1].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|collectionAlreadyRegistered|database=Database;databaseHashValue=\(database.accessor.hashValue());collectionName=myCollection", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|EntityCache<MyStruct>.init|qualifiedCollectionAlreadyRegistered|qualifiedCollectionName=\(database.accessor.hashValue()).myCollection", entries[1].asTestString())
         }
         collection = nil
         XCTAssertFalse (database.collectionRegistrar.isRegistered(key: collectionName))

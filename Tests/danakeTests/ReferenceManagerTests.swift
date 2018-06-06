@@ -2061,7 +2061,7 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         // Decoded with invalid reference
-        let invalidReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: UUID(), version: 1)
+        let invalidReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: UUID(), version: 1)
         reference = ReferenceManager (parent: parentData, referenceData: invalidReferenceData)
         reference.sync() { contents in
             switch contents.state {
@@ -2149,7 +2149,7 @@ class ReferenceManagerTests: XCTestCase {
         let savedDateString = try! jsonEncodedDate (date: Date())!
         var json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        var persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        var persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         reference.setState(state: .retrievalError(oldTime, "Test Error"))
         waitFor = expectation(description: "wait7")
@@ -2192,7 +2192,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2265,7 +2265,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2336,7 +2336,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2407,7 +2407,7 @@ class ReferenceManagerTests: XCTestCase {
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: persistentUUID, data: json.data(using: .utf8)!)
-        persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
+        persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
@@ -2473,7 +2473,7 @@ class ReferenceManagerTests: XCTestCase {
         let entityId = UUID()
         let json = "{\"id\":\"\(entityId.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: collection.name, id: entityId, data: json.data(using: .utf8)!)
-        let persistentReferenceData = ReferenceManagerData (databaseId: database.getAccessor().hashValue(), collectionName: collection.name, id: entityId, version: 10)
+        let persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue(), collectionName: collection.name, id: entityId, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
         switch reference.get() {
         case .ok(let retrievedEntity):

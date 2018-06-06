@@ -191,11 +191,7 @@ class SampleDatabase : Database {
         super.init (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: referenceRetryInterval)
     }
     
-    func getAccessor() -> SampleAccessor {
-        return sampleAccessor
-    }
-
-    private let sampleAccessor: SampleAccessor
+    let sampleAccessor: SampleAccessor
     
 }
 
@@ -249,7 +245,7 @@ class EmployeeCollection : EntityCache<Employee> {
 
     init(database: SampleDatabase) {
         forCompanyClosure = { collection, company in
-            return database.getAccessor().employeesForCompany (collection: collection, company: company)
+            return database.sampleAccessor.employeesForCompany (collection: collection, company: company)
         }
         super.init (database: database, name: "employee", deserializationEnvironmentClosure: nil)
     }
@@ -325,7 +321,7 @@ class SampleTests: XCTestCase {
         // Creating a database logs INFO
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.getAccessor().hashValue())", entries[0].asTestString())
+            XCTAssertEqual ("INFO|SampleDatabase.init|created|hashValue=\(collections.employees.database.accessor.hashValue())", entries[0].asTestString())
         }
 
         // Start test in known state by ensuring persistent media is empty
@@ -429,7 +425,7 @@ class SampleTests: XCTestCase {
             // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
-                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.getAccessor().hashValue());collection=company;id=\(badId.uuidString)", entries[1].asTestString())
+                XCTAssertEqual ("WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(collections.employees.database.accessor.hashValue());collection=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -626,7 +622,7 @@ class SampleTests: XCTestCase {
             XCTAssertEqual ("getError", errorMessage)
             logger.sync() { entries in
                 XCTAssertEqual (1, entries.count)
-                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.getAccessor().hashValue());collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                XCTAssertEqual ("EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(collections.companies.database.accessor.hashValue());collection=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         default:
             XCTFail ("Expected .error")
