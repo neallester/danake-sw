@@ -42,11 +42,11 @@ struct WeakCodable<T: Codable> {
 
 struct WeakObject<T: AnyObject> {
     
-    init (item: T) {
-        self.item = item
+    init (_ object: T) {
+        self.object = object
     }
     
-    weak var item: T?
+    weak var object: T?
 }
 
 /*
@@ -63,10 +63,10 @@ class Registrar<K: Hashable, V: AnyObject> {
     func register (key: K, value: V) -> Bool {
         var result = false
         queue.sync {
-            if let storedValue = items[key]?.item, storedValue !== value {
+            if let storedValue = items[key]?.object, storedValue !== value {
                 // Do nothing
             } else {
-                items[key] = WeakObject (item: value)
+                items[key] = WeakObject (value)
                 result = true
             }
             
@@ -77,7 +77,7 @@ class Registrar<K: Hashable, V: AnyObject> {
     // Only permitted if item associated with key is nil
     func deRegister (key: K) {
         queue.async {
-            if let _ = self.items[key]?.item{
+            if let _ = self.items[key]?.object{
                 // Do nothing
             } else {
                 let _ = self.items.removeValue(forKey: key)
@@ -88,7 +88,7 @@ class Registrar<K: Hashable, V: AnyObject> {
     func isRegistered (key: K) -> Bool {
         var result = false
         queue.sync {
-            if let _ = items[key]?.item {
+            if let _ = items[key]?.object {
                 result = true
             }
             
@@ -99,7 +99,7 @@ class Registrar<K: Hashable, V: AnyObject> {
     func value (key: K) -> V? {
         var result: V? = nil
         queue.sync {
-            result = items[key]?.item
+            result = items[key]?.object
         }
         return result
     }
