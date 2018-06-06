@@ -102,7 +102,12 @@ public class EntityPersistenceWrapper : Encodable {
    
 }
 
-// Data for a reference to an Entity
+/**
+ Data defining a reference to an Entity.
+ 
+ Used when children require a reference to a parent entity during creation of the parent
+*/
+
 public struct EntityReferenceData<T: Codable> : Equatable {
     
     public init (cache: EntityCache<T>, id: UUID, version: Int) {
@@ -111,8 +116,13 @@ public struct EntityReferenceData<T: Codable> : Equatable {
         self.version = version
     }
     
+    /// The cache which managers the referenced Entity
     let cache: EntityCache<T>
+    
+    /// The id of the referenced Entity
     let id: UUID
+    
+    /// The version of the refrenced Entity
     let version: Int
     
     public static func == <T> (lhs: EntityReferenceData<T>, rhs: EntityReferenceData<T>) -> Bool {
@@ -124,7 +134,12 @@ public struct EntityReferenceData<T: Codable> : Equatable {
     
 }
 
-// Data for serializing the reference state of a ReferenceManager
+/**
+    Data for serializing a reference to an Entity.
+ 
+    May also be used as a kind of Entity pointer to copy a reference to an Entity between ReferenceManagers
+    without retrieving the Entity from persistent storage.
+ */
 public struct ReferenceManagerData: Equatable {
     
     internal init (databaseId: String, cacheName: CacheName, id: UUID, version: Int) {
@@ -139,8 +154,13 @@ public struct ReferenceManagerData: Equatable {
         self.version = version
     }
 
+    /// Name of the EntityCache which manages the referenced Entity qualified by the Database.hashValue
     public let qualifiedCacheName: QualifiedCacheName
+    
+    /// Id of the referenced Entity
     public let id: UUID
+    
+    /// Version of the referenced Entity
     public let version: Int
     
     public static func == (lhs: ReferenceManagerData, rhs: ReferenceManagerData) -> Bool {
@@ -152,7 +172,7 @@ public struct ReferenceManagerData: Equatable {
 
 }
 
-public enum EntityDeserializationError<T: Codable> : Error {
+internal enum EntityDeserializationError<T: Codable> : Error {
     case NoCollectionInDecoderUserInfo
     case alreadyCached (Entity<T>)
     case illegalId (String)
@@ -160,7 +180,10 @@ public enum EntityDeserializationError<T: Codable> : Error {
 }
 
 /**
-    Class Entity is the primary model object wrapper.
+    Class Entity is the primary model object wrapper. Application developers work with objects of type
+    Entity<Model: Codable> (where Model is any construct used in the model). The Entity wrapper provides thread
+    safe access to the model construct, houses persistence related metadata about the model construct, and
+    manages (some of) the details regarding persistent storage.
  
     Danake does not support polymorphic retrieval of Entity items because Swift
     generics are invariant rather than covariant. If polymorphic behavior is required
@@ -169,7 +192,8 @@ public enum EntityDeserializationError<T: Codable> : Error {
     for one approach to implementing Codable polymorphic constructs
 */
 public class Entity<T: Codable> : EntityManagement, Codable {
-    
+
+    /// Mark - init and deinit
     
     internal init (cache: EntityCache<T>, id: UUID, version: Int, item: T) {
         self.cache = cache
@@ -189,8 +213,6 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         let item = itemClosure(selfReference)
         self.init (cache: cache, id: id, version: version, item: item)
     }
-    
-    // deiniitalize
     
     deinit {
         cache.decache (id: id)
@@ -236,6 +258,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return _version
     }
     
+    
     public internal (set) var persistenceState: PersistenceState {
         get {
             var result = PersistenceState.new
@@ -266,7 +289,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
-    // EntityManagement
+    /// Mark - EntityManagement
     
     internal func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
         commit (timeout: DispatchTimeInterval.seconds(60), completionHandler: completionHandler)
@@ -278,19 +301,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
 
-/*
+/**
+     Asyncrhonously call **closure** with this Entity's **item** (thread safe).
+     
+     **Do not** assign a reference to item outside of the closure. Doing so negates thread safety for item.
+     
+     **Do not** call any functions which modify the item's state in closure. Use **update** to modify item's state.
 
-     *** IMPORTANT NOTES ***
-     
-     The async (closure:), sync (closure:) and update(closure:) must not assign a reference to item outside
-     of the closure. Doing so negates thread safety for item.
-     
-     The async(closure:) and sync (closure:) cannot assign to item's attributes (because they do not receive an
-     inout parameter), however they can still modify item via any of item's state modifying functions.
-     Always use update when calling state modifying functions on item.
-     
-*/
-    
+     - parameter closure: The closure to call.
+ */
     public func async (closure: @escaping (T) -> Void) {
         queue.async () {
             closure (self.item)
@@ -298,15 +317,31 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
 
 
+/**
+     Call **closure** with this Entity's **item** waiting for the computation to complete (thread safe).
+     
+     **Do not** assign a reference to item outside of the closure. Doing so negates thread safety for item.
+     
+     **Do not** call any functions which modify the item's state in closure. Use **update** to modify item's state.
+     
+     - parameter closure: The closure to call.
+*/
     public func sync (closure: (T) -> Void) {
         queue.sync () {
             closure (self.item)
         }
     }
     
-// Convention is Entity.queue -> Batch.queue
-    
+/**
+     Apply a **closure** which modifies the state of this Entity's item (thread safe) and add Entity to **batch**. The
+     update is applied to **item** immediately and saved to persistent media when the **batch** is committed.
+     
+     - parameter batch: The batch which this entity is added.
+     
+     - parameter closure: The closure to call.
+*/
     public func update (batch: EventuallyConsistentBatch, closure: @escaping (inout T) -> Void) {
+        // Convention is Entity.queue -> Batch.queue
         queue.sync {
             isInsertingToBatch = true
             batch.insertSync (entity: self) {
@@ -317,7 +352,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
 
     // Not Thread Safe
-    func setDirty (batch: EventuallyConsistentBatch) {
+    internal func setDirty (batch: EventuallyConsistentBatch) {
         if isInsertingToBatch {
             self.handleAction(.setDirty)
         } else {
@@ -329,16 +364,19 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
 // Removal
     
-    /*
-         Remove ** self ** from persistent media.
+/**
+     Remove this item from persistent media when the **batch** is committed.
+ 
+     Application developers may safely dereference an Entity after calling **remove().**
+     Modifying an Entity on which **remove()** has been called will reanimate it and the item with modifications will be saved
+     to persistent media.
+ 
+     **Note:** It is the application's responsibility to ensure that no other Items (in memory or persistent storage)
+    contain persistent references to the removed Entity; removing an Entity to which there are references
+    will produce errors (i.e. RetrievalResult.error) when those references are accessed.
      
-         Application developers may safely dereference an Entity after calling ** remove(). **
-         Modifying an Entity on which ** remove() ** has been called will reanimate it.
-     
-        It is the application's responsibility to ensure that no other Items (in memory or persistent storage)
-        contain persistent references to the removed Entity; removing an Entity to which there are references
-        will produce errors (i.e. RetrievalResult.error) when those references are accessed.
-     */
+     - parameter batch: The batch to which this Entity is added.
+*/
     public func remove (batch: EventuallyConsistentBatch) {
         queue.sync {
             self.isInsertingToBatch = true
