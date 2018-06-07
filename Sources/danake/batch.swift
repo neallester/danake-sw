@@ -48,7 +48,7 @@ public class EventuallyConsistentBatch {
     
     /**
      - parameter retryInterval: How long the framework waits until retrying a batch which experienced recoverable errors
-                                during processing.
+                                during processing (see BatchDefaults for default value).
      
      - parameter timeout: The timeout for individual commit operations on Entities. Note that the database bindings used by
                           an implementation of DatabaseAccessor may have their own timeouts which will govern if they are
@@ -59,7 +59,7 @@ public class EventuallyConsistentBatch {
                           if all individual commit operations on Entities within the batch do not complete within 2x timeout
                           the batch will timeout. If the batch times out, any pending updates remaining in the batch are lost
                           and logged if a logger has been provided. Successful database updates for other entities in the
-                          batch are NOT rolled back.
+                          batch are NOT rolled back (see BatchDefaults for default value).
  */
     init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
         self.retryInterval = retryInterval
@@ -86,6 +86,7 @@ public class EventuallyConsistentBatch {
     
     // See https://github.com/neallester/danake-sw/issues/5
     /// Asynchronously write contents to persistent media
+    ///
     /// - parameter completionHandler: The closure called when batch processing is complete
     public func commit (completionHandler: (() -> ())?) {
         queue.sync {

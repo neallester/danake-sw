@@ -29,7 +29,26 @@ internal protocol ReferenceManagerContainer {
     
 }
 
-public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer, Codable {
+/**
+    Manages a reference to an Enity which is stored and retrieved to/from persistent media independently. This is the
+    Danake way of modeling a reference.
+
+    The generic parameter **P** defines type of the construct containing the ReferenceManager (i.e. the Parent).
+ 
+    The generic parameter **T** defines the type of construct the ReferenceManager points to (the type of Entity's item).
+ 
+ For example:
+ ````
+ class Parent {
+    // Instead of this:
+    var child: Child
+ 
+    // We do:
+    var child: ReferenceManager<Parent, Child>
+ }
+ ````
+*/
+open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer, Codable {
     
     enum CodingKeys: String, CodingKey {
         case isNil
@@ -38,7 +57,13 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         case version
         case qualifiedCacheName
     }
-    
+
+/**
+     - parameter parent: EntityReferenceData of the construct in which this object is being created
+     - parameter entity: The Entity which this manager currently points to (if any)
+     - parameter isEager: If true, will asynchronously retrieve the referenced Entity whenever needed
+                          to ensure it is available as soon as possible (default = **false**; lazy retrieval).
+*/
     init (parent: EntityReferenceData<P>, entity: Entity<T>?, isEager: Bool = false) {
         self.parentData = parent
         self.entity = entity
@@ -51,6 +76,12 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
 
+    /**
+     - parameter parent: EntityReferenceData of the construct in which this object is being created
+     - parameter entity: ReferenceManagerData defining the Entity which this manager currently points to (if any).
+     - parameter isEager: If true, will asynchronously retrieve the referenced Entity whenever needed
+                          to ensure it is available as soon as possible (default = **false**; lazy retrieval).
+     */
     init (parent: EntityReferenceData<P>, referenceData: ReferenceManagerData?, isEager: Bool = false) {
         self.parentData = parent
         self.referenceData = referenceData
@@ -118,7 +149,12 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
             }
         }
     }
-    
+
+/**
+     - returns: ReferenceManagerData defining the Entity self points to, if any. May be used to
+                copy a reference to this Entity to another ReferenceManager without necessarily
+                retrieving the Entity from persistent storage.
+*/
     public func getReferenceData() -> ReferenceManagerData? {
         var result: ReferenceManagerData? = nil
         queue.sync {
@@ -131,6 +167,13 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         return result
     }
     
+/**
+     Asynchronously retrieves the Entity self points to and applies it to **closure**.
+     
+     **Note**: Retrieval result is cached so subsequent accesses will be fast.
+     
+     - parameter closure: The closure to which the retrieval result will be applied.
+*/
     public func async (closure: @escaping (RetrievalResult<Entity<T>>) -> ()) {
         queue.async {
             switch self.state {
@@ -160,6 +203,11 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
     
+/**
+     Retrieves the Entity self points to.
+     
+     **Note**: Retrieval result is cached so subsequent accesses will be fast.
+*/
     public func get() -> RetrievalResult<Entity<T>> {
         let group = DispatchGroup()
         group .enter()
@@ -172,7 +220,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         return result
     }
     
-    // id of the referenced entity, if any
+    /// - returns: id of the referenced entity, if any
     public func entityId() -> UUID? {
         var result: UUID? = nil
         queue.sync {
@@ -247,6 +295,13 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
     
+/**
+     Set self to point to **entity**.
+     
+     - parameter entity: The entity to which self should point to.
+     - parameter batch: The batch to which **parent** will be added if this action
+                        changes parent's persistent state.
+*/
     public func set (entity: Entity<T>?, batch: EventuallyConsistentBatch) {
         queue.sync {
             switch self.state {
@@ -273,6 +328,13 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
 
+/**
+     Set self to point to the entity designed by **referenceData**.
+     
+     - parameter referenceData: ReferenceManagerData designating the entity to which self should point to.
+     - parameter batch: The batch to which **parent** will be added if this action
+                        changes parent's persistent state.
+*/
     public func set (referenceData: ReferenceManagerData?, batch: EventuallyConsistentBatch) {
         queue.sync {
             let wasUpdated = self.willUpdate(newId: referenceData?.id)
@@ -299,6 +361,7 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
         }
     }
     
+    
     internal func willUpdate (newId: UUID?, closure: (Bool) -> ()) {
         queue.sync {
             closure (willUpdate (newId: newId))
@@ -318,10 +381,10 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     // Not thread safe, must call within closure on queue
     private func willUpdate (newId: UUID?) -> Bool {
         if let newId = newId {
-            return
-                (self.entity == nil && self.referenceData == nil) ||
-                (self.entity != nil && self.entity?.id.uuidString != newId.uuidString) ||
-                (self.referenceData != nil && self.referenceData?.id.uuidString != newId.uuidString)
+                let bothExistingNil = (self.entity == nil && self.referenceData == nil)
+                let entityIdChanges = (self.entity != nil && self.entity?.id.uuidString != newId.uuidString)
+                let referenceIdchanges = (self.referenceData != nil && self.referenceData?.id.uuidString != newId.uuidString)
+                return bothExistingNil || entityIdChanges || referenceIdchanges
         } else {
             return entity != nil || self.referenceData != nil
         }
@@ -368,6 +431,8 @@ public class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContaine
     private var pendingEntityClosures: [(RetrievalResult<Entity<T>>) -> ()] = []
     private var hasRegistered = false
     
+    /// Should self retrieve referenced Entities as soon as possible (asynchronously) so that they will
+    /// be available to clients as soon as possible
     public let isEager: Bool
     
     static func queueName (cacheName: String) -> String {

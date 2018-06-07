@@ -16,8 +16,6 @@ public class InMemoryAccessor: DatabaseAccessor {
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
     }
     
-    // Implement protocol DatabaseAccessor
-    
     public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>> {
         var result: Entity<T>? = nil
         var errorMessage: String? = nil
@@ -133,6 +131,18 @@ public class InMemoryAccessor: DatabaseAccessor {
     
     // Access to internals (may be used within tests)
     
+/**
+     Use to add encoded Entity data. Use for tests which simulate clean retrieval.
+     Tests which create and then add data through the API can't simulate this condition
+     because the newly created created data is cached.
+     
+     - parameter name: The name of the cache to which the data should be added.
+     - parameter id: **id** of the Entity coded in **data**
+     - parameter data: The Entity to be added to storage as encoded the JSONEncoder in
+                       this classes **encoder** attribute.
+     
+     - returns: A DatabaseUpdateResult indicating the results of the update
+*/
     public func add (name: CacheName, id: UUID, data: Data) -> DatabaseUpdateResult {
         var result = DatabaseUpdateResult.ok
         queue.sync {
@@ -154,6 +164,14 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
+/**
+     Use to remove data for an Entity from storage.
+     
+     - parameter name: The name of the cache from which the data should be removed.
+     - parameter id: **id** of the Entity associated with the data to be removed.
+     
+     - returns: A DatabaseUpdateResult indicating the results of the update
+*/
     public func remove (name: CacheName, id: UUID) -> DatabaseUpdateResult {
         var result = DatabaseUpdateResult.ok
         queue.sync {
@@ -171,6 +189,12 @@ public class InMemoryAccessor: DatabaseAccessor {
         
     }
     
+/**
+     - parameter name: The name of the cache.
+     - parameter id: **id** of the Entity.
+     
+     - returns: True if the an Entity with **id** and associated with **cacheName is present.
+*/
     public func has (name: CacheName, id: UUID) -> Bool {
         var result = false
         queue.sync {
@@ -179,6 +203,11 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
+/**
+     - parameter name: The name of the cache.
+     
+     - returns: The number of entities associated with **name**.
+*/
     public func count (name: CacheName) -> Int {
         var result = 0
         queue.sync {
@@ -189,6 +218,12 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
 
+/**
+     - parameter name: The name of the cache.
+     - parameter id: **id** of the Entity.
+     
+     - returns: The raw data associated with **name** and **id** if any.
+*/
     public func getData (name: CacheName, id: UUID) -> Data? {
         var result: Data? = nil
         queue.sync() {
@@ -197,25 +232,30 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func setThrowError() {
-        queue.sync {
-            self.throwError = true
-        }
-    }
-    
-    public func setThrowError(_ throwError: Bool) {
+/**
+     If **throwError** is true, the next access will throw an error rather than succeed.
+     The setting is not sticky; subsequent accesses will succeed.
+*/
+    public func setThrowError(_ throwError: Bool = true) {
         queue.sync {
             self.throwError = throwError
         }
     }
-    
+
+/**
+     Modulates the behavior of **setThrowError**
+     When **throwRecoverableErrors** is true, only accesses which throw recoverable errors
+     throw an error. This setting is sticky.
+*/
     public func setThrowOnlyRecoverableErrors (_ throwRecoverableErrors: Bool) {
         queue.sync {
             self.throwOnlyRecoverableErrors = throwRecoverableErrors
         }
         
     }
-    
+/**
+     - returns: The current setting for **isThrowError**
+*/
     public func isThrowError() -> Bool {
         var result = false
         queue.sync {
@@ -224,24 +264,34 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    
+/**
+     Sets a closure which will fire whenever a database access occurs (the id of the entity being accessed
+     will be provided to the closure). This setting is sticky.
+     
+     - parameter preFetch: The closure to be fired.
+*/
     func setPreFetch (_ preFetch: ((UUID) -> Void)?) {
         queue.sync {
             self.preFetch = preFetch
         }        
     }
-    
+
+/**
+    Enables thread safe inspection of the entities in storage via **closure**.
+*/
     func sync (closure: (Dictionary<CacheName, Dictionary<UUID, Data>>) -> Void) {
         queue.sync () {
             closure (storage)
         }
     }
     
+    /// JSONEncoder used for encoding Entity data.
     public let encoder: JSONEncoder = {
         let result = JSONEncoder()
         result.dateEncodingStrategy = .secondsSince1970
         return result
     }()
+    
     
     public func decoder <T> (cache: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()

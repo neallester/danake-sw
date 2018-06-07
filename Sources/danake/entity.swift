@@ -98,16 +98,17 @@ public class EntityPersistenceWrapper : Encodable {
     
     public let cacheName: CacheName
     private let entity: EntityManagement
-    
    
 }
 
 /**
  Data defining a reference to an Entity.
  
+ The generic parameter **T** defines the type of the Model construct associated with the
+ referenced Entity (i.e. the Entities item.).
+ 
  Used when children require a reference to a parent entity during creation of the parent
 */
-
 public struct EntityReferenceData<T: Codable> : Equatable {
     
     public init (cache: EntityCache<T>, id: UUID, version: Int) {
@@ -184,6 +185,9 @@ internal enum EntityDeserializationError<T: Codable> : Error {
     Entity<Model: Codable> (where Model is any construct used in the model). The Entity wrapper provides thread
     safe access to the model construct, houses persistence related metadata about the model construct, and
     manages (some of) the details regarding persistent storage.
+ 
+    The generic parameter **T** defines the type of the construct wrapped by the Entity (i.e. the type of its
+    item*.
  
     Danake does not support polymorphic retrieval of Entity items because Swift
     generics are invariant rather than covariant. If polymorphic behavior is required
@@ -395,16 +399,14 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         return ReferenceManagerData (databaseId: cache.database.accessor.hashValue, cacheName: cache.name, id: id, version: localVersion)
     }
     
-    /*
-        Call before reference to self goes out of scope (or the only reachable reference is
-        set to nil) if it is possible that an ReferenceManager owned by `item' contains a loaded
-        reference back to self (which would create a strong reference cycle).
-     
-        This unloads the referenced entities and also makes the ReferenceManagers unusable for
-        further application processing but will not interfere with asynchronous batch processing
-     
-    */
-    
+/**
+     Unloads the referenced entities for all ReferenceManagers contained in **item** and also makes the ReferenceManagers
+     unusable for further application processing. This **will not** interfere with asynchronous batch processing
+
+    Call just before the last reference to this Enity goes out of scope (or the only reachable reference is
+    set to nil) if it is possible that a ReferenceManager owned by `item' contains a loaded
+    reference back to this Entity (which would create a strong reference cycle).
+*/
     public func breakReferences() {
         referencesQueue.async {
             if !self.hasDereferenced {
@@ -416,6 +418,17 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         }
     }
     
+/**
+     Unloads the referenced entities for all ReferenceManagers contained in **item** and also makes the ReferenceManagers
+     unusable for further application processing and then recursively does the same for each Entity loaded in a Reference Manager
+     until breakReferenceRecursive() has been called on all loaded Entities reachable from this Entity. This **will not**
+     interfere with asynchronous batch processing.
+     
+     Call just before the last reference to this Enity goes out of scope (or the only reachable reference is
+     set to nil) if it is possible that a ReferenceManager owned by `item' contains a loaded
+     reference back to this Entity (which would create a strong reference cycle). This feature will make all reachable Entities
+     unusable.
+*/
     public func breakReferencesRecursive() {
         referencesQueue.async {
             if !self.hasDereferenced {

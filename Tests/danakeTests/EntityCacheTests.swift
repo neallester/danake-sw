@@ -43,7 +43,7 @@ class EntityCacheTests: XCTestCase {
         let deserializationClosure: (inout [CodingUserInfoKey : Any]) -> () = { userInfo in
             userInfo[myKey] = "myValue"
         }
-        cache = EntityCache<MyStruct> (database: database, name: cacheName, deserializationEnvironmentClosure: deserializationClosure)
+        cache = EntityCache<MyStruct> (database: database, name: cacheName, userInfoClosure: deserializationClosure)
         XCTAssertTrue (database.cacheRegistrar.isRegistered(key: cacheName))
         XCTAssertEqual (1, database.cacheRegistrar.count())
         logger.sync() { entries in

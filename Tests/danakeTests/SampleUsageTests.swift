@@ -247,7 +247,7 @@ class EmployeeCollection : EntityCache<Employee> {
         forCompanyClosure = { cache, company in
             return database.sampleAccessor.employeesForCompany (cache: cache, company: company)
         }
-        super.init (database: database, name: "employee", deserializationEnvironmentClosure: nil)
+        super.init (database: database, name: "employee", userInfoClosure: nil)
     }
     
     func new (batch: EventuallyConsistentBatch, company: Entity<Company>, name: String, address: Entity<Address>?) -> Entity<Employee> {
