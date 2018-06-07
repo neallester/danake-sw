@@ -73,6 +73,8 @@ typealias PersistenceStatePair = (success: PersistenceState, failure: Persistenc
 
 public class DataContainer {
     
+    public init() {}
+    
     var data: Any?
     
 }
