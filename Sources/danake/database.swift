@@ -240,7 +240,7 @@ open class Database {
                                          subsequent attempts to retrieve from a ReferenceManager will return the same error without
                                          hitting the persistent media.
 */
-    init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger? = nil, referenceRetryInterval: TimeInterval = 120.0) {
+    public init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger? = nil, referenceRetryInterval: TimeInterval = 120.0) {
         self.referenceRetryInterval = referenceRetryInterval
         self.accessor = accessor
         self.logger = logger
