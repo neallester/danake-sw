@@ -71,7 +71,7 @@ internal enum EntityEncodingResult<R> {
 
 typealias PersistenceStatePair = (success: PersistenceState, failure: PersistenceState)
 
-internal class DataContainer {
+public class DataContainer {
     
     var data: Any?
     
