@@ -61,7 +61,7 @@ public class EventuallyConsistentBatch {
                           and logged if a logger has been provided. Successful database updates for other entities in the
                           batch are NOT rolled back (see BatchDefaults for default value).
  */
-    init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
+    public init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
         self.retryInterval = retryInterval
         self.timeout = timeout
         delegate = BatchDelegate(logger: logger)
