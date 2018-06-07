@@ -298,7 +298,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.cacheKey] = cache
         result.userInfo[Database.parentDataKey] = DataContainer()
-        if let closure = cache.getDeserializationEnvironmentClosure() {
+        if let closure = cache.userInfoClosure {
             closure (&result.userInfo)
         }
         return result

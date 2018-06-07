@@ -50,7 +50,7 @@ class EntityCacheTests: XCTestCase {
             XCTAssertEqual (2, entries.count)
         }
         var userInfo: [CodingUserInfoKey : Any] = [:]
-        cache?.getDeserializationEnvironmentClosure()!(&userInfo)
+        cache?.userInfoClosure!(&userInfo)
         XCTAssertEqual ("myValue", userInfo[myKey] as! String)
     }
 

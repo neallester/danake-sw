@@ -250,19 +250,19 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         return result
     }
     
-// Deserialization Environment
-    
-    internal func getDeserializationEnvironmentClosure() -> ((inout [CodingUserInfoKey : Any]) -> ())? {
-        return userInfoClosure
-    }
-    
-    private let userInfoClosure: ((inout [CodingUserInfoKey : Any]) -> ())?
-    
 // Attributes
     
-    internal let database: Database
+    /// Name associated with this cache
     public let name: CacheName
+    
+    /// The name associated with this cache qualified by the Database.hashValue
     public let qualifiedName: QualifiedCacheName
+    
+    /// A closure which adds entries to the Decoder.userInfo before deserialization. The model objects have access
+    /// to the userInfo in their init (from: Decoder) feature.
+    public let userInfoClosure: ((inout [CodingUserInfoKey : Any]) -> ())?
+    
+    internal let database: Database
     private var cache: Dictionary<UUID, WeakCodable<T>>
     private var onEntityCached: Dictionary<UUID, [(Entity<T>) -> ()]> = [:]
     private let cacheQueue: DispatchQueue
