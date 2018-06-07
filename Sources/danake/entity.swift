@@ -94,7 +94,7 @@ public class EntityPersistenceWrapper : Encodable {
         try entity.encode (to: encoder)
     }
     
-    let id: UUID
+    public let id: UUID
     
     public let cacheName: CacheName
     private let entity: EntityManagement
