@@ -172,7 +172,6 @@ extension InMemoryAccessorTests {
 extension IntegrationTests {
   static var allTests = [
     ("testParallel", testParallel),
-    ("testInMemorySample", testInMemorySample),
   ]
 }
 
@@ -202,6 +201,25 @@ extension ReferenceManagerTests {
   ]
 }
 
+extension SampleUsageTests {
+  static var allTests = [
+    ("testSamples", testSamples),
+    ("testCompanyCreation", testCompanyCreation),
+    ("testCompanyEncodeDecode", testCompanyEncodeDecode),
+    ("testCompanyEmployees", testCompanyEmployees),
+    ("testCompanyEmployeesAsync", testCompanyEmployeesAsync),
+    ("testCompanyCollectionNew", testCompanyCollectionNew),
+    ("testAddressCreation", testAddressCreation),
+    ("testAddressFromCollection", testAddressFromCollection),
+    ("testEmployeeCreation", testEmployeeCreation),
+    ("testEmployeeFromCollection", testEmployeeFromCollection),
+    ("testInMemoryAccessorEmployeesForCompany", testInMemoryAccessorEmployeesForCompany),
+    ("testEmployeeCollectionForCompany", testEmployeeCollectionForCompany),
+    ("testEmployeeCollectionForCompanyAsync", testEmployeeCollectionForCompanyAsync),
+    ("testRemoveAll", testRemoveAll),
+  ]
+}
+
 
 XCTMain([
   testCase(BatchTests.allTests),
@@ -217,4 +235,5 @@ XCTMain([
   testCase(IntegrationTests.allTests),
   testCase(LoggingTests.allTests),
   testCase(ReferenceManagerTests.allTests),
+  testCase(SampleUsageTests.allTests),
 ])

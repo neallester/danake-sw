@@ -23,6 +23,7 @@
 /* Begin PBXBuildFile section */
 		08028E272069F34300F8C57F /* ReferenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08028E252069A78800F8C57F /* ReferenceManager.swift */; };
 		08028E29206A9CFD00F8C57F /* ReferenceManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08028E28206A9CFD00F8C57F /* ReferenceManagerTests.swift */; };
+		0838D80720CB470F00AA8296 /* SampleUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0838D80620CB470F00AA8296 /* SampleUsageTests.swift */; };
 		08569B6A2054440C0016502F /* EntityCommitNewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B692054440C0016502F /* EntityCommitNewTests.swift */; };
 		08569B6F2054481A0016502F /* database.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B6B205445C30016502F /* database.swift */; };
 		08569B72205449DA0016502F /* common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08569B71205449DA0016502F /* common.swift */; };
@@ -67,6 +68,7 @@
 /* Begin PBXFileReference section */
 		08028E252069A78800F8C57F /* ReferenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceManager.swift; sourceTree = "<group>"; };
 		08028E28206A9CFD00F8C57F /* ReferenceManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceManagerTests.swift; sourceTree = "<group>"; };
+		0838D80620CB470F00AA8296 /* SampleUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleUsageTests.swift; sourceTree = "<group>"; };
 		08569B692054440C0016502F /* EntityCommitNewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCommitNewTests.swift; sourceTree = "<group>"; };
 		08569B6B205445C30016502F /* database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = database.swift; sourceTree = "<group>"; };
 		08569B6D205447560016502F /* InMemoryAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryAccessor.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				0875DEE72060438300D6F137 /* EntityCommitTests.swift */,
 				08028E28206A9CFD00F8C57F /* ReferenceManagerTests.swift */,
 				08B888BF20CAFEBD00F0BC02 /* IntegrationTests.swift */,
+				0838D80620CB470F00AA8296 /* SampleUsageTests.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -313,6 +316,7 @@
 				08569B792056CF220016502F /* EntityCommitDirtyTests.swift in Sources */,
 				08569B7B205829B50016502F /* EntityCommitPendingRemovalTests.swift in Sources */,
 				0877F994201C0188004B05B8 /* BatchTests.swift in Sources */,
+				0838D80720CB470F00AA8296 /* SampleUsageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

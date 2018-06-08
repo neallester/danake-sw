@@ -16,13 +16,7 @@ class IntegrationTests: XCTestCase {
         #if os(Linux)
             repetitions = 20
         #endif
-        ParallelTest.performTest(accessor: accessor, repetitions: repetitions, logger: nil)
+        XCTAssertTrue (ParallelTest.performTest(accessor: accessor, repetitions: repetitions, logger: nil))
     }
     
-    public func testInMemorySample() {
-        let accessor = SampleInMemoryAccessor()
-        
-        SampleUsage.runSample (accessor: accessor)
-    }
-
 }
