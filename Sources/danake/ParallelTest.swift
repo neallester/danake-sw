@@ -11,7 +11,7 @@ import Foundation
     Tests execution of various danake operations in parallel. This is included in the main library so
     that it is available for testing DatabaseAccessors implementated in other packages.
 */
-class ParallelTest {
+public class ParallelTest {
 
 /**
      Performs test of various danake operations in parallel.
@@ -1294,7 +1294,7 @@ class ParallelTest {
 
 }
 
-internal class TestResult {
+public class TestResult {
     
     var failed = false
     

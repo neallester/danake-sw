@@ -298,7 +298,7 @@ class SampleCollections {
     This is included in the main library so that it is available for testing DatabaseAccessors implementated
     in other packages.
  */
-class SampleUsage  {
+public class SampleUsage  {
     
     // Execute the `runSample' test using the SampleInMemoryAccessor
     
