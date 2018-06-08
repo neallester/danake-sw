@@ -142,7 +142,7 @@ public enum RetrievalResult<T> {
      indicates that either there was no such construct in storage or an error occurred during
      retrieval.
 */
-    func item() -> T? {
+    public func item() -> T? {
         switch self {
         case .ok(let item):
             return item
@@ -152,7 +152,7 @@ public enum RetrievalResult<T> {
     }
     
     /// No Error Occurred
-    func isOk() -> Bool {
+    public func isOk() -> Bool {
         switch self {
         case .ok:
             return true
