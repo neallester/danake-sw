@@ -6,19 +6,12 @@
 //
 
 import XCTest
-@testable import danake
 
-class ParallelTests: XCTestCase {
-
-    func testParallel() {
-        let accessor = InMemoryAccessor()
-        var repetitions = 100
-        #if os(Linux)
-            repetitions = 20
-        #endif
-
-        ParallelTests.performTest(accessor: accessor, repetitions: repetitions, logger: nil)
-    }
+/**
+    Tests execution of various danake operations in parallel. This is included in the main library so
+    that it is available for testing DatabaseAccessors implementated in other packages.
+*/
+class ParallelTest {
 
     public static func performTest(accessor: DatabaseAccessor, repetitions: Int, logger: Logger?) {
         var testCount = 0
@@ -41,12 +34,12 @@ class ParallelTests: XCTestCase {
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testStart", data: [(name: "testCount", value: testCount), (name: "separator", value:"<<<<<<<<<<<<<<<<<<<<<<<")])
             let setupBatch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects!.logger)
             let setupGroup = DispatchGroup()
-            let removeExisting = ParallelTests.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
+            let removeExisting = ParallelTest.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
             test2Results.append (removeExisting)
-            let editExisting = ParallelTests.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
+            let editExisting = ParallelTest.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
             test3Results.append (editExisting)
             do {
-                let containerRemoveExisting = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let containerRemoveExisting = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
                 test2Results.append (containerRemoveExisting.ids)
                 var structIds: [UUID] = []
                 for entity in containerRemoveExisting.containers {
@@ -59,8 +52,8 @@ class ParallelTests: XCTestCase {
             }
             var test300prInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
-                let containers = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
-                let newStructs = ParallelTests.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
+                let containers = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
                     persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
@@ -74,8 +67,8 @@ class ParallelTests: XCTestCase {
             }
             var test300prplInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
-                let containers = ParallelTests.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
-                let newStructs = ParallelTests.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
+                let containers = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
                     persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
@@ -98,7 +91,7 @@ class ParallelTests: XCTestCase {
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             let test1 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
-                let result = ParallelTests.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
+                let result = ParallelTest.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.end", data: nil)
                 resultQueue.async {
                     test1Results.append (result)
@@ -106,7 +99,7 @@ class ParallelTests: XCTestCase {
             }
             let test2 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.start", data: nil)
-                let result = ParallelTests.myStructTest2(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest2(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
@@ -115,7 +108,7 @@ class ParallelTests: XCTestCase {
             }
             let test2p = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.start", data: nil)
-                let result = ParallelTests.myStructTest2p(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest2p(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
@@ -124,12 +117,12 @@ class ParallelTests: XCTestCase {
             }
             let test2r = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.start", data: nil)
-                ParallelTests.myStructTest2r(persistenceObjects: persistenceObjects!, group: testGroup, ids: removeExisting)
+                ParallelTest.myStructTest2r(persistenceObjects: persistenceObjects!, group: testGroup, ids: removeExisting)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.end", data: nil)
             }
             let test3 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.start", data: nil)
-                let result = ParallelTests.myStructTest3(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest3(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
@@ -137,7 +130,7 @@ class ParallelTests: XCTestCase {
             }
             let test3p = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.start", data: nil)
-                let result = ParallelTests.myStructTest3p(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest3p(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
@@ -145,12 +138,12 @@ class ParallelTests: XCTestCase {
             }
             let test3r = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.start", data: nil)
-                ParallelTests.myStructTest3r(persistenceObjects: persistenceObjects!, group: testGroup, ids: editExisting)
+                ParallelTest.myStructTest3r(persistenceObjects: persistenceObjects!, group: testGroup, ids: editExisting)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.end", data: nil)
             }
             let test4 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.start", data: nil)
-                let result = ParallelTests.myStructTest4(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest4(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
@@ -158,7 +151,7 @@ class ParallelTests: XCTestCase {
             }
             let test4b = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.start", data: nil)
-                let result = ParallelTests.myStructTest4b(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.myStructTest4b(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
@@ -166,7 +159,7 @@ class ParallelTests: XCTestCase {
             }
             let test100 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.start", data: nil)
-                let result = ParallelTests.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.end", data: nil)
                 resultQueue.async {
                     test100Results.append (result)
@@ -174,7 +167,7 @@ class ParallelTests: XCTestCase {
             }
             let test100a = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.start", data: nil)
-                let result = ParallelTests.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.end", data: nil)
                 resultQueue.async {
                     test100aResults.append (result)
@@ -182,7 +175,7 @@ class ParallelTests: XCTestCase {
             }
             let test100n = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.start", data: nil)
-                let result = ParallelTests.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.end", data: nil)
                 resultQueue.async {
                     test100nResults.append (result)
@@ -190,7 +183,7 @@ class ParallelTests: XCTestCase {
             }
             let test100na = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.start", data: nil)
-                let result = ParallelTests.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.end", data: nil)
                 resultQueue.async {
                     test100naResults.append (result)
@@ -198,12 +191,12 @@ class ParallelTests: XCTestCase {
             }
             let test200r = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.start", data: nil)
-                ParallelTests.containerTest200r(persistenceObjects: persistenceObjects!, group: testGroup, ids: containerRemoveExistingContainertIds)
+                ParallelTest.containerTest200r(persistenceObjects: persistenceObjects!, group: testGroup, ids: containerRemoveExistingContainertIds)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.end", data: nil)
             }
             let test300 = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.start", data: nil)
-                let result = ParallelTests.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
@@ -212,7 +205,7 @@ class ParallelTests: XCTestCase {
             }
             let test300a = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.start", data: nil)
-                let result = ParallelTests.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
@@ -221,7 +214,7 @@ class ParallelTests: XCTestCase {
             }
             let test300u = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.start", data: nil)
-                let result = ParallelTests.containerTest300u(persistenceObjects: persistenceObjects!, group: testGroup)
+                let result = ParallelTest.containerTest300u(persistenceObjects: persistenceObjects!, group: testGroup)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.end", data: nil)
                 resultQueue.async {
                     test300uResults.append(result)
@@ -229,30 +222,30 @@ class ParallelTests: XCTestCase {
             }
             let test300pr = {
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.start", data: nil)
-                ParallelTests.containerTest300pr(persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
+                ParallelTest.containerTest300pr(persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
                 persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.end", data: nil)
             }
             let test300prpl = {
                 let localLogger = persistenceObjects!.logger
                 localLogger?.log(level: .debug, source: self, featureName: "performTest", message: "test300prpl.start", data: nil)
-                ParallelTests.containerTest300prpl(persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prplInput.containers, structRefs: test300prplInput.newRefs)
+                ParallelTest.containerTest300prpl(persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prplInput.containers, structRefs: test300prplInput.newRefs)
                 localLogger?.log(level: .debug, source: self, featureName: "performTest", message: "test300prpl.end", data: nil)
             }
             var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a, test300u, test300pr, test300prpl]
             var randomTests: [() -> ()] = []
             while tests.count > 0 {
-                let itemToRemove = Int (ParallelTests.randomInteger(maxValue: tests.count))
+                let itemToRemove = Int (ParallelTest.randomInteger(maxValue: tests.count))
                 randomTests.append (tests[itemToRemove])
                 let _ = tests.remove(at: itemToRemove)
             }
             var finalTests: [() -> ()] = []
-            if let inMemoryAccessor = accessor as? InMemoryAccessor, (ParallelTests.randomInteger(maxValue:10) >= 2) {
+            if let inMemoryAccessor = accessor as? InMemoryAccessor, (ParallelTest.randomInteger(maxValue:10) >= 2) {
                 inMemoryAccessor.setThrowOnlyRecoverableErrors (true)
                 var errorCounter = 0
                 while errorCounter < 15 {
                     let newTest = {
                         let maxSleepTime = totalExecutionTime / (Double (testCount) + 1.0)
-                        let sleepTime = UInt32 (ParallelTests.randomInteger(maxValue:Int ((1000000 * maxSleepTime))))
+                        let sleepTime = UInt32 (ParallelTest.randomInteger(maxValue:Int ((1000000 * maxSleepTime))))
                         persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
                         usleep (sleepTime)
                         persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: nil)
@@ -286,7 +279,7 @@ class ParallelTests: XCTestCase {
             // Test 1
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
             for testResult in test1Results {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
@@ -305,7 +298,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             for testResult in test1Results {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
@@ -326,13 +319,13 @@ class ParallelTests: XCTestCase {
             // Test 2
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.2", data: nil)
             for testResult in test2Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     XCTAssertNil (persistenceObjects!.myStructCollection.get(id: uuid).item())
                 }
             }
             for testResult in test2Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     XCTAssertNil (persistenceObjects!.myStructCollection.get(id: uuid).item())
                 }
@@ -340,7 +333,7 @@ class ParallelTests: XCTestCase {
             // Test 3
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.3", data: nil)
             for testResult in test3Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
@@ -359,7 +352,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             for testResult in test3Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
@@ -380,7 +373,7 @@ class ParallelTests: XCTestCase {
             // Test 4
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.4", data: nil)
             for testResult in test4Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     if let entity = persistenceObjects!.myStructCollection.get(id: uuid).item() {
@@ -400,7 +393,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             for testResult in test4Results {
-                XCTAssertEqual(ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual(ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     if let entity = persistenceObjects!.myStructCollection.get(id: uuid).item() {
@@ -422,7 +415,7 @@ class ParallelTests: XCTestCase {
             // Test 100
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100", data: nil)
             for testResult in test100Results {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
@@ -445,7 +438,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             for testResult in test100Results {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
@@ -469,7 +462,7 @@ class ParallelTests: XCTestCase {
             // Test 100a
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100a", data: nil)
             for testResult in test100aResults {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 let group = DispatchGroup()
                 for uuid in testResult {
@@ -495,7 +488,7 @@ class ParallelTests: XCTestCase {
                 group.wait()
             }
             for testResult in test100aResults {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 let group = DispatchGroup()
                 for uuid in testResult {
@@ -523,7 +516,7 @@ class ParallelTests: XCTestCase {
             // Test 100n
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100n", data: nil)
             for testResult in test100nResults {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
@@ -545,7 +538,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             for testResult in test100nResults {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
@@ -570,8 +563,8 @@ class ParallelTests: XCTestCase {
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.300u", data: nil)
             var resultCount = 0
             for testResult in test300uResults {
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.containers.count)
-                XCTAssertEqual (ParallelTests.myStructCount, testResult.myStructs.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.containers.count)
+                XCTAssertEqual (ParallelTest.myStructCount, testResult.myStructs.count)
                 var index = 0
                 for uuid in testResult.containers {
                     let containerEntity = persistenceObjects!.containerCollection.get(id: uuid).item()!
@@ -678,7 +671,7 @@ class ParallelTests: XCTestCase {
             executeOnMyStruct(persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest2r") { entity in
                 entity.remove(batch: batch)
             }
-            usleep(UInt32 (ParallelTests.randomInteger(maxValue: 500)))
+            usleep(UInt32 (ParallelTest.randomInteger(maxValue: 500)))
             counter = counter + 1
             
         }
@@ -765,7 +758,7 @@ class ParallelTests: XCTestCase {
 
                 }
             }
-            usleep(UInt32 (ParallelTests.randomInteger(maxValue:500)))
+            usleep(UInt32 (ParallelTest.randomInteger(maxValue:500)))
             counter = counter + 1
 
         }
@@ -791,7 +784,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
+                    usleep(UInt32 (ParallelTest.randomInteger(maxValue: 10)))
                     myStruct.update(batch: batch2) { item in
                         let newInt = item.myInt * 10
                         item.myInt = newInt
@@ -805,7 +798,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(UInt32 ( ParallelTests.randomInteger(maxValue: 10)))
+                    usleep(UInt32 ( ParallelTest.randomInteger(maxValue: 10)))
                     myStruct.remove(batch: batch2)
                     counter = counter + 1
                 }
@@ -837,7 +830,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
+                    usleep(UInt32 (ParallelTest.randomInteger(maxValue: 10)))
                     myStruct.update(batch: batch2) { item in
                         let newInt = item.myInt * 10
                         item.myInt = newInt
@@ -851,7 +844,7 @@ class ParallelTests: XCTestCase {
             workQueue.async {
                 var counter = 1
                 for myStruct in structs.structs {
-                    usleep(UInt32 (ParallelTests.randomInteger(maxValue: 10)))
+                    usleep(UInt32 (ParallelTest.randomInteger(maxValue: 10)))
                     myStruct.remove(batch: batch3)
                     counter = counter + 1
                 }
@@ -926,7 +919,7 @@ class ParallelTests: XCTestCase {
                 }
                 entity.remove(batch: batch)
             }
-            usleep(UInt32 (ParallelTests.randomInteger(maxValue: 500)))
+            usleep(UInt32 (ParallelTest.randomInteger(maxValue: 500)))
         }
         internalGroup.wait()
         persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "batch.commit()", data: nil)
@@ -1028,7 +1021,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             workQueue.async {
-                usleep(UInt32 (ParallelTests.randomInteger(maxValue: 1000)))
+                usleep(UInt32 (ParallelTest.randomInteger(maxValue: 1000)))
                 self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
@@ -1037,7 +1030,7 @@ class ParallelTests: XCTestCase {
         for structRef in structRefs {
             internalGroup.enter()
             workQueue.async {
-                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
+                usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
                 executeOnMyStruct(persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
@@ -1092,7 +1085,7 @@ class ParallelTests: XCTestCase {
                 }
             }
             workQueue.async {
-                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
+                usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
                 self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
@@ -1101,7 +1094,7 @@ class ParallelTests: XCTestCase {
         for structRef in structRefs {
             internalGroup.enter()
             workQueue.async {
-                usleep(UInt32(ParallelTests.randomInteger(maxValue: 1000)))
+                usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
                 executeOnMyStruct(persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
@@ -1245,3 +1238,77 @@ class ParallelTests: XCTestCase {
     private static let myStructCount = 6
 
 }
+
+internal class ParallelTestPersistence {
+    
+    init (accessor: DatabaseAccessor, logger: Logger?) {
+        self.logger = logger
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
+        myStructCollection = EntityCache<MyStruct> (database: database, name: "MyStructs")
+        containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
+    }
+    
+    deinit {
+        if let logger = logger {
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "start", data: nil)
+            var myStructCount = 0
+            var containerCount = 0
+            myStructCollection.sync() { entities in
+                myStructCount = entities.count
+            }
+            containerCollection.sync() { entities in
+                containerCount = entities.count
+            }
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
+            logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
+        }
+    }
+    
+    let logger: Logger?
+    
+    let myStructCollection: EntityCache<MyStruct>
+    
+    let containerCollection: ContainerCollection
+}
+
+internal class MyStructContainer : Codable {
+    
+    init (parentData: EntityReferenceData<MyStructContainer>, myStruct: Entity<MyStruct>?) {
+        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
+    }
+    
+    init (parentData: EntityReferenceData<MyStructContainer>, structData: ReferenceManagerData?) {
+        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
+    }
+    
+    let myStruct: ReferenceManager<MyStructContainer, MyStruct>
+}
+
+struct MyStruct : Codable {
+    
+    var myInt = 0
+    var myString = ""
+    
+}
+
+internal class ContainerCollection : EntityCache<MyStructContainer> {
+    
+    func new(batch: EventuallyConsistentBatch, myStruct: Entity<MyStruct>?) -> Entity<MyStructContainer> {
+        return new (batch: batch) { parentData in
+            return MyStructContainer (parentData: parentData, myStruct: myStruct)
+        }
+    }
+    
+    func new(batch: EventuallyConsistentBatch, structData: ReferenceManagerData?) -> Entity<MyStructContainer> {
+        return new (batch: batch) { parentData in
+            return MyStructContainer (parentData: parentData, structData: structData)
+        }
+    }    
+}
+
+
+
+
+
+
+

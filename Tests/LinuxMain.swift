@@ -169,6 +169,13 @@ extension InMemoryAccessorTests {
   ]
 }
 
+extension IntegrationTests {
+  static var allTests = [
+    ("testParallel", testParallel),
+    ("testInMemorySample", testInMemorySample),
+  ]
+}
+
 extension LoggingTests {
   static var allTests = [
     ("testLogLevel", testLogLevel),
@@ -176,12 +183,6 @@ extension LoggingTests {
     ("testStandardFormat", testStandardFormat),
     ("testLogEntry", testLogEntry),
     ("testInMemoryLogger", testInMemoryLogger),
-  ]
-}
-
-extension ParallelTests {
-  static var allTests = [
-    ("testParallel", testParallel),
   ]
 }
 
@@ -201,28 +202,6 @@ extension ReferenceManagerTests {
   ]
 }
 
-extension SampleTests {
-  static var allTests = [
-    ("testInMemorySample", testInMemorySample),
-    ("testDemonstrateThrowError", testDemonstrateThrowError),
-    ("testDemonstratePrefetchWithGet ", testDemonstratePrefetchWithGet ),
-    ("testDemonstrateUpdateErrors ", testDemonstrateUpdateErrors ),
-    ("testCompanyCreation", testCompanyCreation),
-    ("testCompanyEncodeDecode", testCompanyEncodeDecode),
-    ("testCompanyEmployees", testCompanyEmployees),
-    ("testCompanyEmployeesAsync", testCompanyEmployeesAsync),
-    ("testCompanyCollectionNew", testCompanyCollectionNew),
-    ("testAddressCreation", testAddressCreation),
-    ("testAddressFromCollection", testAddressFromCollection),
-    ("testEmployeeCreation", testEmployeeCreation),
-    ("testEmployeeFromCollection", testEmployeeFromCollection),
-    ("testInMemoryAccessorEmployeesForCompany", testInMemoryAccessorEmployeesForCompany),
-    ("testEmployeeCollectionForCompany", testEmployeeCollectionForCompany),
-    ("testEmployeeCollectionForCompanyAsync", testEmployeeCollectionForCompanyAsync),
-    ("testRemoveAll", testRemoveAll),
-  ]
-}
-
 
 XCTMain([
   testCase(BatchTests.allTests),
@@ -235,8 +214,7 @@ XCTMain([
   testCase(EntityCommitTests.allTests),
   testCase(EntityTests.allTests),
   testCase(InMemoryAccessorTests.allTests),
+  testCase(IntegrationTests.allTests),
   testCase(LoggingTests.allTests),
-  testCase(ParallelTests.allTests),
   testCase(ReferenceManagerTests.allTests),
-  testCase(SampleTests.allTests),
 ])

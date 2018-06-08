@@ -404,8 +404,8 @@ class BatchTests: XCTestCase {
             var startTime = Date()
             if testCount > 0 {
                 delay = totalExecutionTime / Double (testCount)
-                let delayAt = ParallelTests.randomInteger(maxValue: Int (1000000 * delay))
-                let msDelayMultiplier = Double (300000 + ParallelTests.randomInteger(maxValue: 1000000))
+                let delayAt = ParallelTest.randomInteger(maxValue: Int (1000000 * delay))
+                let msDelayMultiplier = Double (300000 + ParallelTest.randomInteger(maxValue: 1000000))
                 timeout = .microseconds(Int (delay * msDelayMultiplier))
                 accessor.setPreFetch() { uuid in
                     if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
@@ -417,7 +417,7 @@ class BatchTests: XCTestCase {
             let persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             startTime = Date()
             let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
-            let structs = ParallelTests.newStructs (persistenceObjects: persistenceObjects, batch: batch)
+            let structs = ParallelTest.newStructs (persistenceObjects: persistenceObjects, batch: batch)
             let result = structs.ids
             batch.commitSync()
             let endTime = Date()

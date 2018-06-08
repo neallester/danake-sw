@@ -10,9 +10,6 @@ let package = Package(
         .library(
             name: "danake",
             targets: ["danake"]),
-	.library(
-		name: "danakeTests",
-		targets: ["danakeTests"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.

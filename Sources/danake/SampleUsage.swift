@@ -6,7 +6,6 @@
 //
 
 import XCTest
-@testable import danake
 
 /*
     ========
@@ -295,14 +294,14 @@ class SampleCollections {
     
 }
 
-class SampleTests: XCTestCase {
+/**
+    An executable test intended to demonstrate the usage of the danake framework in application code.
+    This is included in the main library so that it is available for testing DatabaseAccessors implementated
+    in other packages.
+ */
+class SampleUsage  {
     
     // Execute the `runSample' test using the SampleInMemoryAccessor
-    public func testInMemorySample() {
-        let accessor = SampleInMemoryAccessor()
-        
-        SampleTests.runSample (accessor: accessor)
-    }
     
 /*
      ================================================
@@ -889,11 +888,7 @@ class SampleTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let waitFor = expectation(description: "wait1")
-        batch.commit() {
-            waitFor.fulfill()
-        }
-        waitForExpectations(timeout: 10, handler: nil)
+        batch.commitSync()
         companyEntity1.sync() { company in
             let employees = company.employees().item()!
             XCTAssertEqual (2, employees.count)
@@ -921,38 +916,40 @@ class SampleTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let waitFor1 = expectation(description: "wait1")
-        batch.commit() {
-            waitFor1.fulfill()
-        }
-        waitForExpectations(timeout: 10, handler: nil)
-        let waitFor2a = expectation(description: "wait2a")
-        let waitFor2b = expectation(description: "wait2b")
-        let waitFor2c = expectation(description: "wait2c")
+        batch.commitSync()
+        let group = DispatchGroup()
+        group.enter()
+        group.enter()
+        group.enter()
         companyEntity1.async() { company in
             company.employees() { result in
                 let employees = result.item()!
                 XCTAssertEqual (2, employees.count)
                 XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
                 XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
-                waitFor2a.fulfill()
+                group.leave()
             }
         }
         companyEntity2.async() { company in
             company.employees() { result in
                 let employees = result.item()!
                 XCTAssertEqual (2, employees.count)
-                waitFor2b.fulfill()
+                group.leave()
             }
         }
         companyEntity3.async() { company in
             company.employees() { result in
                 let employees = result.item()!
                 XCTAssertEqual (0, employees.count)
-                waitFor2c.fulfill()
+                group.leave()
             }
         }
-        waitForExpectations(timeout: 10.0, handler: nil)
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail("Expected success")
+        }
     }
 
     func testCompanyCollectionNew() {
@@ -1044,11 +1041,7 @@ class SampleTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let waitFor = expectation(description: "wait1")
-        batch.commit() {
-            waitFor.fulfill()
-        }
-        waitForExpectations(timeout: 10, handler: nil)
+        batch.commitSync()
         companyEntity1.sync() { company in
             switch accessor.employeesForCompany(cache: caches.employees, company: company) {
             case .ok (let company1Employees):
@@ -1089,11 +1082,7 @@ class SampleTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let waitFor = expectation(description: "wait1")
-        batch.commit() {
-            waitFor.fulfill()
-        }
-        waitForExpectations(timeout: 10, handler: nil)
+        batch.commitSync()
         companyEntity1.sync() { company in
             switch caches.employees.forCompany(company) {
             case .ok (let company1Employees):
@@ -1126,13 +1115,10 @@ class SampleTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let waitFor1 = expectation(description: "wait1")
-        batch.commit() {
-            waitFor1.fulfill()
-        }
-        waitForExpectations(timeout: 10, handler: nil)
-        let waitFor2a = expectation(description: "wait2a")
-        let waitFor2b = expectation(description: "wait2b")
+        batch.commitSync()
+        let group = DispatchGroup()
+        group.enter()
+        group.enter()
         companyEntity1.sync() { company in
             caches.employees.forCompany(company) { result in
                 switch result {
@@ -1143,7 +1129,7 @@ class SampleTests: XCTestCase {
                 default:
                     XCTFail ("expected .ok")
                 }
-                waitFor2a.fulfill()
+                group.leave()
             }
         }
         companyEntity2.sync() { company in
@@ -1156,10 +1142,15 @@ class SampleTests: XCTestCase {
                 default:
                     XCTFail ("expected .ok")
                 }
-                waitFor2b.fulfill()
+                group.leave()
             }
         }
-        waitForExpectations(timeout: 10, handler: nil)
+        switch group.wait(timeout: DispatchTime.now() + 10.0) {
+        case .success:
+            break
+        default:
+            XCTFail("Expected success")
+        }
     }
 
     func testRemoveAll() {
@@ -1192,7 +1183,7 @@ class SampleTests: XCTestCase {
         XCTAssertEqual (2, caches.companies.scan(criteria: nil).item()!.count)
         XCTAssertEqual (4, caches.employees.scan(criteria: nil).item()!.count)
         XCTAssertEqual (4, caches.addresses.scan(criteria: nil).item()!.count)
-        SampleTests.removeAll(caches: caches)
+        SampleUsage .removeAll(caches: caches)
         XCTAssertEqual (0, caches.companies.scan(criteria: nil).item()!.count)
         XCTAssertEqual (0, caches.employees.scan(criteria: nil).item()!.count)
         XCTAssertEqual (0, caches.addresses.scan(criteria: nil).item()!.count)

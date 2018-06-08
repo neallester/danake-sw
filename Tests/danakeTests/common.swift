@@ -28,13 +28,6 @@ func newTestClassEntity (myInt: Int, myString: String) -> Entity<MyClass> {
     
 }
 
-struct MyStruct : Codable {
-    
-    var myInt = 0
-    var myString = ""
-    
-}
-
 func newTestEntity (myInt: Int, myString: String) -> Entity<MyStruct> {
     var myStruct = MyStruct()
     myStruct.myInt = myInt
@@ -108,67 +101,6 @@ class TimeoutHookEntity<T: Codable> : Entity<T> {
             print ("****************************************** timeoutTestingHook.timeoutSemaphore .timedOut")
         }
     }
-}
-
-internal class MyStructContainer : Codable {
-    
-    init (parentData: EntityReferenceData<MyStructContainer>, myStruct: Entity<MyStruct>?) {
-        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, entity: myStruct)
-    }
-    
-    init (parentData: EntityReferenceData<MyStructContainer>, structData: ReferenceManagerData?) {
-        self.myStruct = ReferenceManager<MyStructContainer, MyStruct> (parent: parentData, referenceData: structData)
-    }
-    
-    let myStruct: ReferenceManager<MyStructContainer, MyStruct>
-}
-
-internal class ContainerCollection : EntityCache<MyStructContainer> {
-    
-    func new(batch: EventuallyConsistentBatch, myStruct: Entity<MyStruct>?) -> Entity<MyStructContainer> {
-        return new (batch: batch) { parentData in
-            return MyStructContainer (parentData: parentData, myStruct: myStruct)
-        }
-    }
-    
-    func new(batch: EventuallyConsistentBatch, structData: ReferenceManagerData?) -> Entity<MyStructContainer> {
-        return new (batch: batch) { parentData in
-            return MyStructContainer (parentData: parentData, structData: structData)
-        }
-    }
-    
-}
-
-internal class ParallelTestPersistence {
-    
-    init (accessor: DatabaseAccessor, logger: Logger?) {
-        self.logger = logger
-        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
-        myStructCollection = EntityCache<MyStruct> (database: database, name: "MyStructs")
-        containerCollection = ContainerCollection (database: database, name: "myContainerCollection")
-    }
-    
-    deinit {
-        if let logger = logger {
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "start", data: nil)
-            var myStructCount = 0
-            var containerCount = 0
-            myStructCollection.sync() { entities in
-                myStructCount = entities.count
-            }
-            containerCollection.sync() { entities in
-                containerCount = entities.count
-            }
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
-        }
-    }
-    
-    let logger: Logger?
-    
-    let myStructCollection: EntityCache<MyStruct>
-    
-    let containerCollection: ContainerCollection
 }
 
 class DateExtensionTests : XCTestCase {
