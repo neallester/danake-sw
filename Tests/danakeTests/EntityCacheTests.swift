@@ -1339,4 +1339,41 @@ class EntityCacheTests: XCTestCase {
         XCTAssertEqual (0, cache.onCacheCount())
     }
     
+    public func testHasCached() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
+        XCTAssertFalse (cache.hasCached(id: UUID()))
+        let myStruct = MyStruct(myInt: 10, myString: "10")
+        let batch = EventuallyConsistentBatch()
+        let entity = cache.new(batch: batch, item: myStruct)
+        XCTAssertTrue (cache.hasCached(id: entity.id))
+    }
+    
+    public func testWaitWhileCached() {
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
+        let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
+        XCTAssertFalse (cache.hasCached(id: UUID()))
+        let myStruct = MyStruct(myInt: 10, myString: "10")
+        let batch = EventuallyConsistentBatch()
+        var entity: Entity<MyStruct>? = cache.new(batch: batch, item: myStruct)
+        batch.commitSync()
+        let id = entity!.id
+        let timeout1 = 0.01
+        let start = Date().timeIntervalSince1970
+        cache.waitWhileCached(id: id, timeout: timeout1)
+        XCTAssertTrue (Date().timeIntervalSince1970 >= start + timeout1)
+        XCTAssertTrue (cache.hasCached(id: id))
+        let queue = DispatchQueue(label: "test")
+        queue.async {
+            entity = nil
+        }
+        let timeout2 = 10.0
+        cache.waitWhileCached(id: id, timeout: timeout2)
+        XCTAssertNil (entity)
+        XCTAssertFalse (cache.hasCached(id: id))
+        XCTAssertTrue (Date().timeIntervalSince1970 < start + 1.0)
+    }
+    
 }

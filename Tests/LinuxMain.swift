@@ -47,6 +47,8 @@ extension EntityCacheTests {
     ("testScan", testScan),
     ("testScanAsync", testScanAsync),
     ("testRegisterOnCache", testRegisterOnCache),
+    ("testHasCached", testHasCached),
+    ("testWaitWhileCached", testWaitWhileCached),
   ]
 }
 

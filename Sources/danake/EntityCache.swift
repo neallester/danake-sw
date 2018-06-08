@@ -176,7 +176,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         return result
     }
     
-    /**
+/**
      Create a new Entity wrapping the new item returned by **itemClosure**. Use when creation of an attribute of
      T requires a back reference to T. For example:
      ````
@@ -198,6 +198,36 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         }
         batch.insertAsync(entity: result, closure: nil)
         return result
+    }
+    
+/**
+     - parameter id: Parameter to be queried
+     - returns: True if an Entity with **id** is currently present in the cache
+*/
+    public func hasCached (id: UUID) -> Bool {
+        var result = false
+        cacheQueue.sync() {
+            if let cachedContainer = self.cache[id], let _ = cachedContainer.codable {
+                result = true
+            }
+        }
+        return result
+    }
+/**
+     Causes the current thread to wait (loop + sleep) while an Entity with **id** is present in the
+     cache or until **timeout** elapses.
+     
+     - parameter id: Id of the Entity
+     - parameter timeout: TimeInterval after which the function gives up and moves on;
+                          default = **10.0**
+*/
+    public func waitWhileCached (id: UUID, timeout: TimeInterval = 10.0) {
+        let timeout = Date().timeIntervalSince1970 + timeout
+        var wasFound = true
+        while (wasFound && timeout > Date().timeIntervalSince1970) {
+            usleep(100)
+            wasFound = hasCached(id: id)
+        }
     }
 
 // Entity Initialization
