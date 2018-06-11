@@ -573,8 +573,9 @@ public class SampleUsage  {
         
         // An error has indeed been logged and the update has indeed been lost
         logger.sync() { entries in
-            ParallelTest.AssertEqual (testResult: &overallTestResult, 3, entries.count)
+            ParallelTest.AssertEqual (testResult: &overallTestResult, 4, entries.count)
             ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
+            ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|Entity<Employee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).employee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
         }
         do {
             if let companyEntity = caches.companies.get (id: company1id!).item() {
