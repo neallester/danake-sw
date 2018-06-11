@@ -2819,7 +2819,72 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (reference === references[0] as! ReferenceManager<MyStruct, MyStruct>)
         }
     }
+    
+    // Verify that when the Child of ReferenceManager is updated (i.e. its version is incremented)
+    // That this does not produce a spurious lostData message in its parent
+    func testUpdateLogging() {
+
+        class ReferenceContainer : Codable {
+            
+            init (parentData: EntityReferenceData<ReferenceContainer>, entity: Entity<MyStruct>? = nil) {
+                child = ReferenceManager<ReferenceContainer, MyStruct> (parent: parentData, entity: entity)
+            }
+            
+            let child: ReferenceManager<ReferenceContainer, MyStruct>
+            
+        }
+        
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger(level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let containerCache = EntityCache<ReferenceContainer> (database: database, name: "containers")
+        let structCache = EntityCache<MyStruct> (database: database, name: "structs")
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch()
+        var structEntity1: Entity<MyStruct>? = structCache.new(batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
+        var containerEntity: Entity<ReferenceContainer>? = containerCache.new(batch: batch!) { parentData in
+            return ReferenceContainer (parentData: parentData, entity: structEntity1)
+        }
+        let structId1 = structEntity1!.id
+        let containerId = containerEntity!.id
+        batch!.commitSync()
+        structEntity1?.update(batch: batch!) { myStruct in
+            myStruct.myInt = 11
+            myStruct.myString = "11"
+        }
+        batch!.commitSync()
+        structEntity1 = nil
+        containerEntity = nil
+        containerCache.waitWhileCached(id: containerId)
+        structCache.waitWhileCached(id: structId1)
+        XCTAssertFalse (containerCache.hasCached(id: containerId))
+        logger.sync() { entries in
+//            XCTAssertEqual (0, entries.count)
+        }
+        let structEntity2: Entity<MyStruct> = structCache.new(batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
+        batch!.commitSync()
+        containerEntity = containerCache.get(id: containerId).item()
+        containerEntity!.sync() { container in
+            container.child.set(entity: structEntity2, batch: batch!)
+        }
+        containerEntity = nil
+        batch = nil
+        containerCache.waitWhileCached(id: containerId)
+        XCTAssertFalse (containerCache.hasCached(id: containerId))
+        var entryCount = 0
+        let timeout = Date().timeIntervalSince1970 + 10.0
+//        while entryCount < 1 && Date().timeIntervalSince1970 < timeout {
+//            logger.sync() { entries in
+//                entryCount = entries.count
+//            }
+//        }
+//        logger.sync() { entries in
+//            XCTAssertEqual (1, entries.count)
+//            XCTAssertEqual ("", entries[0].asTestString())
+//        }
+    }
 }
+
+
 
 // function retrieve() waits until the thread which created the reference
 // signals the semaphore

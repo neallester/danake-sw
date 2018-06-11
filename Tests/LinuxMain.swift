@@ -153,7 +153,9 @@ extension EntityTests {
     ("testReferenceManagerCycle", testReferenceManagerCycle),
     ("testTwoReferences ", testTwoReferences ),
     ("testRegisterReferenceContainer", testRegisterReferenceContainer),
-    ("testUnsavedChangesLogging", testUnsavedChangesLogging),
+    ("testUnsavedChangesLoggingNoBatchUpdate ", testUnsavedChangesLoggingNoBatchUpdate ),
+    ("testUnsavedChangesLoggingAbandonedBatchUpdate ", testUnsavedChangesLoggingAbandonedBatchUpdate ),
+    ("testUnsavedChangesLoggingAbandonedBatchRemove ", testUnsavedChangesLoggingAbandonedBatchRemove ),
   ]
 }
 
@@ -198,6 +200,7 @@ extension ReferenceManagerTests {
     ("testGet", testGet),
     ("testSetWithinEntity", testSetWithinEntity),
     ("testDereference", testDereference),
+    ("testUpdateLogging", testUpdateLogging),
   ]
 }
 

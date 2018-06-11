@@ -222,17 +222,17 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     deinit {
         cache.decache (id: id)
+        let localCollection = cache
+        let localId = id
         switch self._persistenceState {
         case .persistent:
             let localItem = item
             if let itemData = itemData {
-                let localCollection = cache
-                let localId = id
                 cache.database.workQueue.async {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
-                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedWithoutSave", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
                         }
                     } catch {
                         localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
@@ -241,6 +241,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             } else {
                 cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
             }
+        case .dirty:
+            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+        case .pendingRemoval:
+            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemRemovedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
         default:
             break
         }
@@ -541,7 +545,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 self.cache.database.workQueue.async {
                     self.timeoutTestingHook()
                     let _ = group.wait(timeout: DispatchTime.now() + timeout)
-                    self.queue.async {
+                    self.queue.sync {
                         if result == nil {
                             result = .error ("Entity.commit():timedOut:\(timeout)")
                         }

@@ -16,7 +16,7 @@ class IntegrationTests: XCTestCase {
         #if os(Linux)
             repetitions = 20
         #endif
-        XCTAssertTrue (ParallelTest.performTest(accessor: accessor, repetitions: repetitions, logger: nil))
+        XCTAssertTrue (ParallelTest.performTest(accessor: accessor, repetitions: repetitions, logger: ConsoleLogger()))
     }
     
 }

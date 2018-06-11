@@ -1555,7 +1555,7 @@ class EntityTests: XCTestCase {
         }
     }
     
-    func testUnsavedChangesLogging() {
+    func testUnsavedChangesLoggingNoBatchUpdate () {
         
         class SneakyUpdater : Codable {
             
@@ -1595,9 +1595,60 @@ class EntityTests: XCTestCase {
             }
         }
         logger.sync() { entries in
-            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedWithoutSave|cacheName=\(cache.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedOutsideOfBatch|cacheName=\(cache.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
         }
     }
-    
+
+    func testUnsavedChangesLoggingAbandonedBatchUpdate () {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger (level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
+        let cache = EntityCache<MyStruct>(database: database, name: "myStruct")
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch()
+        var entity: Entity<MyStruct>? = cache.new(batch: batch!, item: MyStruct (myInt: 10, myString: "10"))
+        batch!.commitSync()
+        entity!.update(batch: batch!) { myStruct in
+            myStruct.myInt = 11
+            myStruct.myString = "11"
+        }
+        let entityId = entity!.id
+        entity = nil
+        batch = nil
+        var loggerCount = 0
+        let timeout = Date().timeIntervalSince1970 + 10.0
+        while loggerCount < 1 && Date().timeIntervalSince1970 < timeout {
+            logger.sync() { entries in
+                loggerCount = entries.count
+            }
+        }
+        logger.sync() { entries in
+            XCTAssertEqual ("ERROR|Entity<MyStruct>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(cache.qualifiedName);entityId=\(entityId.uuidString)", entries[0].asTestString())
+        }
+    }
+
+    func testUnsavedChangesLoggingAbandonedBatchRemove () {
+        let accessor = InMemoryAccessor()
+        let logger = InMemoryLogger (level: .warning)
+        let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
+        let cache = EntityCache<MyStruct>(database: database, name: "myStruct")
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch()
+        var entity: Entity<MyStruct>? = cache.new(batch: batch!, item: MyStruct (myInt: 10, myString: "10"))
+        batch!.commitSync()
+        entity!.remove(batch: batch!)
+        let entityId = entity!.id
+        entity = nil
+        batch = nil
+        var loggerCount = 0
+        let timeout = Date().timeIntervalSince1970 + 10.0
+        while loggerCount < 1 && Date().timeIntervalSince1970 < timeout {
+            logger.sync() { entries in
+                loggerCount = entries.count
+            }
+        }
+        logger.sync() { entries in
+            XCTAssertEqual ("ERROR|Entity<MyStruct>.Type.deinit|lostData:itemRemovedBatchAbandoned|cacheName=\(cache.qualifiedName);entityId=\(entityId.uuidString)", entries[0].asTestString())
+        }
+    }
+
 }
 
