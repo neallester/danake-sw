@@ -773,7 +773,6 @@ class EntityTests: XCTestCase {
                 XCTAssertEqual (parentVersion, reference.parentData.version)
                 XCTAssertEqual (Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: "childCollection") , reference.referenceData!.qualifiedCacheName)
                 XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
-                XCTAssertEqual (3, reference.referenceData!.version)
                 switch reference.state {
                 case .decoded:
                     break

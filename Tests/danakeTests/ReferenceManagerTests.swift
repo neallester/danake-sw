@@ -309,9 +309,9 @@ class ReferenceManagerTests: XCTestCase {
         reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: nil)
         parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         var json = "{\"isEager\":false,\"isNil\":true}"
+        try XCTAssertTrue(String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":false"))
+        try XCTAssertTrue(String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isNil\":true"))
         #if os(Linux)
-            XCTAssertTrue(json.contains("\"isEager\":false"))
-            XCTAssertTrue(json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -362,9 +362,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":true,\"isNil\":true}"
+        try XCTAssertTrue(String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":true"))
+        try XCTAssertTrue(String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isNil\":true"))
         #if os(Linux)
-            XCTAssertTrue(json.contains("\"isEager\":true"))
-            XCTAssertTrue(json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -410,12 +410,11 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"id\":\"\(child.id.uuidString)\"}"
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"id\":\"\(child.id.uuidString)\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":false"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
-            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"isEager\":false"))
-            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -428,7 +427,8 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertNil (reference.entity)
             XCTAssertTrue (reference.parent === parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (child.referenceData(), reference.referenceData)
+            XCTAssertEqual (child.referenceData().id.uuidString, reference.referenceData!.id.uuidString)
+            XCTAssertEqual (child.referenceData().qualifiedCacheName, reference.referenceData!.qualifiedCacheName)
             XCTAssertNil (reference.cache)
             switch reference.state {
             case .decoded:
@@ -465,7 +465,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"id\":\"\(child.id.uuidString)\"}"
         waitFor = expectation(description: "wait1")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
@@ -483,7 +483,8 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (child.referenceData(), reference.referenceData)
+            XCTAssertEqual (child.referenceData().id.uuidString, reference.referenceData!.id.uuidString)
+            XCTAssertEqual (child.referenceData().qualifiedCacheName, reference.referenceData!.qualifiedCacheName)
             XCTAssertTrue (cache === reference.cache)
             switch reference.state {
             case .retrieving (let referenceData):
@@ -518,11 +519,10 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"id\":\"\(child.id.uuidString)\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":true"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
-            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"isEager\":true"))
-            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -551,9 +551,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":false,\"isNil\":true}"
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":false"))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isNil\":true"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"isEager\":false"))
-            XCTAssertTrue (json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -604,9 +604,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         json = "{\"isEager\":true,\"isNil\":true}"
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":true"))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isNil\":true"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"isEager\":true"))
-            XCTAssertTrue (json.contains("\"isNil\":true"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8))
         #endif
@@ -656,12 +656,11 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"isEager\":false,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"id\":\"\(child.id.uuidString)\"}"
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"id\":\"\(child.id.uuidString)\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":false"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
-            XCTAssertTrue (json.contains("\"id\":\"\(child.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"isEager\":false"))
-            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -674,7 +673,8 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertNil (reference.entity)
             XCTAssertTrue (reference.parent === parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (child.referenceData(), reference.referenceData)
+            XCTAssertEqual (child.referenceData().id.uuidString, reference.referenceData!.id.uuidString)
+            XCTAssertEqual (child.referenceData().qualifiedCacheName, reference.referenceData!.qualifiedCacheName)
             XCTAssertNil (reference.cache)
             switch reference.state {
             case .decoded:
@@ -696,7 +696,7 @@ class ReferenceManagerTests: XCTestCase {
         default:
             XCTFail("Expected .ok")
         }
-        json = "{\"id\":\"\(persistentChildId2.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":10}"
+        json = "{\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"id\":\"\(persistentChildId2.uuidString)\"}"
         waitFor = expectation(description: "wait3")
         parentId = UUID()
         parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
@@ -749,11 +749,10 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"id\":\"\(persistentChildId2.uuidString)\""))
+        try XCTAssertTrue (String (data: encoder.encode(reference), encoding: .utf8)!.contains("\"isEager\":true"))
         #if os(Linux)
-            XCTAssertTrue (json.contains("\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\""))
-            XCTAssertTrue (json.contains("\"id\":\"\(persistentChildId2.uuidString)\""))
-            XCTAssertTrue (json.contains("\"isEager\":true"))
-            XCTAssertTrue (json.contains("\"version\":10"))
         #else
             try XCTAssertEqual (json, String (data: encoder.encode(reference), encoding: .utf8)!)
         #endif
@@ -776,7 +775,8 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertNil (reference.entity)
             XCTAssertNil (reference.parent)
             XCTAssertTrue (parentData == reference.parentData)
-            XCTAssertEqual (child.referenceData(), reference.referenceData)
+            XCTAssertEqual (child.referenceData().id.uuidString, reference.referenceData!.id.uuidString)
+            XCTAssertEqual (child.referenceData().qualifiedCacheName, reference.referenceData!.qualifiedCacheName)
             XCTAssertTrue (cache === reference.cache)
             switch reference.state {
             case .retrieving (let referenceData):
@@ -867,22 +867,6 @@ class ReferenceManagerTests: XCTestCase {
             XCTFail ("Expected Exception")
         } catch {
             XCTAssertEqual ("typeMismatch(Swift.String, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"qualifiedCacheName\", intValue: nil)], debugDescription: \"Expected to decode String but found a number instead.\", underlyingError: nil))", "\(error)")
-        }
-        // Missing Version
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\"}"
-        do {
-            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTFail ("Expected Exception")
-        } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"version\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"version\\\", intValue: nil) (\\\"version\\\").\", underlyingError: nil))", "\(error)")
-        }
-        // Illegal Version
-        json = "{\"id\":\"\(child.id.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"\(database.accessor.hashValue).myCollection\",\"version\":\"10\"}"
-        do {
-            reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
-            XCTFail ("Expected Exception")
-        } catch {
-            XCTAssertEqual ("typeMismatch(Swift.Int, Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"version\", intValue: nil)], debugDescription: \"Expected to decode Int but found a string/data instead.\", underlyingError: nil))", "\(error)")
         }
         json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"isEager\":true,\"cacheName\":\"myCollection\",\"version\":10}"
         // No parentData
@@ -2858,7 +2842,7 @@ class ReferenceManagerTests: XCTestCase {
         structCache.waitWhileCached(id: structId1)
         XCTAssertFalse (containerCache.hasCached(id: containerId))
         logger.sync() { entries in
-//            XCTAssertEqual (0, entries.count)
+            XCTAssertEqual (0, entries.count)
         }
         let structEntity2: Entity<MyStruct> = structCache.new(batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
         batch!.commitSync()
@@ -2872,15 +2856,15 @@ class ReferenceManagerTests: XCTestCase {
         XCTAssertFalse (containerCache.hasCached(id: containerId))
         var entryCount = 0
         let timeout = Date().timeIntervalSince1970 + 10.0
-//        while entryCount < 1 && Date().timeIntervalSince1970 < timeout {
-//            logger.sync() { entries in
-//                entryCount = entries.count
-//            }
-//        }
-//        logger.sync() { entries in
-//            XCTAssertEqual (1, entries.count)
-//            XCTAssertEqual ("", entries[0].asTestString())
-//        }
+        while entryCount < 1 && Date().timeIntervalSince1970 < timeout {
+            logger.sync() { entries in
+                entryCount = entries.count
+            }
+        }
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            XCTAssertEqual ("ERROR|Entity<ReferenceContainer #1>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(database.accessor.hashValue).containers;entityId=\(containerId.uuidString)", entries[0].asTestString())
+        }
     }
 }
 

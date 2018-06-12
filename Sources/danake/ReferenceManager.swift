@@ -111,7 +111,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 state = .loaded
             } else {
                 let qualifiedCacheName = try values.decode (String.self, forKey: .qualifiedCacheName)
-                let version = try values.decode (Int.self, forKey: .version)
+                let version = 0
                 let idString = try values.decode (String.self, forKey: .id)
                 let id = UUID (uuidString: idString)
                 if let id = id {
@@ -139,11 +139,9 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
             if let entity = entity {
                 try container.encode(entity.cache.qualifiedName, forKey: .qualifiedCacheName)
                 try container.encode (entity.id, forKey: .id)
-                try container.encode (entity.getVersionUnsafe(), forKey: .version)
             } else if let referenceData = referenceData {
                 try container.encode(referenceData.qualifiedCacheName, forKey: .qualifiedCacheName)
                 try container.encode (referenceData.id, forKey: .id)
-                try container.encode (referenceData.version, forKey: .version)
             } else {
                 try container.encode (true, forKey: .isNil)
             }
