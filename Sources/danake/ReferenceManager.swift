@@ -207,14 +207,25 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
      **Note**: Retrieval result is cached so subsequent accesses will be fast.
 */
     public func get() -> RetrievalResult<Entity<T>> {
-        let group = DispatchGroup()
-        group .enter()
         var result = RetrievalResult<Entity<T>>.error("timedOut")
-        async() { retrievalResult in
-            result = retrievalResult
-            group.leave()
+        var currentState: ReferenceManagerState = .decoded
+        var currentEntity: Entity<T>? = nil
+        queue.sync {
+            currentState = self.state
+            currentEntity = self.entity
         }
-        group.wait()
+        switch currentState {
+            case .loaded:
+            result = .ok (currentEntity)
+        default:
+            let group = DispatchGroup()
+            group .enter()
+            async() { retrievalResult in
+                result = retrievalResult
+                group.leave()
+            }
+            group.wait()
+        }
         return result
     }
     
