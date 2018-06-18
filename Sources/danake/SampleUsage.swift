@@ -27,28 +27,28 @@ import Foundation
  
     These classes demonstrate how to incorporate Danake into an application object model.
  
-    class Company:  A Company is associated with zero or more Employees.
-                    - Property `employeeCollection' demonstrates how to deserialize a property whose value
-                      comes from the environment rather than the the serialized representation of the instance.
-                    - property `id' demonstrates how to create a model object with an attribute of type UUID
-                      value which is taken from the id of the enclosing Entity at creation and deserialization
-                      time.
-                    - The function `employees()' demonstrate functions whose results are obtained via queries to
-                      the persistent media.
+    class SampleCompany:  A SampleCompany is associated with zero or more Employees.
+                          - Property `employeeCollection' demonstrates how to deserialize a property whose value
+                            comes from the environment rather than the the serialized representation of the instance.
+                          - property `id' demonstrates how to create a model object with an attribute of type UUID
+                            value which is taken from the id of the enclosing Entity at creation and deserialization
+                            time.
+                          - The function `employees()' demonstrate functions whose results are obtained via queries to
+                            the persistent media.
  
-    class Employee: An employee is associated with zero or one companies, and has zero or one addresses.
-                    - Properties `company' and `address' demonstrate the usage of EntityReference<PARENT, TYPE>
-                    - company attribute demonstrates eager retrieval
+    class SampleEmployee: An sampleEmployee is associated with zero or one companies, and has zero or one addresses.
+                          - Properties `sampleCompany' and `sampleAddress' demonstrate the usage of EntityReference<PARENT, TYPE>
+                          - sampleCompany attribute demonstrates eager retrieval
 
-    class Address:  Demonstrates the use of a struct as a reference.
+    class SampleAddress:  Demonstrates the use of a struct as a reference.
  
  */
 
-class Company : Codable {
+public class SampleCompany : Codable {
     
     enum CodingKeys: CodingKey {}
     
-    init (employeeCollection: EmployeeCollection, id: UUID) {
+    init (employeeCollection: SampleEmployeeCollection, id: UUID) {
         self.id = id
         self.employeeCollection = employeeCollection
     }
@@ -56,52 +56,52 @@ class Company : Codable {
     // Custom decoder sets the `employeeCollection' and `id' during deserialization
     public required init (from decoder: Decoder) throws {
         // employeeCollection set by persistence system. See CompanyCollection.init()
-        if let employeeCollection = decoder.userInfo[Company.employeeCollectionKey] as? EmployeeCollection {
+        if let employeeCollection = decoder.userInfo[SampleCompany.employeeCollectionKey] as? SampleEmployeeCollection {
             self.employeeCollection = employeeCollection
         } else {
-            throw EntityDeserializationError<Company>.missingUserInfoValue(Company.employeeCollectionKey)
+            throw EntityDeserializationError<SampleCompany>.missingUserInfoValue(SampleCompany.employeeCollectionKey)
         }
         // Use the enclosing entities value of `id'
         // Same method may be used to obtain schemaVersion at time of last save
-        if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentReferenceData = container.data as? EntityReferenceData<Company> {
+        if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer, let parentReferenceData = container.data as? EntityReferenceData<SampleCompany> {
             self.id = parentReferenceData.id
         } else {
-            throw EntityDeserializationError<Company>.missingUserInfoValue(Database.parentDataKey)
+            throw EntityDeserializationError<SampleCompany>.missingUserInfoValue(Database.parentDataKey)
         }
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var _ = encoder.container(keyedBy: CodingKeys.self)
     }
     
     // With this design the results of the `employees' function will not include any newly
-    // created employee objects which have not yet been saved to the persistent media
+    // created sampleEmployee objects which have not yet been saved to the persistent media
     
     // Syncrhonous implementation
-    public func employees() -> RetrievalResult<[Entity<Employee>]> {
+    public func employees() -> RetrievalResult<[Entity<SampleEmployee>]> {
         return employeeCollection.forCompany(self)
     }
     
     // Asyncrhonous implementation
-    public func employees(closure: @escaping (RetrievalResult<[Entity<Employee>]>) -> Void) {
+    public func employees(closure: @escaping (RetrievalResult<[Entity<SampleEmployee>]>) -> Void) {
         employeeCollection.forCompany(self, closure: closure)
     }
     
     // In actual use within the application; id will match the id of the surrounding Entity wrapper
     public let id: UUID
     
-    private let employeeCollection: EmployeeCollection
+    private let employeeCollection: SampleEmployeeCollection
     public static let employeeCollectionKey = CodingUserInfoKey.init(rawValue: "employeeCollectionKey")!
 
 }
 
-class Employee : Codable {
+public class SampleEmployee : Codable {
     
-    init (selfReference: EntityReferenceData<Employee>, company: Entity<Company>, name: String, address: Entity<Address>?) {
+    init (selfReference: EntityReferenceData<SampleEmployee>, company: Entity<SampleCompany>, name: String, address: Entity<SampleAddress>?) {
         self.name = name
-        // company reference is created with eager retrieval
-        self.company = ReferenceManager<Employee, Company> (parent: selfReference, entity: company, isEager: true)
-        self.address = ReferenceManager<Employee, Address> (parent: selfReference, entity: address)
+        // sampleCompany reference is created with eager retrieval
+        self.company = ReferenceManager<SampleEmployee, SampleCompany> (parent: selfReference, entity: company, isEager: true)
+        self.address = ReferenceManager<SampleEmployee, SampleAddress> (parent: selfReference, entity: address)
     }
 
     var name: String
@@ -112,12 +112,12 @@ class Employee : Codable {
     
     // Always declare attributes of type 'EntityReference' using 'let'
     // The entities which are referenced may change, but the EntityReference itself does not
-    let company: ReferenceManager<Employee, Company>
-    let address: ReferenceManager<Employee, Address>
+    let company: ReferenceManager<SampleEmployee, SampleCompany>
+    let address: ReferenceManager<SampleEmployee, SampleAddress>
     
 }
 
-struct Address : Codable {
+public struct SampleAddress : Codable {
     
     init (street: String, city: String, state: String, zipCode: String) {
         self.street = street
@@ -146,7 +146,7 @@ struct Address : Codable {
  
     protocol SampleAccessor:        Application specific extension to DatabaseAccessor which adds specialized queries (e.g. lookups
                                     based on indexed criteria). In this case it includes selecting employees by the id of their
-                                    associated company. A media specific implementation (e.g. SampleInMemoryAccessor) must be provided
+                                    associated sampleCompany. A media specific implementation (e.g. SampleInMemoryAccessor) must be provided
                                     for each supported persistent media. The application specific DatabaseAccessor protocol is where
                                     application developers should place the application interface to specialized queries which rely on
                                     indexing capabilities in the underlying persistent media.
@@ -165,14 +165,14 @@ struct Address : Codable {
                                     attributes with `let' within a scope with process lifetime. Re-creating a EntityCache
                                     object is not currently supported.
  
-    class CompanyCollection:        Access to persistent Company objects. Demonstrates:
+    class SampleCompanyCollection:  Access to persistent SampleCompany objects. Demonstrates:
                                     - creation of model objects which include an id whose value matches the id of their enclosing
                                       Entity
                                     - setup of a EntityCache to support deserialization of objects which include properties
                                       which are populated from the environment rather than the serialized data.
-                                    - custom `new' function for creating new Entity<Company> objects
+                                    - custom `new' function for creating new Entity<SampleCompany> objects
  
-    class EmployeeCollection:       Access to persistent Employee objects. Demonstrates:
+    class SampleEmployeeCollection: Access to persistent SampleEmployee objects. Demonstrates:
                                     - deserialization of objects which include EntityReference properties
                                     - custom synchronous and asynchronous retrieval functions
  
@@ -193,19 +193,19 @@ class SampleDatabase : Database {
     
 }
 
-protocol SampleAccessor : DatabaseAccessor {
-    func employeesForCompany (cache: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>>
+public protocol SampleAccessor : DatabaseAccessor {
+    func employeesForCompany (cache: EntityCache<SampleEmployee>, company: SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>>
 }
 
 class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
-    func employeesForCompany (cache: EntityCache<Employee>, company: Company) -> DatabaseAccessListResult<Entity<Employee>> {
-        let retrievalResult = scan (type: Entity<Employee>.self, cache: cache)
+    func employeesForCompany (cache: EntityCache<SampleEmployee>, company: SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>> {
+        let retrievalResult = scan (type: Entity<SampleEmployee>.self, cache: cache)
         switch retrievalResult {
         case .ok(let allEmployees):
-            var result: [Entity<Employee>] = []
+            var result: [Entity<SampleEmployee>] = []
             for employeeEntity in allEmployees {
-                employeeEntity.sync() { employee in
-                    if employee.company.entityId()!.uuidString == company.id.uuidString {
+                employeeEntity.sync() { sampleEmployee in
+                    if sampleEmployee.company.entityId()!.uuidString == company.id.uuidString {
                         result.append(employeeEntity)
                     }
                 }
@@ -218,43 +218,43 @@ class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
 }
 
-class CompanyCollection : EntityCache<Company> {
+class SampleCompanyCollection : EntityCache<SampleCompany> {
     
-    init (database: SampleDatabase, employeeCollection: EmployeeCollection) {
+    init (database: SampleDatabase, employeeCollection: SampleEmployeeCollection) {
         self.employeeCollection = employeeCollection
         // The following closure is fired on the decoders userInfo property before deserialization
         // setting the employeeCollection object which will be assigned to the appropriate property
-        // during deserialization (see Company.init (decoder:)
-        super.init (database: database, name: "company") { userInfo in
-            userInfo[Company.employeeCollectionKey] = employeeCollection
+        // during deserialization (see SampleCompany.init (decoder:)
+        super.init (database: database, name: "sampleCompany") { userInfo in
+            userInfo[SampleCompany.employeeCollectionKey] = employeeCollection
         }
     }
     
-    func new (batch: EventuallyConsistentBatch) -> Entity<Company> {
+    func new (batch: EventuallyConsistentBatch) -> Entity<SampleCompany> {
         return new (batch: batch) { selfReference in
-            return Company (employeeCollection: employeeCollection, id: selfReference.id)
+            return SampleCompany (employeeCollection: employeeCollection, id: selfReference.id)
         }
     }
     
-    private let employeeCollection: EmployeeCollection
+    private let employeeCollection: SampleEmployeeCollection
 }
 
-class EmployeeCollection : EntityCache<Employee> {
+class SampleEmployeeCollection : EntityCache<SampleEmployee> {
 
     init(database: SampleDatabase) {
-        forCompanyClosure = { cache, company in
-            return database.sampleAccessor.employeesForCompany (cache: cache, company: company)
+        forCompanyClosure = { cache, sampleCompany in
+            return database.sampleAccessor.employeesForCompany (cache: cache, company: sampleCompany)
         }
-        super.init (database: database, name: "employee", userInfoClosure: nil)
+        super.init (database: database, name: "sampleEmployee", userInfoClosure: nil)
     }
     
-    func new (batch: EventuallyConsistentBatch, company: Entity<Company>, name: String, address: Entity<Address>?) -> Entity<Employee> {
+    func new (batch: EventuallyConsistentBatch, company: Entity<SampleCompany>, name: String, address: Entity<SampleAddress>?) -> Entity<SampleEmployee> {
         return new (batch: batch) { selfReference in
-            return Employee (selfReference: selfReference, company: company, name: name, address: address)
+            return SampleEmployee (selfReference: selfReference, company: company, name: name, address: address)
         }
     }
     
-    func forCompany (_ company: Company) -> RetrievalResult<[Entity<Employee>]> {
+    func forCompany (_ company: SampleCompany) -> RetrievalResult<[Entity<SampleEmployee>]> {
         switch forCompanyClosure (self, company) {
         case .ok(let employees):
             return .ok (employees)
@@ -263,13 +263,13 @@ class EmployeeCollection : EntityCache<Employee> {
         }
     }
     
-    func forCompany (_ company: Company, closure: @escaping (RetrievalResult<[Entity<Employee>]>) -> ()) {
+    func forCompany (_ company: SampleCompany, closure: @escaping (RetrievalResult<[Entity<SampleEmployee>]>) -> ()) {
         database.workQueue.async {
             closure (self.forCompany (company))
         }
     }
     
-    private let forCompanyClosure: ((EmployeeCollection, Company) -> DatabaseAccessListResult<Entity<Employee>>)
+    private let forCompanyClosure: ((SampleEmployeeCollection, SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>>)
     
 }
 
@@ -278,18 +278,18 @@ class SampleCollections {
     init (accessor: SampleAccessor, schemaVersion: Int, logger: Logger?) {
         let database = SampleDatabase (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 180.0)
         self.logger = logger
-        employees = EmployeeCollection (database: database)
-        companies = CompanyCollection (database: database, employeeCollection: employees)
-        addresses = EntityCache<Address> (database: database, name: "address")
+        employees = SampleEmployeeCollection (database: database)
+        companies = SampleCompanyCollection (database: database, employeeCollection: employees)
+        addresses = EntityCache<SampleAddress> (database: database, name: "sampleAddress")
     }
     
     public let logger: Logger?
     
-    public let companies: CompanyCollection
+    public let companies: SampleCompanyCollection
     
-    public let employees: EmployeeCollection
+    public let employees: SampleEmployeeCollection
     
-    public let addresses: EntityCache<Address>
+    public let addresses: EntityCache<SampleAddress>
     
 }
 
@@ -388,8 +388,8 @@ public class SampleUsage  {
             // use asynchronous version when possible
             group.enter()
             caches.companies.get(id: company2.id) { retrievalResult in
-                if let company = retrievalResult.item() {
-                    ParallelTest.AssertTrue (testResult: &overallTestResult, company === company2)
+                if let sampleCompany = retrievalResult.item() {
+                    ParallelTest.AssertTrue (testResult: &overallTestResult, sampleCompany === company2)
                 } else {
                     // Retrieval error
                     ParallelTest.Fail (testResult: &overallTestResult, message: "Expected valid")
@@ -416,8 +416,8 @@ public class SampleUsage  {
             let badId = UUID()
             caches.companies.get(id: badId) { retrievalResult in
                 switch retrievalResult {
-                case .ok (let company):
-                    ParallelTest.AssertNil (testResult: &overallTestResult, company)
+                case .ok (let sampleCompany):
+                    ParallelTest.AssertNil (testResult: &overallTestResult, sampleCompany)
                 default:
                     // Retrieval error
                     ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
@@ -429,14 +429,14 @@ public class SampleUsage  {
             // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "WARNING|CompanyCollection.get|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "WARNING|SampleCompanyCollection.get|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=sampleCompany;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
             // The default implementation retrieves and deserializes all entries in a cache/table
             // before filtering the results.
-            let scanResult = caches.companies.scan() { company in
-                company.id.uuidString == company2.id.uuidString
+            let scanResult = caches.companies.scan() { sampleCompany in
+                sampleCompany.id.uuidString == company2.id.uuidString
             }
             if let companies = scanResult.item() {
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 1, companies.count)
@@ -448,23 +448,23 @@ public class SampleUsage  {
 
             // after commit() the batch is left as a fresh empty batch and may be reused
             let _ = caches.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
-            var employee2: Entity<Employee>? = caches.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
+            var employee2: Entity<SampleEmployee>? = caches.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
             batch.commitSync()
-            // Updating the name attribute of Employee and setting a new reference for its address
-            let address1 = caches.addresses.new (batch: batch, item: Address(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
-            let address2 = caches.addresses.new (batch: batch, item: Address(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
-            let address3 = caches.addresses.new (batch: batch, item: Address(street: "Street 3", city: "City 3", state: "CA", zipCode: "94377"))
+            // Updating the name attribute of SampleEmployee and setting a new reference for its sampleAddress
+            let address1 = caches.addresses.new (batch: batch, item: SampleAddress(street: "Street 1", city: "City 1", state: "CA", zipCode: "94377"))
+            let address2 = caches.addresses.new (batch: batch, item: SampleAddress(street: "Street 2", city: "City 2", state: "CA", zipCode: "94377"))
+            let address3 = caches.addresses.new (batch: batch, item: SampleAddress(street: "Street 3", city: "City 3", state: "CA", zipCode: "94377"))
             batch.commitSync()
-            employee2!.update(batch: batch) { employee in
-                employee.name = "Name Updated2"
-                employee.address.set(entity: address1, batch: batch)
+            employee2!.update(batch: batch) { sampleEmployee in
+                sampleEmployee.name = "Name Updated2"
+                sampleEmployee.address.set(entity: address1, batch: batch)
             }
             batch.commitSync()
 
             // EntityReference may be also be updated within a synchronous access to the
             // parent entity
-            employee2!.sync() { employee in
-                employee.address.set(entity: address2, batch: batch)
+            employee2!.sync() { sampleEmployee in
+                sampleEmployee.address.set(entity: address2, batch: batch)
             }
             batch.commitSync()
 
@@ -473,8 +473,8 @@ public class SampleUsage  {
             // the batch is committed
 
             group.enter()
-            employee2!.async() { employee in
-                employee.address.set(entity: address3, batch: batch)
+            employee2!.async() { sampleEmployee in
+                sampleEmployee.address.set(entity: address3, batch: batch)
                 group.leave()
             }
             group.wait()
@@ -482,22 +482,22 @@ public class SampleUsage  {
             
             // Gotchas
             
-            var employeeItem: Employee?
+            var employeeItem: SampleEmployee?
             employeeItem = nil
-            employee2!.sync() { employee in
+            employee2!.sync() { sampleEmployee in
                 // Capturing a reference to an entity's item outside of the
                 // Entity.sync(), Entity.async(), or Entity.update() closures
                 // bypasses the multi-threading protection offered by the Entity wrapper.
                 // i.e. avoid doing the following:
-                // employeeItem = employee
+                // employeeItem = sampleEmployee
             }
             ParallelTest.AssertNil (testResult: &overallTestResult, employeeItem)
 
             // Closures which modify an item's state via functions must always be called within an
             // Entity.update() call. Failure to do so will cause lost data (which will be logged when
             // the entity is deallocated; this error is not demonstrated here)
-            employee2!.update(batch: batch) { employee in
-                employee.resetName()
+            employee2!.update(batch: batch) { sampleEmployee in
+                sampleEmployee.resetName()
             }
             batch.commitSync()
             logger.sync() { entries in
@@ -517,10 +517,10 @@ public class SampleUsage  {
             //    This just demonstrates the usage of Entity.breakReferences()
             //    See EntityTests.testEntityReferenceCycle() for an example of a direct
             //    reference cycle (indirect cycles are also possible).
-            employee2!.sync() { employee in
-                let _ = employee.company.get().item()!
+            employee2!.sync() { sampleEmployee in
+                let _ = sampleEmployee.company.get().item()!
             }
-            employee2!.breakReferences() // unloads the Entity<Company>;makes employee2.item.company unusuable
+            employee2!.breakReferences() // unloads the Entity<SampleCompany>;makes employee2.item.sampleCompany unusuable
             employee2 = nil              // so only call after we are completely finished with employee2
 
         }
@@ -539,12 +539,12 @@ public class SampleUsage  {
             if let companyEntity = caches.companies.get (id: company1id!).item() {
                 
                 
-                companyEntity.sync() { company in
-                    if let employeeEntity = company.employees().item()?[0] {
+                companyEntity.sync() { sampleCompany in
+                    if let employeeEntity = sampleCompany.employees().item()?[0] {
                         lostChangesEmployeeUuidString = employeeEntity.id.uuidString
-                        employeeEntity.update(batch: batch) { employee in
-                            employee.name = "Name Updated1"
-                            ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated1", employee.name)
+                        employeeEntity.update(batch: batch) { sampleEmployee in
+                            sampleEmployee.name = "Name Updated1"
+                            ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
                         }
                     } else {
                         // Retrieval error
@@ -574,17 +574,17 @@ public class SampleUsage  {
         // An error has indeed been logged and the update has indeed been lost
         logger.sync() { entries in
             ParallelTest.AssertEqual (testResult: &overallTestResult, 4, entries.count)
-            ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<Employee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
-            ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|Entity<Employee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).employee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
+            ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<SampleEmployee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
+            ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|Entity<SampleEmployee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).sampleEmployee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
         }
         do {
             if let companyEntity = caches.companies.get (id: company1id!).item() {
-                companyEntity.sync() { company in
-                    if let employeeEntity = company.employees().item()?[0] {
+                companyEntity.sync() { sampleCompany in
+                    if let employeeEntity = sampleCompany.employees().item()?[0] {
                         
                         
-                        employeeEntity.sync() { employee in
-                            ParallelTest.AssertEqual (testResult: &overallTestResult, "Name One", employee.name)
+                        employeeEntity.sync() { sampleEmployee in
+                            ParallelTest.AssertEqual (testResult: &overallTestResult, "Name One", sampleEmployee.name)
                         }
                     } else {
                         // Retrieval error
@@ -608,7 +608,7 @@ public class SampleUsage  {
      InMemoryAccessor to test error handling in application code
      ===========================================================
 */
-    public static func demonstrateThrowError() -> Bool {
+    static func demonstrateThrowError() -> Bool {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
@@ -629,15 +629,15 @@ public class SampleUsage  {
             ParallelTest.AssertEqual (testResult: &overallTestResult, "getError", errorMessage)
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|CompanyCollection.get|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|SampleCompanyCollection.get|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=sampleCompany;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         default:
             ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .error")
         }
         // Only one error will be thrown; subsequent operations will succeed
         switch caches.companies.get(id: companyId) {
-        case .ok (let company):
-            ParallelTest.AssertEqual (testResult: &overallTestResult, company!.id.uuidString, companyId.uuidString)
+        case .ok (let sampleCompany):
+            ParallelTest.AssertEqual (testResult: &overallTestResult, sampleCompany!.id.uuidString, companyId.uuidString)
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 1, entries.count)
             }
@@ -650,7 +650,7 @@ public class SampleUsage  {
     /*
         Use InMemoryAccessor.prefetch to control the timing of persistent media operations
      */
-    public static func testDemonstratePrefetchWithGet () -> Bool {
+    static func testDemonstratePrefetchWithGet () -> Bool {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
@@ -674,24 +674,24 @@ public class SampleUsage  {
             }
         }
         inMemoryAccessor.setPreFetch(preFetch)
-        var retrievedCompany: Entity<Company>? = nil
+        var retrievedCompany: Entity<SampleCompany>? = nil
         let group = DispatchGroup()
         group.enter()
         caches.companies.get(id: companyId) { retrievalResult in
             switch retrievalResult {
-            case .ok (let company):
-                ParallelTest.AssertEqual (testResult: &overallTestResult, company!.id.uuidString, companyId.uuidString)
-                retrievedCompany = company
+            case .ok (let sampleCompany):
+                ParallelTest.AssertEqual (testResult: &overallTestResult, sampleCompany!.id.uuidString, companyId.uuidString)
+                retrievedCompany = sampleCompany
             default:
                 ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
             }
             group.leave()
         }
-        // Company has not yet been retrieved
+        // SampleCompany has not yet been retrieved
         ParallelTest.AssertNil (testResult: &overallTestResult, retrievedCompany)
         semaphore.signal()
         group.wait()
-        // Company has now been retrieved
+        // SampleCompany has now been retrieved
         ParallelTest.AssertEqual (testResult: &overallTestResult, retrievedCompany!.id.uuidString, companyId.uuidString)
         logger.sync() { entries in
             ParallelTest.AssertEqual (testResult: &overallTestResult, 0, entries.count)
@@ -708,7 +708,7 @@ public class SampleUsage  {
      Recoverable errors are logged EMERGENCY and retried until completion
      Both kinds of errors may be simulated by InMemoryAccessor
 */
-    public static func testDemonstrateUpdateErrors () -> Bool {
+    static func testDemonstrateUpdateErrors () -> Bool {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
@@ -723,7 +723,7 @@ public class SampleUsage  {
             ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
         }
         let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
-        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue)\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"cacheName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
+        let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"sampleCompany\":{\"databaseId\":\"\(inMemoryAccessor.hashValue)\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"cacheName\":\"sampleCompany\",\"version\":1},\"sampleAddress\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
         switch inMemoryAccessor.add(name: caches.employees.name, id: employeeId, data: employeeJson.data (using: .utf8)!) {
         case .ok:
             break
@@ -734,10 +734,10 @@ public class SampleUsage  {
         var batchIdString = batch.delegateId().uuidString
         
         if let employeeEntity = caches.employees.get(id: employeeId).item() {
-            // Update employee name
-            employeeEntity.update(batch: batch) { employee in
-                employee.name = "Name Updated1"
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated1", employee.name)
+            // Update sampleEmployee name
+            employeeEntity.update(batch: batch) { sampleEmployee in
+                sampleEmployee.name = "Name Updated1"
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
             }
 
             // Using setThrowError() before committing an update will throw an unrecoverable serialization error
@@ -745,7 +745,7 @@ public class SampleUsage  {
             batch.commitSync()
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<Employee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
             }
             
             // Demonstrate that the previous changes were lost due to the reported unrecoverable error
@@ -757,13 +757,13 @@ public class SampleUsage  {
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"saved\":1525459184.5832"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"item\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"name\":\"Name Two\""))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"company\":{"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"sampleCompany\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isEager\":true"))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"cacheName\":\"company\",\"version\":1}"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"cacheName\":\"sampleCompany\",\"version\":1}"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"version\":1}"))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"address\":{"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"sampleAddress\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isEager\":false"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isNil\":true"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"persistenceState\":\"persistent\""))
@@ -772,10 +772,10 @@ public class SampleUsage  {
             #endif
             ParallelTest.AssertFalse (testResult: &overallTestResult, inMemoryAccessor.isThrowError())
 
-            // Modify the employee again so that it is again added to the batch
-            employeeEntity.update(batch: batch) { employee in
-                employee.name = "Name Updated2"
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated2", employee.name)
+            // Modify the sampleEmployee again so that it is again added to the batch
+            employeeEntity.update(batch: batch) { sampleEmployee in
+                sampleEmployee.name = "Name Updated2"
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated2", sampleEmployee.name)
             }
             
             // Use preFetch to setup a recoverable update error
@@ -793,7 +793,7 @@ public class SampleUsage  {
             batch.commitSync()
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<Employee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
             }
             // Demonstrate that the data was updated in persistent media
             #if os(Linux)
@@ -804,13 +804,13 @@ public class SampleUsage  {
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"saved\":1525459184.5832"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"item\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"name\":\"Name Two\""))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"company\":{"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"sampleCompany\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isEager\":true"))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"cacheName\":\"company\",\"version\":1}"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"cacheName\":\"sampleCompany\",\"version\":1}"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"version\":1}"))
-                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"address\":{"))
+                ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"sampleAddress\":{"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isEager\":false"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"isNil\":true"))
                 ParallelTest.AssertTrue (testResult: &overallTestResult, employeeJson.contains("\"persistenceState\":\"persistent\""))

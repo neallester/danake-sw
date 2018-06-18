@@ -22,7 +22,7 @@ class SampleUsageTests: XCTestCase {
     func testCompanyCreation() {
         let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let uuid = UUID()
-        let company = Company (employeeCollection: caches.employees, id: uuid)
+        let company = SampleCompany (employeeCollection: caches.employees, id: uuid)
         XCTAssertEqual (uuid.uuidString, company.id.uuidString)
     }
     
@@ -33,32 +33,32 @@ class SampleUsageTests: XCTestCase {
         jsonData = json.data(using: .utf8)!
         // Decoding With no cache or parentData
         do {
-            let _ = try decoder.decode(Company.self, from: jsonData)
+            let _ = try decoder.decode(SampleCompany.self, from: jsonData)
             XCTFail("Expected error")
-        } catch EntityDeserializationError<Company>.missingUserInfoValue (let error) {
+        } catch EntityDeserializationError<SampleCompany>.missingUserInfoValue (let error) {
             XCTAssertEqual ("CodingUserInfoKey(rawValue: \"employeeCollectionKey\")", "\(error)")
         } catch {
             XCTFail("Expected missingUserInfoValue")
         }
         let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         // Decoding with cache and no parent data
-        decoder.userInfo[Company.employeeCollectionKey] = caches.employees
+        decoder.userInfo[SampleCompany.employeeCollectionKey] = caches.employees
         do {
-            let _ = try decoder.decode(Company.self, from: jsonData)
+            let _ = try decoder.decode(SampleCompany.self, from: jsonData)
             XCTFail("Expected error")
-        } catch EntityDeserializationError<Company>.missingUserInfoValue (let error) {
+        } catch EntityDeserializationError<SampleCompany>.missingUserInfoValue (let error) {
             XCTAssertEqual ("CodingUserInfoKey(rawValue: \"parentData\")", "\(error)")
         } catch {
             XCTFail("Expected missingUserInfoValue")
         }
         // Decoding with cache and parentdata
         let uuid = UUID (uuidString: "30288A21-4798-4134-9F35-6195BEC7F352")!
-        let parentData = EntityReferenceData<Company>(cache: caches.companies, id: uuid, version: 1)
+        let parentData = EntityReferenceData<SampleCompany>(cache: caches.companies, id: uuid, version: 1)
         let container = DataContainer ()
         container.data = parentData
         decoder.userInfo[Database.parentDataKey] = container
         do {
-            let company = try decoder.decode(Company.self, from: jsonData)
+            let company = try decoder.decode(SampleCompany.self, from: jsonData)
             XCTAssertEqual ("30288A21-4798-4134-9F35-6195BEC7F352", company.id.uuidString)
             let encoder = JSONEncoder()
             let encodedData = try encoder.encode(company)
@@ -150,7 +150,7 @@ class SampleUsageTests: XCTestCase {
     }
     
     func testAddressCreation() {
-        let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
+        let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         XCTAssertEqual ("Street", address.street)
         XCTAssertEqual ("City", address.city)
         XCTAssertEqual ("CA", address.state)
@@ -160,7 +160,7 @@ class SampleUsageTests: XCTestCase {
     func testAddressFromCollection() {
         let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
-        let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
+        let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         addressEntity.sync() { address in
             XCTAssertEqual ("Street", address.street)
@@ -172,12 +172,12 @@ class SampleUsageTests: XCTestCase {
     
     func testEmployeeCreation() {
         let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = Company(employeeCollection: caches.employees, id: UUID())
+        let company = SampleCompany(employeeCollection: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
         let companyEntity = caches.companies.new(batch: batch, item: company)
-        let selfReference = EntityReferenceData<Employee> (cache: caches.employees, id: UUID(), version: 0)
+        let selfReference = EntityReferenceData<SampleEmployee> (cache: caches.employees, id: UUID(), version: 0)
         // Without address
-        var employee = Employee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: nil)
+        var employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: nil)
         var referencedCompanyEntity = employee.company.get().item()!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
@@ -185,9 +185,9 @@ class SampleUsageTests: XCTestCase {
         XCTAssertEqual ("Bob Carol", employee.name)
         XCTAssertNil (employee.address.get().item())
         // With address
-        let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
+        let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
-        employee = Employee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: addressEntity)
+        employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: addressEntity)
         referencedCompanyEntity = employee.company.get().item()!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
@@ -201,7 +201,7 @@ class SampleUsageTests: XCTestCase {
     
     func testEmployeeFromCollection() {
         let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = Company(employeeCollection: caches.employees, id: UUID())
+        let company = SampleCompany(employeeCollection: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
         let companyEntity = caches.companies.new(batch: batch, item: company)
         // Without address
@@ -211,7 +211,7 @@ class SampleUsageTests: XCTestCase {
             XCTAssertEqual ("Bob Carol", employee.name)
             XCTAssertNil (employee.address.get().item())
         }
-        let address = Address (street: "Street", city: "City", state: "CA", zipCode: "95010")
+        let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: addressEntity)
         employeeEntity.sync() { employee in
@@ -354,10 +354,10 @@ class SampleUsageTests: XCTestCase {
         let employeeEntity2 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp B", address: nil)
         let employeeEntity3 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
-        let address1 = caches.addresses.new(batch: batch, item: Address(street: "S1", city: "C1", state: "St1", zipCode: "Z1"))
-        let address2 = caches.addresses.new(batch: batch, item: Address(street: "S2", city: "C2", state: "St2", zipCode: "Z2"))
-        let address3 = caches.addresses.new(batch: batch, item: Address(street: "S3", city: "C3", state: "St3", zipCode: "Z3"))
-        let address4 = caches.addresses.new(batch: batch, item: Address(street: "S4", city: "C4", state: "St4", zipCode: "Z4"))
+        let address1 = caches.addresses.new(batch: batch, item: SampleAddress(street: "S1", city: "C1", state: "St1", zipCode: "Z1"))
+        let address2 = caches.addresses.new(batch: batch, item: SampleAddress(street: "S2", city: "C2", state: "St2", zipCode: "Z2"))
+        let address3 = caches.addresses.new(batch: batch, item: SampleAddress(street: "S3", city: "C3", state: "St3", zipCode: "Z3"))
+        let address4 = caches.addresses.new(batch: batch, item: SampleAddress(street: "S4", city: "C4", state: "St4", zipCode: "Z4"))
         employeeEntity1.update(batch: batch) { employee in
             employee.address.set(entity: address1, batch: batch)
         }
