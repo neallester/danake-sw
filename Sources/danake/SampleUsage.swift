@@ -218,7 +218,7 @@ class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
 }
 
-class SampleCompanyCollection : EntityCache<SampleCompany> {
+public class SampleCompanyCollection : EntityCache<SampleCompany> {
     
     init (database: SampleDatabase, employeeCollection: SampleEmployeeCollection) {
         self.employeeCollection = employeeCollection
@@ -239,7 +239,7 @@ class SampleCompanyCollection : EntityCache<SampleCompany> {
     private let employeeCollection: SampleEmployeeCollection
 }
 
-class SampleEmployeeCollection : EntityCache<SampleEmployee> {
+public class SampleEmployeeCollection : EntityCache<SampleEmployee> {
 
     init(database: SampleDatabase) {
         forCompanyClosure = { cache, sampleCompany in
@@ -273,7 +273,7 @@ class SampleEmployeeCollection : EntityCache<SampleEmployee> {
     
 }
 
-class SampleCollections {
+public class SampleCollections {
     
     init (accessor: SampleAccessor, schemaVersion: Int, logger: Logger?) {
         let database = SampleDatabase (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 180.0)
