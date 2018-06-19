@@ -313,7 +313,7 @@ public class SampleUsage  {
      
      - returns: **True** if all operations succeeded; **False** if a failure occurred
 */
-    static func runSample (accessor: SampleAccessor) -> Bool {
+    public static func runSample (accessor: SampleAccessor) -> Bool {
         var overallTestResult = TestResult()
         // Application code can run with any DatabaseAccessor implementing SampleAccessor
         
