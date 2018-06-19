@@ -78,12 +78,12 @@ public class SampleCompany : Codable {
     // created sampleEmployee objects which have not yet been saved to the persistent media
     
     // Syncrhonous implementation
-    public func employees() -> RetrievalResult<[Entity<SampleEmployee>]> {
+    public func employees() -> DatabaseAccessListResult<Entity<SampleEmployee>> {
         return employeeCollection.forCompany(self)
     }
     
     // Asyncrhonous implementation
-    public func employees(closure: @escaping (RetrievalResult<[Entity<SampleEmployee>]>) -> Void) {
+    public func employees(closure: @escaping (DatabaseAccessListResult<Entity<SampleEmployee>>) -> Void) {
         employeeCollection.forCompany(self, closure: closure)
     }
     
@@ -254,7 +254,7 @@ class SampleEmployeeCollection : EntityCache<SampleEmployee> {
         }
     }
     
-    func forCompany (_ company: SampleCompany) -> RetrievalResult<[Entity<SampleEmployee>]> {
+    func forCompany (_ company: SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>> {
         switch forCompanyClosure (self, company) {
         case .ok(let employees):
             return .ok (employees)
@@ -263,7 +263,7 @@ class SampleEmployeeCollection : EntityCache<SampleEmployee> {
         }
     }
     
-    func forCompany (_ company: SampleCompany, closure: @escaping (RetrievalResult<[Entity<SampleEmployee>]>) -> ()) {
+    func forCompany (_ company: SampleCompany, closure: @escaping (DatabaseAccessListResult<Entity<SampleEmployee>>) -> ()) {
         database.workQueue.async {
             closure (self.forCompany (company))
         }
@@ -480,6 +480,18 @@ public class SampleUsage  {
             group.wait()
             batch.commitSync()
             
+            // Retrieving Employees of a Company
+            company2.sync() { company in
+                switch company.employees() {
+                case .ok (let employees):
+                    ParallelTest.AssertEqual (testResult: &overallTestResult, 1, employees.count)
+                    ParallelTest.AssertTrue(testResult: &overallTestResult, employees[0] === employee2)
+                default:
+                    ParallelTest.Fail(testResult: &overallTestResult, message: "Expected .ok")
+                }
+
+            }
+            
             // Gotchas
             
             var employeeItem: SampleEmployee?
@@ -540,15 +552,16 @@ public class SampleUsage  {
                 
                 
                 companyEntity.sync() { sampleCompany in
-                    if let employeeEntity = sampleCompany.employees().item()?[0] {
+                    switch sampleCompany.employees() {
+                    case .ok (let employees):
+                        let employeeEntity = employees[0]
                         lostChangesEmployeeUuidString = employeeEntity.id.uuidString
                         employeeEntity.update(batch: batch) { sampleEmployee in
                             sampleEmployee.name = "Name Updated1"
                             ParallelTest.AssertEqual (testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
                         }
-                    } else {
-                        // Retrieval error
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "Expected valid")
+                    default:
+                        ParallelTest.Fail(testResult: &overallTestResult, message: "Expected .ok")
                     }
                 }
             } else {
@@ -580,15 +593,13 @@ public class SampleUsage  {
         do {
             if let companyEntity = caches.companies.get (id: company1id!).item() {
                 companyEntity.sync() { sampleCompany in
-                    if let employeeEntity = sampleCompany.employees().item()?[0] {
-                        
-                        
-                        employeeEntity.sync() { sampleEmployee in
+                    switch sampleCompany.employees() {
+                    case .ok (let employees):
+                        employees[0].sync() { sampleEmployee in
                             ParallelTest.AssertEqual (testResult: &overallTestResult, "Name One", sampleEmployee.name)
                         }
-                    } else {
-                        // Retrieval error
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "Expected valid")
+                    default:
+                        ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
                     }
                 }
             } else {

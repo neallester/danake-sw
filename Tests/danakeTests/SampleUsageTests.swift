@@ -81,18 +81,32 @@ class SampleUsageTests: XCTestCase {
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         batch.commitSync()
         companyEntity1.sync() { company in
-            let employees = company.employees().item()!
-            XCTAssertEqual (2, employees.count)
-            XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
-            XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
+            switch company.employees() {
+            case .ok (let employees):
+                XCTAssertEqual (2, employees.count)
+                XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
+                XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
+            default:
+                XCTFail ("Expected .ok")
+            }
         }
         companyEntity2.sync() { company in
-            let employees = company.employees().item()!
-            XCTAssertEqual (2, employees.count)
+            switch company.employees() {
+            case .ok (let employees):
+                XCTAssertEqual (2, employees.count)
+            default:
+                XCTFail ("Expected .ok")
+            }
+            
         }
         companyEntity3.sync() { company in
-            let employees = company.employees().item()!
-            XCTAssertEqual (0, employees.count)
+            switch company.employees() {
+            case .ok (let employees):
+                XCTAssertEqual (0, employees.count)
+            default:
+                XCTFail ("Expected .ok")
+            }
+            
         }
     }
     
@@ -113,26 +127,32 @@ class SampleUsageTests: XCTestCase {
         group.enter()
         group.enter()
         companyEntity1.async() { company in
-            company.employees() { result in
-                let employees = result.item()!
+            switch company.employees() {
+            case .ok (let employees):
                 XCTAssertEqual (2, employees.count)
                 XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
                 XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
                 group.leave()
+            default:
+                XCTFail("Expected .ok")
             }
         }
         companyEntity2.async() { company in
-            company.employees() { result in
-                let employees = result.item()!
+            switch company.employees() {
+            case .ok (let employees):
                 XCTAssertEqual (2, employees.count)
                 group.leave()
+            default:
+                XCTFail("Expected .ok")
             }
         }
         companyEntity3.async() { company in
-            company.employees() { result in
-                let employees = result.item()!
+            switch company.employees() {
+            case .ok (let employees):
                 XCTAssertEqual (0, employees.count)
                 group.leave()
+            default:
+                XCTFail ("Expected .ok")
             }
         }
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
@@ -277,9 +297,9 @@ class SampleUsageTests: XCTestCase {
         companyEntity1.sync() { company in
             switch caches.employees.forCompany(company) {
             case .ok (let company1Employees):
-                XCTAssertEqual (2, company1Employees!.count)
-                XCTAssertTrue (company1Employees![0] === employeeEntity1 || company1Employees![0] === employeeEntity2)
-                XCTAssertTrue (company1Employees![1] === employeeEntity1 || company1Employees![1] === employeeEntity2)
+                XCTAssertEqual (2, company1Employees.count)
+                XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
+                XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
             default:
                 XCTFail ("expected .ok")
             }
@@ -287,9 +307,9 @@ class SampleUsageTests: XCTestCase {
         companyEntity2.sync() { company in
             switch caches.employees.forCompany(company) {
             case .ok (let company2Employees):
-                XCTAssertEqual (2, company2Employees!.count)
-                XCTAssertTrue (company2Employees![0] === employeeEntity3 || company2Employees![0] === employeeEntity4)
-                XCTAssertTrue (company2Employees![1] === employeeEntity3 || company2Employees![1] === employeeEntity4)
+                XCTAssertEqual (2, company2Employees.count)
+                XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
+                XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
             default:
                 XCTFail ("expected .ok")
             }
@@ -314,9 +334,9 @@ class SampleUsageTests: XCTestCase {
             caches.employees.forCompany(company) { result in
                 switch result {
                 case .ok (let company1Employees):
-                    XCTAssertEqual (2, company1Employees!.count)
-                    XCTAssertTrue (company1Employees![0] === employeeEntity1 || company1Employees![0] === employeeEntity2)
-                    XCTAssertTrue (company1Employees![1] === employeeEntity1 || company1Employees![1] === employeeEntity2)
+                    XCTAssertEqual (2, company1Employees.count)
+                    XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
+                    XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
                 default:
                     XCTFail ("expected .ok")
                 }
@@ -327,9 +347,9 @@ class SampleUsageTests: XCTestCase {
             caches.employees.forCompany(company) { result in
                 switch result {
                 case .ok (let company2Employees):
-                    XCTAssertEqual (2, company2Employees!.count)
-                    XCTAssertTrue (company2Employees![0] === employeeEntity3 || company2Employees![0] === employeeEntity4)
-                    XCTAssertTrue (company2Employees![1] === employeeEntity3 || company2Employees![1] === employeeEntity4)
+                    XCTAssertEqual (2, company2Employees.count)
+                    XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
+                    XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
                 default:
                     XCTFail ("expected .ok")
                 }
