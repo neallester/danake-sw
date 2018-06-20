@@ -209,7 +209,7 @@ public enum DatabaseActionResult {
     case error (String)
 }
 
-internal enum EntityConversionResult<T> {
+public enum EntityConversionResult<T> {
     
     case ok (T)
     case error (String)
@@ -348,9 +348,9 @@ public protocol DatabaseAccessor {
     
 }
 
-internal class EntityCreation {
+public class EntityCreation {
     
-    func entity<T, E: Entity<T>> (creator: () throws -> E) -> EntityConversionResult<Entity<T>> {
+    public func entity<T, E: Entity<T>> (creator: () throws -> E) -> EntityConversionResult<Entity<T>> {
         do {
             let result = try creator()
             return .ok (result)
