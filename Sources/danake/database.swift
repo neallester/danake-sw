@@ -350,6 +350,8 @@ public protocol DatabaseAccessor {
 
 public class EntityCreation {
     
+    public init () {}
+    
     public func entity<T, E: Entity<T>> (creator: () throws -> E) -> EntityConversionResult<Entity<T>> {
         do {
             let result = try creator()
