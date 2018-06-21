@@ -28,7 +28,7 @@ import Foundation
     These classes demonstrate how to incorporate Danake into an application object model.
  
     class SampleCompany:  A SampleCompany is associated with zero or more Employees.
-                          - Property `employeeCollection' demonstrates how to deserialize a property whose value
+                          - Property `employeeCache' demonstrates how to deserialize a property whose value
                             comes from the environment rather than the the serialized representation of the instance.
                           - property `id' demonstrates how to create a model object with an attribute of type UUID
                             value which is taken from the id of the enclosing Entity at creation and deserialization
@@ -48,18 +48,18 @@ public class SampleCompany : Codable {
     
     enum CodingKeys: CodingKey {}
     
-    init (employeeCollection: SampleEmployeeCollection, id: UUID) {
+    init (employeeCache: SampleEmployeeCache, id: UUID) {
         self.id = id
-        self.employeeCollection = employeeCollection
+        self.employeeCache = employeeCache
     }
     
-    // Custom decoder sets the `employeeCollection' and `id' during deserialization
+    // Custom decoder sets the `employeeCache' and `id' during deserialization
     public required init (from decoder: Decoder) throws {
-        // employeeCollection set by persistence system. See CompanyCollection.init()
-        if let employeeCollection = decoder.userInfo[SampleCompany.employeeCollectionKey] as? SampleEmployeeCollection {
-            self.employeeCollection = employeeCollection
+        // employeeCache set by persistence system. See CompanyCache.init()
+        if let employeeCache = decoder.userInfo[SampleCompany.employeeCacheKey] as? SampleEmployeeCache {
+            self.employeeCache = employeeCache
         } else {
-            throw EntityDeserializationError<SampleCompany>.missingUserInfoValue(SampleCompany.employeeCollectionKey)
+            throw EntityDeserializationError<SampleCompany>.missingUserInfoValue(SampleCompany.employeeCacheKey)
         }
         // Use the enclosing entities value of `id'
         // Same method may be used to obtain schemaVersion at time of last save
@@ -79,19 +79,19 @@ public class SampleCompany : Codable {
     
     // Syncrhonous implementation
     public func employees() -> DatabaseAccessListResult<Entity<SampleEmployee>> {
-        return employeeCollection.forCompany(self)
+        return employeeCache.forCompany(self)
     }
     
     // Asyncrhonous implementation
     public func employees(closure: @escaping (DatabaseAccessListResult<Entity<SampleEmployee>>) -> Void) {
-        employeeCollection.forCompany(self, closure: closure)
+        employeeCache.forCompany(self, closure: closure)
     }
     
     // In actual use within the application; id will match the id of the surrounding Entity wrapper
     public let id: UUID
     
-    private let employeeCollection: SampleEmployeeCollection
-    public static let employeeCollectionKey = CodingUserInfoKey.init(rawValue: "employeeCollectionKey")!
+    private let employeeCache: SampleEmployeeCache
+    public static let employeeCacheKey = CodingUserInfoKey.init(rawValue: "employeeCacheKey")!
 
 }
 
@@ -165,18 +165,18 @@ public struct SampleAddress : Codable {
                                     attributes with `let' within a scope with process lifetime. Re-creating a EntityCache
                                     object is not currently supported.
  
-    class SampleCompanyCollection:  Access to persistent SampleCompany objects. Demonstrates:
+    class SampleCompanyCache:       Access to persistent SampleCompany objects. Demonstrates:
                                     - creation of model objects which include an id whose value matches the id of their enclosing
                                       Entity
                                     - setup of a EntityCache to support deserialization of objects which include properties
                                       which are populated from the environment rather than the serialized data.
                                     - custom `new' function for creating new Entity<SampleCompany> objects
  
-    class SampleEmployeeCollection: Access to persistent SampleEmployee objects. Demonstrates:
+    class SampleEmployeeCache:      Access to persistent SampleEmployee objects. Demonstrates:
                                     - deserialization of objects which include EntityReference properties
                                     - custom synchronous and asynchronous retrieval functions
  
-    class SampleCollections:        An application specific convenience class for organizing all of the EntityCache objects
+    class SampleCaches:             An application specific convenience class for organizing all of the EntityCache objects
                                     associated with the SampleDatabase. Declare objects of this type using `let' within a scope with
                                     process lifetime. Ensure that all EntityCaches used within the application are fully
                                     created before proceeding with model processing.
@@ -218,28 +218,28 @@ class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
 }
 
-public class SampleCompanyCollection : EntityCache<SampleCompany> {
+public class SampleCompanyCache : EntityCache<SampleCompany> {
     
-    init (database: SampleDatabase, employeeCollection: SampleEmployeeCollection) {
-        self.employeeCollection = employeeCollection
+    init (database: SampleDatabase, employeeCache: SampleEmployeeCache) {
+        self.employeeCache = employeeCache
         // The following closure is fired on the decoders userInfo property before deserialization
-        // setting the employeeCollection object which will be assigned to the appropriate property
+        // setting the employeeCache object which will be assigned to the appropriate property
         // during deserialization (see SampleCompany.init (decoder:)
         super.init (database: database, name: "sampleCompany") { userInfo in
-            userInfo[SampleCompany.employeeCollectionKey] = employeeCollection
+            userInfo[SampleCompany.employeeCacheKey] = employeeCache
         }
     }
     
     func new (batch: EventuallyConsistentBatch) -> Entity<SampleCompany> {
         return new (batch: batch) { selfReference in
-            return SampleCompany (employeeCollection: employeeCollection, id: selfReference.id)
+            return SampleCompany (employeeCache: employeeCache, id: selfReference.id)
         }
     }
     
-    private let employeeCollection: SampleEmployeeCollection
+    private let employeeCache: SampleEmployeeCache
 }
 
-public class SampleEmployeeCollection : EntityCache<SampleEmployee> {
+public class SampleEmployeeCache : EntityCache<SampleEmployee> {
 
     init(database: SampleDatabase) {
         forCompanyClosure = { cache, sampleCompany in
@@ -269,25 +269,25 @@ public class SampleEmployeeCollection : EntityCache<SampleEmployee> {
         }
     }
     
-    private let forCompanyClosure: ((SampleEmployeeCollection, SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>>)
+    private let forCompanyClosure: ((SampleEmployeeCache, SampleCompany) -> DatabaseAccessListResult<Entity<SampleEmployee>>)
     
 }
 
-public class SampleCollections {
+public class SampleCaches {
     
     init (accessor: SampleAccessor, schemaVersion: Int, logger: Logger?) {
         let database = SampleDatabase (accessor: accessor, schemaVersion: schemaVersion, logger: logger, referenceRetryInterval: 180.0)
         self.logger = logger
-        employees = SampleEmployeeCollection (database: database)
-        companies = SampleCompanyCollection (database: database, employeeCollection: employees)
+        employees = SampleEmployeeCache (database: database)
+        companies = SampleCompanyCache (database: database, employeeCache: employees)
         addresses = EntityCache<SampleAddress> (database: database, name: "sampleAddress")
     }
     
     public let logger: Logger?
     
-    public let companies: SampleCompanyCollection
+    public let companies: SampleCompanyCache
     
-    public let employees: SampleEmployeeCollection
+    public let employees: SampleEmployeeCache
     
     public let addresses: EntityCache<SampleAddress>
     
@@ -317,10 +317,10 @@ public class SampleUsage  {
         var overallTestResult = TestResult()
         // Application code can run with any DatabaseAccessor implementing SampleAccessor
         
-        // Declare SampleCollections with `let'
+        // Declare SampleCaches with `let'
         // See class Database header comment for explanation of `schemaVersion'
         let logger = InMemoryLogger()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: logger)
         
         // Creating a database logs INFO
         logger.sync() { entries in
@@ -429,7 +429,7 @@ public class SampleUsage  {
             // An unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "WARNING|SampleCompanyCollection.get|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=sampleCompany;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "WARNING|SampleCompanyCache.get|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=sampleCompany;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -623,7 +623,7 @@ public class SampleUsage  {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
@@ -640,7 +640,7 @@ public class SampleUsage  {
             ParallelTest.AssertEqual (testResult: &overallTestResult, "getError", errorMessage)
             logger.sync() { entries in
                 ParallelTest.AssertEqual (testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|SampleCompanyCollection.get|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=sampleCompany;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                ParallelTest.AssertEqual (testResult: &overallTestResult, "EMERGENCY|SampleCompanyCache.get|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=sampleCompany;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         default:
             ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .error")
@@ -665,7 +665,7 @@ public class SampleUsage  {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
@@ -723,7 +723,7 @@ public class SampleUsage  {
         var overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
-        let caches = SampleCollections(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
+        let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
         // For testing purposes: create and preload data into the database bypassing the persistence system
         let companyId = UUID(uuidString: "D175D409-7189-4375-A0A7-29916A08FD19")!
         let companyJson = "{\"id\":\"\(companyId.uuidString)\",\"schemaVersion\":1,\"created\":1525454726.7684,\"saved\":1525454841.3895,\"item\":{},\"persistenceState\":\"persistent\",\"version\":1}"
@@ -832,7 +832,7 @@ public class SampleUsage  {
         return !overallTestResult.failed
     }
 
-    static func removeAll (caches: SampleCollections) {
+    static func removeAll (caches: SampleCaches) {
         let batch = EventuallyConsistentBatch()
         for entity in caches.companies.scan(criteria: nil).item()! {
             entity.remove(batch: batch)

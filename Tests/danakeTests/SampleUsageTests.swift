@@ -20,9 +20,9 @@ class SampleUsageTests: XCTestCase {
     }
     
     func testCompanyCreation() {
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let uuid = UUID()
-        let company = SampleCompany (employeeCollection: caches.employees, id: uuid)
+        let company = SampleCompany (employeeCache: caches.employees, id: uuid)
         XCTAssertEqual (uuid.uuidString, company.id.uuidString)
     }
     
@@ -36,13 +36,13 @@ class SampleUsageTests: XCTestCase {
             let _ = try decoder.decode(SampleCompany.self, from: jsonData)
             XCTFail("Expected error")
         } catch EntityDeserializationError<SampleCompany>.missingUserInfoValue (let error) {
-            XCTAssertEqual ("CodingUserInfoKey(rawValue: \"employeeCollectionKey\")", "\(error)")
+            XCTAssertEqual ("CodingUserInfoKey(rawValue: \"employeeCacheKey\")", "\(error)")
         } catch {
             XCTFail("Expected missingUserInfoValue")
         }
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         // Decoding with cache and no parent data
-        decoder.userInfo[SampleCompany.employeeCollectionKey] = caches.employees
+        decoder.userInfo[SampleCompany.employeeCacheKey] = caches.employees
         do {
             let _ = try decoder.decode(SampleCompany.self, from: jsonData)
             XCTFail("Expected error")
@@ -70,7 +70,7 @@ class SampleUsageTests: XCTestCase {
     
     func testCompanyEmployees() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
@@ -112,7 +112,7 @@ class SampleUsageTests: XCTestCase {
     
     func testCompanyEmployeesAsync() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
@@ -163,8 +163,8 @@ class SampleUsageTests: XCTestCase {
         }
     }
     
-    func testCompanyCollectionNew() {
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+    func testCompanyCacheNew() {
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         XCTAssertNotNil (caches.companies.new(batch: batch))
     }
@@ -177,8 +177,8 @@ class SampleUsageTests: XCTestCase {
         XCTAssertEqual ("95010", address.zipCode)
     }
     
-    func testAddressFromCollection() {
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+    func testAddressFromCache() {
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
@@ -191,8 +191,8 @@ class SampleUsageTests: XCTestCase {
     }
     
     func testEmployeeCreation() {
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = SampleCompany(employeeCollection: caches.employees, id: UUID())
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let company = SampleCompany(employeeCache: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
         let companyEntity = caches.companies.new(batch: batch, item: company)
         let selfReference = EntityReferenceData<SampleEmployee> (cache: caches.employees, id: UUID(), version: 0)
@@ -219,9 +219,9 @@ class SampleUsageTests: XCTestCase {
         XCTAssertEqual ("", employee.name)
     }
     
-    func testEmployeeFromCollection() {
-        let caches = SampleCollections (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let company = SampleCompany(employeeCollection: caches.employees, id: UUID())
+    func testEmployeeFromCache() {
+        let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
+        let company = SampleCompany(employeeCache: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
         let companyEntity = caches.companies.new(batch: batch, item: company)
         // Without address
@@ -243,7 +243,7 @@ class SampleUsageTests: XCTestCase {
     
     func testInMemoryAccessorEmployeesForCompany() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
@@ -283,9 +283,9 @@ class SampleUsageTests: XCTestCase {
         }
     }
     
-    func testEmployeeCollectionForCompany() {
+    func testEmployeeCacheForCompany() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
@@ -316,9 +316,9 @@ class SampleUsageTests: XCTestCase {
         }
     }
     
-    func testEmployeeCollectionForCompanyAsync() {
+    func testEmployeeCacheForCompanyAsync() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
@@ -366,7 +366,7 @@ class SampleUsageTests: XCTestCase {
     
     func testRemoveAll() {
         let accessor = SampleInMemoryAccessor()
-        let caches = SampleCollections (accessor: accessor, schemaVersion: 1, logger: nil)
+        let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
