@@ -32,7 +32,7 @@ public protocol Logger {
 
 open class LogEntryFormatter {
     
-    static func formattedData (data: [(name: String, value: CustomStringConvertible?)]?) -> String {
+    public static func formattedData (data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var result = ""
         if let data = data {
             for entry in data where data.count > 0 {
@@ -49,11 +49,11 @@ open class LogEntryFormatter {
         return result
     }
 
-    static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
+    public static func standardFormat (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         return LogEntryFormatter.standardEntryFormat (level: level, source: "\(type (of: source))", featureName: featureName, message: message, data: data)
     }
     
-    static func standardEntryFormat (level: LogLevel, source: String, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
+    public static func standardEntryFormat (level: LogLevel, source: String, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) -> String {
         var formattedData = LogEntryFormatter.formattedData (data: data)
         if (formattedData.count > 0) {
             formattedData = "|" + formattedData
@@ -64,7 +64,7 @@ open class LogEntryFormatter {
     
 }
 
-struct LogEntry {
+public struct LogEntry {
     
     init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         time = Date()
@@ -75,12 +75,12 @@ struct LogEntry {
         self.data = data
     }
     
-    let time: Date
-    let level: LogLevel
-    let source: String
-    let featureName: String
-    let message: String
-    let data: [(name: String, value: CustomStringConvertible?)]?
+    public let time: Date
+    public let level: LogLevel
+    public let source: String
+    public let featureName: String
+    public let message: String
+    public let data: [(name: String, value: CustomStringConvertible?)]?
     
     public func asTestString() -> String {
         return LogEntryFormatter.standardEntryFormat (level: level, source: source, featureName: featureName, message: message, data: data)
@@ -119,13 +119,13 @@ open class InMemoryLogger : ThreadSafeLogger {
         entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
     }
     
-    func sync (closure: ([LogEntry]) -> Void) {
+    public func sync (closure: ([LogEntry]) -> Void) {
         queue.sync () {
             closure (self.entries)
         }
     }
     
-    func printAll() {
+    public func printAll() {
         queue.sync {
             for entry in entries {
                 print (entry.asTestString())
@@ -143,7 +143,7 @@ open class ConsoleLogger : ThreadSafeLogger {
         print (LogEntry (level: level, source: source, featureName: featureName, message: message, data: data).asTestString())
     }
     
-    func sync (closure: ([LogEntry]) -> Void) {
+    public func sync (closure: ([LogEntry]) -> Void) {
         queue.sync () {
             closure (self.entries)
         }
