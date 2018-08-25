@@ -4,17 +4,21 @@ The Danake framework provides Swift application developers with tools to move da
 
 ## Introduction
 
-Danake provides a relatively simple and straightforward framework for saving and retrieving small portions of an application model which features complex instance graphs. Model constructs only need to implement the *Codable* protocol, but no attempt is made to separate the persistence system **machine** code from the application **model** code. The philosophy is: You are writing a machine, not a model; get over it. Communication with persistent media is handled through an adapter allowing media agnostic application code, and a mock persistent media class [InMemoryAccessor](https://github.com/neallester/danake-sw/blob/master/Sources/danake/InMemoryAccessor.swift) is provided for testing application code. A Mongo DB adapter is planned soon. Problems with the persistent media are (in general) reported using status enums rather than exceptions. The framework is currently most suitable for applications where only one process will update the persistent media or where an upstream process can reliably route requests to processes which each handle independent subsets of the object graph.
+Danake provides a relatively simple and straightforward framework for saving and retrieving small portions of an application model which features complex instance graphs. Model constructs only need to implement the *Codable* protocol, but no attempt is made to separate the persistence system **machine** code from the application **model** code. The philosophy is: You are writing a machine, not a model; get over it. Communication with persistent media is handled through an adapter allowing media agnostic application code, and a mock persistent media class [InMemoryAccessor](https://github.com/neallester/danake-sw/blob/master/Sources/danake/InMemoryAccessor.swift) is provided for testing application code. A [Mongo DB adapter](https://github.com/neallester/danake-mongo) is available. Problems with the persistent media are (in general) reported using status enums rather than exceptions. The framework is currently most suitable for applications where only one process will update the persistent media or where an upstream process can reliably route requests to processes which each handle independent subsets of the object graph.
 
-Application developers work with a wrapper ([Entity<T: Codable>](https://github.com/neallester/danake-sw/blob/master/Sources/danake/entity.swift)) around their model constructs (T is the type of the model instance). Each Entity object is stored, retrieved, and cached independently. The Entity wrapper also provides asynchronous and synchronous access to the model instance. References to Entities are implemented using the [EntityReference<P: Codable, T: Codable>](https://github.com/neallester/danake-sw/blob/master/Sources/danake/EntityReference.swift) class (P=PARENT, T=TYPE). Lazy (asynchronous and synchronous) and eager retrieval are supported.
+Application developers work with a wrapper ([Entity<T: Codable>](https://github.com/neallester/danake-sw/blob/master/Sources/danake/entity.swift)) around their model constructs (T is the type of the model instance). Each Entity object is stored, retrieved, and cached independently. The Entity wrapper also provides thread safe asynchronous and synchronous access to the model instance. References to Entities are implemented using the [EntityReference<P: Codable, T: Codable>](https://github.com/neallester/danake-sw/blob/master/Sources/danake/EntityReference.swift) class (P=PARENT, T=TYPE). Lazy (asynchronous and synchronous) and eager retrieval are supported.
 
 Data updates are collected into batches which are submitted manually by the application developer. Batch processing is asynchronous. Persistent media error reporting and framework managed retry (for the life of the process) are provided (unrecoverable errors are reported but not retried). Database writes are eventually consistent.
 
-Please see the [SampleUsageTests](https://github.com/neallester/danake-sw/blob/master/Tests/danakeTests/SampleUsageTests.swift) for more detail about incorporating the Danake framework into application code.
+Please see the [SampleUsage](https://github.com/neallester/danake-sw/blob/master/Sources/danake/SampleUsage.swift) for more detail about incorporating the Danake framework into application code.
 
 ## Status
 
 This is library is currently tested on OSX High Sierra and Ubuntu 16.04.
+
+## Installation
+
+Install the [danake-mongo](https://github.com/neallester/danake-mongo) Accessor which includes this framework.
 
 ## Gotchas
 
@@ -22,6 +26,7 @@ This is library is currently tested on OSX High Sierra and Ubuntu 16.04.
 * Application developers are responsible for removing Entities ((Entity.remove(batch:)) which are not needed as persistent media entry points and which are not referenced by any other Entities from persistent media.
 * Unless EntityReference is used, attributes which reference objects (that is, attributes which are implemented as classes rather than structs) will be stored and retrieved with struct (value) semantics rather than class (reference) semantics.
 * Changes to Entity items must be done via Entity.update(), not Entity.sync(), but the compiler will only enforce this restriction for closures which directly assign to item attributes. Ensure that any changes which occur as side effects to function calls occur within an Entity.update() closure.
+* Assigning a reference to an Entity item outside the closure used to access it defeats thread safety and is not detected by any compile or run type checks.
 
 ## Setup Development Environment on OSX
 1. Install [sourcery](https://github.com/krzysztofzablocki/Sourcery)
