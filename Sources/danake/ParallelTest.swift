@@ -603,7 +603,7 @@ public class ParallelTest {
             Database.cacheRegistrar.clear()
             testCount = testCount + 1
         }
-        return !overallTestResult.failed
+        return !overallTestResult.isFailed()
     }
     
     // Create
@@ -1251,41 +1251,41 @@ public class ParallelTest {
     
     public static func Fail (testResult: inout TestResult, message: String) {
         print (message)
-        testResult.failed = true
+        testResult.setFailed()
     }
     
     public static func AssertEqual<T: Equatable> (label: String, testResult: inout TestResult, _ lhs: T, _ rhs: T) {
         if lhs != rhs {
             print ("\(label): Expected \(lhs), but got \(rhs)")
-            testResult.failed = true
+            testResult.setFailed()
         }
     }
     
     public static func AssertNotEqual<T: Equatable> (label: String, testResult: inout TestResult, _ lhs: T, _ rhs: T) {
         if lhs == rhs {
             print ("\(label): Expected \(lhs), but got \(rhs)")
-            testResult.failed = true
+            testResult.setFailed()
         }
     }
 
     public static func AssertNil (label: String, testResult: inout TestResult, _ object: Any?) {
         if object != nil {
             print ("\(label): Object was not nil")
-            testResult.failed = true
+            testResult.setFailed()
         }
     }
     
     public static func AssertTrue (label: String, testResult: inout TestResult, _ value: Bool) {
         if !value {
             print ("\(label): Expected True but got False")
-            testResult.failed = true
+            testResult.setFailed()
         }
     }
     
     public static func AssertFalse (label: String, testResult: inout TestResult, _ value: Bool) {
         if value {
             print ("\(label): Expected False but got True")
-            testResult.failed = true
+            testResult.setFailed()
         }
         
     }
@@ -1296,7 +1296,17 @@ public class ParallelTest {
 
 public class TestResult {
     
-    var failed = false
+    public func isFailed() -> Bool {
+        return failed
+    }
+    
+    private var failed = false
+    
+    public func setFailed() {
+        failed = true
+    }
+    
+    let queue = DispatchQueue (label: "TestResult")
     
 }
 

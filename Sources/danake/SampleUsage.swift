@@ -610,7 +610,7 @@ public class SampleUsage  {
 
         // Clean up
         removeAll(caches: caches)
-        return !overallTestResult.failed
+        return !overallTestResult.isFailed()
     }
     
 /*
@@ -655,7 +655,7 @@ public class SampleUsage  {
         default:
             ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowError.7: Expected .ok")
         }
-        return !overallTestResult.failed
+        return !overallTestResult.isFailed()
     }
 
     /*
@@ -707,7 +707,7 @@ public class SampleUsage  {
         logger.sync() { entries in
             ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.6", testResult: &overallTestResult, 0, entries.count)
         }
-        return !overallTestResult.failed
+        return !overallTestResult.isFailed()
     }
 
 /*
@@ -829,7 +829,7 @@ public class SampleUsage  {
             ParallelTest.AssertNotEqual (label: "testDemonstrateUpdateErrors.9", testResult: &overallTestResult, employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8))
             #endif
         }
-        return !overallTestResult.failed
+        return !overallTestResult.isFailed()
     }
 
     static func removeAll (caches: SampleCaches) {
