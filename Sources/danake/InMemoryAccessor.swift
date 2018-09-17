@@ -7,7 +7,9 @@
 
 import Foundation
 
-// Use for testing
+/**
+    Use for testing
+*/
 public class InMemoryAccessor: DatabaseAccessor {
     
     

@@ -342,17 +342,20 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test3Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
-                    entity.sync { myStruct in
-                        let expectedInt = counter * 100
-                        ParallelTest.AssertEqual (label: "test3Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
-                        ParallelTest.AssertEqual (label: "test3Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
-                    }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.4: Expected .persistent")
+                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()
+                    ParallelTest.AssertNotNil(label: "test3Results.1a", testResult: &overallTestResult, entity)
+                    if let entity = entity {
+                        entity.sync { myStruct in
+                            let expectedInt = counter * 100
+                            ParallelTest.AssertEqual (label: "test3Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
+                            ParallelTest.AssertEqual (label: "test3Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                        }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.4: Expected .persistent")
+                        }
                     }
                     counter = counter + 1
                 }
@@ -1268,6 +1271,14 @@ public class ParallelTest {
         }
     }
 
+    public static func AssertNotNil (label: String, testResult: inout TestResult, _ object: Any?) {
+        if object == nil {
+            print ("\(label): Object was nil")
+            testResult.failed = true
+        }
+    }
+
+    
     public static func AssertNil (label: String, testResult: inout TestResult, _ object: Any?) {
         if object != nil {
             print ("\(label): Object was not nil")
