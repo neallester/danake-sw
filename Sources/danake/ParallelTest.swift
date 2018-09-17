@@ -1274,7 +1274,7 @@ public class ParallelTest {
     public static func AssertNotNil (label: String, testResult: inout TestResult, _ object: Any?) {
         if object == nil {
             print ("\(label): Object was nil")
-            testResult.failed = true
+            testResult.setFailed()
         }
     }
 
