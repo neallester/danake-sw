@@ -1594,7 +1594,7 @@ class EntityTests: XCTestCase {
             }
         }
         logger.sync() { entries in
-            XCTAssertEqual ("ERROR|Entity<SneakyUpdater #1>.Type.deinit|lostData:itemModifiedOutsideOfBatch|cacheName=\(cache.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|Entity<SneakyUpdater>.Type.deinit|lostData:itemModifiedOutsideOfBatch|cacheName=\(cache.qualifiedName);entityId=\(updaterId)", entries[0].asTestString())
         }
     }
 

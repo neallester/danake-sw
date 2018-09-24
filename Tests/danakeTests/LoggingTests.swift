@@ -26,6 +26,7 @@ class LoggingTests: XCTestCase {
         XCTAssertTrue (LogLevel.error > LogLevel.warning)
         XCTAssertTrue (LogLevel.business > LogLevel.error)
         XCTAssertTrue (LogLevel.emergency > LogLevel.business)
+        XCTAssertTrue (LogLevel.none > LogLevel.emergency)
         XCTAssertEqual (LogLevel.none, LogLevel.none)
         XCTAssertEqual (LogLevel.debug, LogLevel.debug)
         XCTAssertEqual (LogLevel.fine, LogLevel.fine)

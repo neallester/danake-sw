@@ -2863,7 +2863,7 @@ class ReferenceManagerTests: XCTestCase {
         }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|Entity<ReferenceContainer #1>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(database.accessor.hashValue).containers;entityId=\(containerId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|Entity<ReferenceContainer>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(database.accessor.hashValue).containers;entityId=\(containerId.uuidString)", entries[0].asTestString())
         }
     }
 }

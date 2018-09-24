@@ -19,7 +19,59 @@ public enum LogLevel : String, Comparable {
     case none
 
     public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-        return lhs.hashValue < rhs.hashValue
+        switch rhs {
+        case .debug:
+            return false
+        case .fine:
+            switch lhs {
+            case .debug:
+                return true
+            default:
+                return false
+            }
+        case .info:
+            switch lhs {
+            case .debug, .fine:
+                return true
+            default:
+                return false
+            }
+        case .warning:
+            switch lhs {
+            case .debug, .fine, .info:
+                return true
+            default:
+                return false
+            }
+        case .error:
+            switch lhs {
+            case .debug, .fine, .info, .warning:
+                return true
+            default:
+                return false
+            }
+        case .business:
+            switch lhs {
+            case .debug, .fine, info, .warning, .error:
+                return true
+            default:
+                return false
+            }
+        case .emergency:
+            switch lhs {
+            case .debug, .fine, info, .warning, .error, .business:
+                return true
+            default:
+                return false
+            }
+        case .none:
+            switch lhs {
+            case .debug, .fine, info, .warning, .error, .business, .emergency:
+                return true
+            default:
+                return false
+            }
+        }
     }
     
 }
