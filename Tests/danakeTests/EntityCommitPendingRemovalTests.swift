@@ -230,7 +230,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -873,7 +873,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1487,7 +1487,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2094,7 +2094,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2653,7 +2653,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3230,7 +3230,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3829,7 +3829,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:nanoseconds(1)", errorMessage)
+                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }

@@ -154,6 +154,18 @@ extension Date {
         let otherMS = Int ((other.timeIntervalSince1970 * 1000).rounded())
         return (thisMS + millisecondPrecision) >= otherMS && (otherMS + millisecondPrecision) >= thisMS
     }
+}
+
+class ExpectedOutput {
+    
+    static func asString (_ interval: DispatchTimeInterval) -> String {
+        #if os(Linux)
+            return "\(interval)"
+        #else
+            return "unknown()"
+        #endif
+
+    }
     
 }
 
