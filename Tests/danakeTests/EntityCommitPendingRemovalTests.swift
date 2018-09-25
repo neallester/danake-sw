@@ -3825,6 +3825,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
+        print ("Calling commit")
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
@@ -3846,6 +3847,7 @@ class EntityCommitPendingRemovalTests: XCTestCase {
             XCTAssertNil (entity.getPendingAction())
             group.leave()
         }
+        print ("Calling commit")
         switch entity.persistenceState {
         case .saving:
             break
