@@ -451,11 +451,12 @@ class BatchTests: XCTestCase {
                     XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                 }
                 if !batchTimedOut {
-                    switch entity.persistenceState {
+                    let state = entity.persistenceState
+                    switch state {
                     case .persistent:
                         break
                     default:
-                        XCTFail ("Expected .persistent")
+                        XCTFail ("Expected .persistent but got .\(state)")
                     }
                 }
                 counter = counter + 1
