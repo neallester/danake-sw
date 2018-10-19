@@ -422,7 +422,6 @@ class BatchTests: XCTestCase {
             batch.commitSync()
             let endTime = Date()
             totalExecutionTime = totalExecutionTime + endTime.timeIntervalSince1970 - startTime.timeIntervalSince1970 - delay
-            var counter = 1
             var batchTimedOut = false
             var entityTimedOut = false
             logger.sync() { entries in
@@ -443,6 +442,8 @@ class BatchTests: XCTestCase {
             if !batchTimedOut && !entityTimedOut {
                 noTimeoutCount = noTimeoutCount + 1
             }
+            var counter = 1
+            var unexpectedStateFound = false
             for uuid in result {
                 let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
                 entity.sync { myStruct in
@@ -456,11 +457,34 @@ class BatchTests: XCTestCase {
                     case .persistent:
                         break
                     default:
-                        XCTFail ("Expected .persistent but got .\(state)")
+                        unexpectedStateFound = true
+                        print ("Entity: \(entity.id.uuidString); Counter \(counter): Expected .persistent but got .\(state)")
                     }
                 }
                 counter = counter + 1
             }
+            if unexpectedStateFound {
+                print ("Batch Start Time:     \(startTime.timeIntervalSince1970)")
+                print ("Batch End Time:       \(startTime.timeIntervalSince1970)")
+                print ("Now:                  \(Date().timeIntervalSince1970)")
+                print ("Total Execution Time: \(totalExecutionTime)")
+                switch timeout {
+                case .microseconds(let ms):
+                    print ("Timeout Microseconds: \(ms)")
+                default:
+                    print ("Unexpected timeout denomination")
+                }
+                
+                print ("Test Count: \(testCount)")
+                print ("Batch Timed Out: \(batchTimedOut)")
+                print ("Entity Timed Out: \(entityTimedOut)")
+                logger.sync() { entries in
+                    for entry in entries {
+                        print (entry.asTestString())
+                    }
+                }
+            }
+            XCTAssertFalse(unexpectedStateFound)
             testCount = testCount + 1
         }
         // Technically speaking the occurrence of each scenario is dependent on factors which are randomized in the
