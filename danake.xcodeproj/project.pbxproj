@@ -294,7 +294,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = $SRCROOT/sourcery.sh;
+			shellScript = "$SRCROOT/sourcery.sh\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

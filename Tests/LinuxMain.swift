@@ -184,6 +184,7 @@ extension LoggingTests {
     ("testStandardFormat", testStandardFormat),
     ("testLogEntry", testLogEntry),
     ("testInMemoryLogger", testInMemoryLogger),
+    ("testWaitForEntry", testWaitForEntry),
   ]
 }
 

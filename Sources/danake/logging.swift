@@ -150,7 +150,7 @@ open class ThreadSafeLogger : Logger {
         self.level = level
     }
     
-    public func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+    public func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]? = nil) {
         if (level >= self.level) {
             queue.async () {
                 self.logImplementation(level: level, source: source, featureName: featureName, message: message, data: data)
@@ -183,6 +183,22 @@ open class InMemoryLogger : ThreadSafeLogger {
                 print (entry.asTestString())
             }
         }
+    }
+    
+    public func waitForEntry(intervalUseconds: UInt32, timeoutSeconds: Double, condition: (([LogEntry]) -> Bool)) -> Bool {
+        var foundEntry = false
+        let endTime = Date().timeIntervalSince1970 + timeoutSeconds
+        while (!foundEntry && Date().timeIntervalSince1970 < endTime) {
+            queue.sync {
+                if !entries.isEmpty {
+                    foundEntry = condition (entries)
+                }
+            }
+            if !foundEntry {
+                usleep (intervalUseconds)
+            }
+        }
+        return foundEntry
     }
     
     private var entries: [LogEntry] = []
