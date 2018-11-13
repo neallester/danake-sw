@@ -289,10 +289,12 @@ class BatchTests: XCTestCase {
         let entity2 = slowCollection.new (batch: batch, item: slowCodable)
         let waitFor = expectation (description: "waitFor")
         batch.commit() {
-            waitFor.fulfill()
             slowCodable.semaphore.signal()
+            entity2.sync() { slowCodable in }
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
+        batch.syncEntities() { entities in }
         switch entity1.persistenceState {
         case .persistent:
             break
