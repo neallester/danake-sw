@@ -129,4 +129,30 @@ class LoggingTests: XCTestCase {
             XCTAssertEqual (0, entries.count)
         }
     }
+    
+    func testWaitForEntry() {
+        let logger = InMemoryLogger()
+        var foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
+            return entries.count > 0
+        }
+        XCTAssertFalse(foundEntry)
+        logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "FIRST", data: nil)
+        foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
+            return entries.last!.asTestString().contains("FIRST")
+        }
+        XCTAssertTrue (foundEntry)
+        foundEntry = false
+        let queue = DispatchQueue (label: "Test", attributes: .concurrent)
+        queue.asyncAfter(deadline: DispatchTime.now() + 0.2) {
+            logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
+        }
+        foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
+            return entries.last!.asTestString().contains("SECOND")
+        }
+        XCTAssertFalse (foundEntry)
+        foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 10.0) { entries in
+            return entries.last!.asTestString().contains("SECOND")
+        }
+        XCTAssertTrue (foundEntry)
+    }
 }
