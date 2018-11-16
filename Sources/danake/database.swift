@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PromiseKit
 
 public enum ValidationResult {
     
@@ -125,60 +126,6 @@ class Registrar<K: Hashable, V: AnyObject> {
 }
 
 /**
-    The result of an attempt to retrieve a construct or class from persistent storage.
- 
-    The generic parameter **T** indicates the type of the (possibly) retrieved construct.
-*/
-public enum RetrievalResult<T> {
-    
-    /// No Error occurred; the associated value is the item retrieved from persistent storage
-    case ok (T?)
-    
-    /// An error occurred; the associated value is the error message.
-    case error (String)
-    
-/**
-     The item (of type **T**) retrieved from persistent storage (if any). A nil value
-     indicates that either there was no such construct in storage or an error occurred during
-     retrieval.
-*/
-    public func item() -> T? {
-        switch self {
-        case .ok(let item):
-            return item
-        default:
-            return nil
-        }
-    }
-    
-    /// No Error Occurred
-    public func isOk() -> Bool {
-        switch self {
-        case .ok:
-            return true
-        default:
-            return false
-        }
-    }
-    
-}
-
-/**
-    The result of an attempt to retrieve a list of constructs from persistent storage.
- 
-    The generic parameter **T** indicates the type of the (possibly) retrieved constructs.
- */
-public enum DatabaseAccessListResult<T> {
-
-    /// No Error occurred; the associated value is the list of items retrieved from persistent storage
-    case ok ([T])
-    
-    /// An error occurred; the associated value is the error message.
-    case error (String)
-    
-}
-
-/**
     The results of an attempt to update the persistent storage.
 */
 public enum DatabaseUpdateResult {
@@ -247,6 +194,7 @@ open class Database {
         self.hashValue = accessor.hashValue
         self.schemaVersion = schemaVersion
         workQueue = DispatchQueue (label: "workQueue Database \(hashValue)", attributes: .concurrent)
+        PromiseKit.conf.Q = (map: workQueue, return: workQueue)
         if Database.registrar.register(key: hashValue, value: self) {
             logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
         } else {
@@ -296,13 +244,18 @@ open class Database {
     }()
 }
 
+public enum AccessorError: Error {
+    case unknownUUID
+    case creationError (String)
+}
+
 /**
     A delegate which implements access to a specific persistent media.
 */
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>>
-    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>>
+    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>
+    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
     
 /**
      - returns: Is the format of **name** a valid CacheName in this storage medium and,

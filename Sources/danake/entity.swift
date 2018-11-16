@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import PromiseKit
 
 public protocol EntityProtocol : class {
 
@@ -395,6 +396,18 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             }
             self.isInsertingToBatch = false
         }
+    }
+    
+/**
+     Obtain a promise from the item
+*/
+
+    public func promiseFromItem<P> (closure: (T) -> Promise<P>) -> Promise<P> {
+        var result: Promise<P>? = nil
+        queue.sync {
+            result = closure (self.item)
+        }
+        return result!
     }
     
 // Serialization Data

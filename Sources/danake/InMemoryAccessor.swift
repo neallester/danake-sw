@@ -12,23 +12,31 @@ import Foundation
 */
 public class InMemoryAccessor: DatabaseAccessor {
     
-    
+    /**
+     Errors which Accessors may throw
+     */
+    public enum Errors: Error {
+        case scanError
+        case getError
+    }
+
+
     init() {
         id = UUID()
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
     }
+
     
-    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) -> RetrievalResult<Entity<T>> {
+    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T> {
         var result: Entity<T>? = nil
-        var errorMessage: String? = nil
         if let preFetch = preFetch {
             preFetch (id)
             
         }
-        queue.sync() {
+        try queue.sync() {
             if self.throwError {
-                errorMessage = "getError"
                 self.throwError = false
+                throw InMemoryAccessor.Errors.getError
             } else if let cacheDictionary = storage[cache.name] {
                 let data = cacheDictionary[id]
                 if let data = data {
@@ -36,35 +44,33 @@ public class InMemoryAccessor: DatabaseAccessor {
                     case .ok (let entity):
                         result = entity
                     case .error (let creationError):
-                        errorMessage = creationError
+                        throw AccessorError.creationError(creationError)
                     }
                 }
             }
         }
-        if let errorMessage = errorMessage {
-            return .error (errorMessage)
+        if let result = result {
+            return result
         }
-        return .ok (result)
+        throw AccessorError.unknownUUID
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) -> DatabaseAccessListResult<Entity<T>> {
-        var resultList: [Entity<T>] = []
-        var result = DatabaseAccessListResult<Entity<T>>.ok (resultList)
-        queue.sync {
+    public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {
+        var result: [Entity<T>] = []
+        try queue.sync {
             if self.throwError {
-                result = .error ("scanError")
                 self.throwError = false
+                throw InMemoryAccessor.Errors.scanError
             } else if let cacheDictionary = storage [cache.name] {
-                resultList.reserveCapacity (cacheDictionary.count)
+                result.reserveCapacity (cacheDictionary.count)
                 for item in cacheDictionary.values {
                     switch entityCreator.entity(creator: {try decoder (cache: cache).decode(type, from: item)} ) {
                     case .ok (let entity):
-                        resultList.append (entity)
+                        result.append (entity)
                     case .error:
                         break
                     }
                 }
-                result = .ok (resultList)
             }
         }
         return result

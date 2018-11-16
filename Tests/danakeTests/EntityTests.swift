@@ -1648,6 +1648,8 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("ERROR|Entity<MyStruct>.Type.deinit|lostData:itemRemovedBatchAbandoned|cacheName=\(cache.qualifiedName);entityId=\(entityId.uuidString)", entries[0].asTestString())
         }
     }
+    
+    // TODO Test promiseFromItem
 
 }
 

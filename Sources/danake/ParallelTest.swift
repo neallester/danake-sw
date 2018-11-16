@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PromiseKit
 
 /**
     Tests execution of various danake operations in parallel. This is included in the main library so
@@ -51,7 +52,11 @@ public class ParallelTest {
                 for entity in containerRemoveExisting.containers {
                     containerRemoveExistingContainertIds.append(entity.id)
                     entity.sync() { container in
-                        structIds.append(container.myStruct.get().item()!.id)
+                        do {
+                            try structIds.append(container.myStruct.getSync()!.id)
+                        } catch {
+                            ParallelTest.Fail(testResult: &overallTestResult, message: "\(error)")
+                        }
                     }
                 }
                 test2Results.append (structIds)
@@ -288,17 +293,21 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test1Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
-                    entity.sync { myStruct in
-                        let expectedInt = counter * 10
-                        ParallelTest.AssertEqual (label: "test1Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
-                        ParallelTest.AssertEqual (label: "test1Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
-                    }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test1Results.4; counter=\(counter): Expected .persistent")
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        entity.sync { myStruct in
+                            let expectedInt = counter * 10
+                            ParallelTest.AssertEqual (label: "test1Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
+                            ParallelTest.AssertEqual (label: "test1Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                        }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test1Results.4; counter=\(counter): Expected .persistent")
+                        }
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
                     counter = counter + 1
                 }
@@ -307,19 +316,23 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test1Results.5", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
-                    entity.sync { myStruct in
-                        let expectedInt = counter * 10
-                        ParallelTest.AssertEqual (label: "test1Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
-                        ParallelTest.AssertEqual (label: "test1Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        entity.sync { myStruct in
+                            let expectedInt = counter * 10
+                            ParallelTest.AssertEqual (label: "test1Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
+                            ParallelTest.AssertEqual (label: "test1Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                        }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test1Results.8; counter=\(counter): Expected .persistent")
+                        }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test1Results.8; counter=\(counter): Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             // Test 2
@@ -327,13 +340,23 @@ public class ParallelTest {
             for testResult in test2Results {
                 ParallelTest.AssertEqual (label: "test2Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
-                    ParallelTest.AssertNil (label: "test2Results.2", testResult: &overallTestResult, persistenceObjects!.myStructCollection.get(id: uuid).item())
+                    do {
+                        ParallelTest.AssertNil (label: "test2Results.2", testResult: &overallTestResult, try persistenceObjects!.myStructCollection.getSync(id: uuid))
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
+                    }
                 }
             }
             for testResult in test2Results {
                 ParallelTest.AssertEqual (label: "test2Results.3", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
-                    ParallelTest.AssertNil (label: "test2Results.4", testResult: &overallTestResult, persistenceObjects!.myStructCollection.get(id: uuid).item())
+                    do {
+                        ParallelTest.AssertNil (label: "test2Results.4", testResult: &overallTestResult, try persistenceObjects!.myStructCollection.getSync(id: uuid))
+
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
+                    }
+
                 }
             }
             // Test 3
@@ -342,9 +365,9 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test3Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()
-                    ParallelTest.AssertNotNil(label: "test3Results.1a", testResult: &overallTestResult, entity)
-                    if let entity = entity {
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        ParallelTest.AssertNotNil(label: "test3Results.1a", testResult: &overallTestResult, entity)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test3Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -356,7 +379,10 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.4: Expected .persistent")
                         }
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
+
                     counter = counter + 1
                 }
             }
@@ -364,19 +390,23 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test3Results.5", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.myStructCollection.get(id: uuid).item()!
-                    entity.sync { myStruct in
-                        let expectedInt = counter * 100
-                        ParallelTest.AssertEqual (label: "test3Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
-                        ParallelTest.AssertEqual (label: "test3Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        entity.sync { myStruct in
+                            let expectedInt = counter * 100
+                            ParallelTest.AssertEqual (label: "test3Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
+                            ParallelTest.AssertEqual (label: "test3Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                        }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.8: Expected .persistent")
+                        }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.8: Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             // Test 4
@@ -385,7 +415,8 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test4Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    if let entity = persistenceObjects!.myStructCollection.get(id: uuid).item() {
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync (id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test4Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -397,15 +428,18 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test4Results.4: Expected .persistent")
                         }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    counter = counter + 1
                 }
             }
             for testResult in test4Results {
                 ParallelTest.AssertEqual (label: "test4Results.5", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    if let entity = persistenceObjects!.myStructCollection.get(id: uuid).item() {
+                    do {
+                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test4Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -417,8 +451,10 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test4Results.8, counter=\(counter): Expected .persistent")
                         }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    counter = counter + 1
                 }
             }
             // Test 100
@@ -427,45 +463,61 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test100Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    let expectedInt = counter * 10
-                    entity.sync() { container in
-                        let rr = container.myStruct.get()
-                        let myStruct = rr.item()!
-                        myStruct.sync() { item in
-                            ParallelTest.AssertEqual (label: "test100Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
-                            ParallelTest.AssertEqual (label: "test100Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let expectedInt = counter * 10
+                        entity.sync() { container in
+                            do {
+                                let myStruct = try container.myStruct.getSync()!
+                                myStruct.sync() { item in
+                                    ParallelTest.AssertEqual (label: "test100Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
+                                    ParallelTest.AssertEqual (label: "test100Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                                }
+                            } catch {
+                                Fail(testResult: &overallTestResult, message: "\(error)")
+                            }
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100Results.4: Expected .persistent")
+                        }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100Results.4: Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             for testResult in test100Results {
                 ParallelTest.AssertEqual (label: "test100Results.5", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    let expectedInt = counter * 10
-                    entity.sync() { container in
-                        let myStruct = container.myStruct.get().item()!
-                        myStruct.sync() { item in
-                            ParallelTest.AssertEqual (label: "test100Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
-                            ParallelTest.AssertEqual (label: "test100Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync (id: uuid)
+                        let expectedInt = counter * 10
+                        entity.sync() { container in
+                            do {
+                                let myStruct = try container.myStruct.getSync()!
+                                myStruct.sync() { item in
+                                    ParallelTest.AssertEqual (label: "test100Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
+                                    ParallelTest.AssertEqual (label: "test100Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                                }
+                            } catch {
+                                Fail(testResult: &overallTestResult, message: "\(error)")
+                            }
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100Results.8: Expected .persistent")
+                        }
+                        counter = counter + 1
+
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100Results.8: Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             // Test 100a
@@ -476,23 +528,31 @@ public class ParallelTest {
                 let group = DispatchGroup()
                 for uuid in testResult {
                     group.enter()
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    let expectedInt = counter * 10
-                    entity.async() { container in
-                        let myStruct = container.myStruct.get().item()!
-                        myStruct.async() { item in
-                            ParallelTest.AssertEqual (label: "test100aResults.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
-                            ParallelTest.AssertEqual (label: "test100aResults.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
-                            group.leave()
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let expectedInt = counter * 10
+                        entity.async() { container in
+                            do {
+                                let myStruct = try container.myStruct.getSync()!
+                                myStruct.async() { item in
+                                    ParallelTest.AssertEqual (label: "test100aResults.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
+                                    ParallelTest.AssertEqual (label: "test100aResults.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                                    group.leave()
+                                }
+                            } catch {
+                                ParallelTest.Fail (testResult: &overallTestResult, message: "test100aResults.4: Expected .persistent")
+                            }
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100aResults.4: Expected .persistent")
+                        }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100aResults.4: Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
                 group.wait()
             }
@@ -502,23 +562,31 @@ public class ParallelTest {
                 let group = DispatchGroup()
                 for uuid in testResult {
                     group.enter()
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    let expectedInt = counter * 10
-                    entity.async() { container in
-                        let myStruct = container.myStruct.get().item()!
-                        myStruct.async() { item in
-                            ParallelTest.AssertEqual (label: "test100aResults.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
-                            ParallelTest.AssertEqual (label: "test100aResults.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
-                            group.leave()
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let expectedInt = counter * 10
+                        entity.async() { container in
+                            do {
+                                let myStruct = try container.myStruct.getSync()!
+                                myStruct.async() { item in
+                                    ParallelTest.AssertEqual (label: "test100aResults.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
+                                    ParallelTest.AssertEqual (label: "test100aResults.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
+                                    group.leave()
+                                }
+                            } catch {
+                                Fail(testResult: &overallTestResult, message: "\(error)")
+                            }
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100aResults.8: Expected .persistent")
+                        }
+                        counter = counter + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100aResults.8: Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
                 group.wait()
             }
@@ -528,44 +596,53 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test100nResults.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    entity.sync() { container in
-                        switch container.myStruct.get() {
-                        case .ok (let result):
-                            ParallelTest.AssertNil (label: "test100nResults.2; counter=\(counter)", testResult: &overallTestResult, result)
-                        default:
-                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResult.3, counter=\(counter): Expected .ok")
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        entity.sync() { container in
+                            for _ in testResult {
+                                do {
+                                    ParallelTest.AssertNil (label: "test100nResults.2; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync())
+                                } catch {
+                                    Fail(testResult: &overallTestResult, message: "\(error)")
+                                }
+                            }
+                            switch entity.persistenceState {
+                            case .persistent:
+                                break
+                            default:
+                                ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResult.4, counter=\(counter): Expected .persistent")
+                            }
+                            counter = counter + 1
                         }
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResult.4, counter=\(counter): Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             for testResult in test100nResults {
                 ParallelTest.AssertEqual (label: "test100nResults.5", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
-                    let entity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    entity.sync() { container in
-                        switch container.myStruct.get() {
-                        case .ok (let result):
-                            ParallelTest.AssertNil (label: "test100nResults.6; counter=\(counter)", testResult: &overallTestResult, result)
-                        default:
-                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResults.7, counter=\(counter): Expected .ok")
+                    do {
+                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        entity.sync() { container in
+                            do {
+                                ParallelTest.AssertNil (label: "test100nResults.6; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync())
+                            } catch {
+                                Fail(testResult: &overallTestResult, message: "\(error)")
+                            }
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResults.8, counter=\(counter): Expected .persistent")
+                        }
+                        counter = counter + 1
+
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch entity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResults.8, counter=\(counter): Expected .persistent")
-                    }
-                    counter = counter + 1
                 }
             }
             // Test 300u
@@ -576,30 +653,34 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test100uResults.2", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.myStructs.count)
                 var index = 0
                 for uuid in testResult.containers {
-                    let containerEntity = persistenceObjects!.containerCollection.get(id: uuid).item()!
-                    containerEntity.sync() { container in
-                        switch container.myStruct.get() {
-                        case .ok (let myStruct):
-                            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
-                            ParallelTest.AssertEqual (label: "test100uResults.3", testResult: &overallTestResult, testResult.myStructs[index].uuidString, myStruct!.id.uuidString)
-                            myStruct!.sync() { myStruct in
-                                let expectedInt = (index + 1) * 100
-                                ParallelTest.AssertEqual (label: "test100uResults.4", testResult: &overallTestResult, expectedInt, myStruct.myInt)
-                                ParallelTest.AssertEqual (label: "test100uResults.5", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                    do {
+                        let containerEntity = try persistenceObjects!.containerCollection.getSync (id: uuid)
+                        containerEntity.sync() { container in
+                            do {
+                                let myStruct = try container.myStruct.getSync()
+                                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
+                                ParallelTest.AssertEqual (label: "test100uResults.3", testResult: &overallTestResult, testResult.myStructs[index].uuidString, myStruct!.id.uuidString)
+                                myStruct!.sync() { myStruct in
+                                    let expectedInt = (index + 1) * 100
+                                    ParallelTest.AssertEqual (label: "test100uResults.4", testResult: &overallTestResult, expectedInt, myStruct.myInt)
+                                    ParallelTest.AssertEqual (label: "test100uResults.5", testResult: &overallTestResult, "\(expectedInt)", myStruct.myString)
+                                }
+                            } catch {
+                                Fail(testResult: &overallTestResult, message: "\(error)")
                             }
-                        default:
-                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100uResults.6: Expected .ok")
                         }
+                        switch containerEntity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100uResults.7: Expected .persistent")
+                        }
+                        index = index + 1
+                        resultCount = resultCount + 1
+                    } catch {
+                        Fail(testResult: &overallTestResult, message: "\(error)")
                     }
-                    switch containerEntity.persistenceState {
-                    case .persistent:
-                        break
-                    default:
-                        ParallelTest.Fail (testResult: &overallTestResult, message: "test100uResults.7: Expected .persistent")
-                    }
-                    index = index + 1
                 }
-                resultCount = resultCount + 1
             }
             persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             Database.registrar.clear()
@@ -941,14 +1022,13 @@ public class ParallelTest {
     }
     
     private static func executeOnReference (reference: ReferenceManager<MyStructContainer, MyStruct>, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>?) -> ()) {
-        reference.async() { result in
-            switch result {
-            case .ok (let entity):
-                closure (entity)
-            case .error(let errorMessage):
-                logger?.log (level: .debug, source: self, featureName: "executeOnReference", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: errorMessage)])
-                executeOnReference(reference: reference, logger: logger, sourceLabel: sourceLabel, closure: closure)
-            }
+        firstly {
+            reference.get()
+        }.done { entity in
+            closure (entity)
+        }.catch { error in
+            logger?.log (level: .debug, source: self, featureName: "executeOnReference", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
+            executeOnReference(reference: reference, logger: logger, sourceLabel: sourceLabel, closure: closure)
         }
     }
     
@@ -1142,11 +1222,11 @@ public class ParallelTest {
         var result: [Entity<T>] = []
         var badIds: [UUID] = []
         for id in ids {
-            switch cache.get(id: id) {
-            case .ok (let retrievedEntity):
-                result.append (retrievedEntity!)
-            case .error (let errorMessage):
-                logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "from." + label, data: [(name:"error", value: errorMessage)])
+            do {
+                let retrievedEntity = try cache.getSync(id: id)
+                result.append (retrievedEntity)
+            } catch {
+                logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "from." + label, data: [(name:"error", value: "\(error)")])
                 badIds.append (id)
             }
         }
@@ -1179,47 +1259,40 @@ public class ParallelTest {
     
     private static func executeOnMyStruct (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
         var internalTestResult = testResult
-        persistenceObjects.myStructCollection.get(id: id) { retrievalResult in
-            switch retrievalResult {
-            case .ok (let entity):
-                if let entity = entity {
-                    closure (entity)
-                } else {
-                    ParallelTest.Fail (testResult: &internalTestResult, message: "executeOnMyStructId.\(sourceLabel): Expected entity")
-                }
-                group.leave()
-            case .error (let errorMessage):
-                logger?.log (level: .debug, source: self, featureName: "executeOnMyStruct", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: errorMessage)])
-                executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: group, logger: logger, sourceLabel: sourceLabel, closure: closure)
-            }
+        firstly {
+            persistenceObjects.myStructCollection.get(id: id)
+        }.done { entity in
+            closure (entity)
+            group.leave()
+        }.catch { error in
+            logger?.log (level: .debug, source: self, featureName: "executeOnMyStruct", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
+            executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: group, logger: logger, sourceLabel: sourceLabel, closure: closure)
         }
     }
     
     private static func executeOnContainer (persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStructContainer>) -> ()) {
-        persistenceObjects.containerCollection.get(id: id) { retrievalResult in
-            if let retrievedEntity = retrievalResult.item() {
-                closure (retrievedEntity)
-            } else {
-                executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
-            }
+        firstly {
+            persistenceObjects.containerCollection.get(id: id)
+        }.done { retrievedEntity in
+            closure (retrievedEntity)
+        }.catch { error in
+            executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
         }
     }
     
     private static func executeOnMyStruct (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, container: MyStructContainer, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
         var internalTestResult = testResult
-        container.myStruct.async() { result in
-            switch result {
-            case .ok (let entity):
-                if let entity = entity {
-                    closure (entity)
-                } else {
-                    ParallelTest.Fail (testResult: &internalTestResult, message: "executeOnMyStruct.\(sourceLabel) Expected entity")
-                }
-            default:
-                executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: container, sourceLabel: sourceLabel, closure: closure)
+        firstly {
+            container.myStruct.get()
+        }.done { entity in
+            if let entity = entity {
+                closure (entity)
+            } else {
+                ParallelTest.Fail (testResult: &internalTestResult, message: "executeOnMyStruct.\(sourceLabel) Expected entity")
             }
+        }.catch { error in
+            executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: container, sourceLabel: sourceLabel, closure: closure)
         }
-
     }
 
     private static func newContainers (persistenceObjects: ParallelTestPersistence, structs: [Entity<MyStruct>?]?, batch: EventuallyConsistentBatch) -> (containers: [Entity<MyStructContainer>], ids: [UUID]) {

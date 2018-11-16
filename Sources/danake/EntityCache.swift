@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PromiseKit
 
 
 //class SomeClass<E: RawRepresentable> where E.RawValue == Int {
@@ -70,34 +71,31 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     }
 
 /**
-     Retrieve Entity<T> (if any) from cache or persistent media
+     Retrieve Entity<T> from cache or persistent media
      
      - parameter id: UUID of the Entity to be retrieved.
+     
+     - throws:  AccessorError.unknownUUID: ID not associated with any entities.
+                Also throws all errors originating in the underlying persistent media.
 */
-    public func get (id: UUID) -> RetrievalResult<Entity<T>> {
+    public func getSync (id: UUID) throws -> Entity<T> {
         var result: Entity<T>? = nil
-        var errorResult: RetrievalResult<Entity<T>>? = nil
         cacheQueue.sync {
             result = cache[id]?.codable
         }
-        if (result == nil) {
-            let retrievalResult = self.database.accessor.get(type: Entity<T>.self, cache: self, id: id)
-            switch retrievalResult {
-            case .ok (let prospectEntity):
-                if let prospectEntity = prospectEntity {
-                    result = prospectEntity
-                } else {
-                    self.database.logger?.log (level: .warning, source: self, featureName: "get",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
-                }
-            case .error (let errorMessage):
-                self.database.logger?.log (level: .emergency, source: self, featureName: "get",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", errorMessage)])
-                errorResult = retrievalResult
+        if let result = result {
+            return result
+        } else {
+            do {
+                return try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id)
+            } catch AccessorError.unknownUUID {
+                self.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
+                throw AccessorError.unknownUUID
+            } catch {
+                self.database.logger?.log (level: .emergency, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
+                throw error
             }
         }
-        if let errorResult = errorResult {
-            return errorResult
-        }
-        return .ok(result)
     }
 
 /**
@@ -107,56 +105,61 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      - parameter id: UUID of the Entity to be retrieved.
      - parameter closure: The closure to call when the retrieval has completed.
 */
-    public func get (id: UUID, closure: @escaping (RetrievalResult<Entity<T>>) -> Void) {
-        workQueue.async {
-            closure (self.get (id: id))
+    public func get (id: UUID) -> Promise<Entity<T>> {
+        return Promise { seal in
+            workQueue.async {
+                do {
+                    try seal.fulfill(self.getSync(id: id))
+                } catch {
+                    seal.reject(error)
+                }
+            }
         }
     }
     
 /**
-        Returns all Entities associated with this cache from in the persistent media.
-        New objects which have not yet been persisted are not included in the results
+    Returns all Entities associated with this cache from in the persistent media.
+    New objects which have not yet been persisted are not included in the results
      
      - parameter criteria: If provided, only those Entities whose item matches the criteria
                            will be included in the results
+     
+     - throws:  Any errors originating in underlying persistent media
 */
-    public func scan (criteria: ((T) -> Bool)? = nil) -> RetrievalResult<[Entity<T>]> {
-        let retrievalResult = database.accessor.scan(type: Entity<T>.self, cache: self)
-        switch retrievalResult {
-        case .ok (let resultList):
-            if let criteria = criteria  {
-                var result: [Entity<T>] = []
-                for entity in resultList {
-                    var matchesCriteria = true
-                    entity.sync() { item in
-                        matchesCriteria = criteria (item)
-                    }
-                    if matchesCriteria {
-                        result.append (entity)
-                    }
+    public func scanSync (criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
+        let result = try database.accessor.scan(type: Entity<T>.self, cache: self)
+        if let criteria = criteria  {
+            let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
+                var result = true
+                entity.sync() { item in
+                    result = criteria (item)
                 }
-                return .ok (result)
-            } else {
-                return .ok (resultList)
+                return result
             }
-        case .error (let errorMessage):
-            self.database.logger?.log (level: .emergency, source: self, featureName: "scan",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name: "errorMessage", errorMessage)])
-            return .error (errorMessage)
+            return result.filter (criteriaWrapper)
+        } else {
+            return result
         }
     }
     
 /**
-        Asynchronously retrieve all Entities associated with this cache from the persistent media and then
-        call **closure** on the retrieval result. New objects which have not yet been persisted are not included
-        in the results
+        Returns the promise (fulfilled asynchronously) of all Entities associated with
+        this cache from the persistent media. New objects which have not yet been persisted
+        are not included in the results
  
         - parameter criteria: If provided, only those Entities whose item match the criteria
                               will be included in the results
         - parameter closure: The closure to call when the retrieval operation has completed.
  */
-    public func scan (criteria: ((T) -> Bool)? = nil, closure: @escaping (RetrievalResult<[Entity<T>]>) -> Void) {
-        workQueue.async {
-            closure (self.scan (criteria: criteria))
+    public func scan (criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
+        return Promise { seal in
+            workQueue.async {
+                do {
+                    try seal.fulfill(self.scanSync(criteria: criteria))
+                } catch {
+                    seal.reject(error)
+                }
+            }
         }
     }
     
