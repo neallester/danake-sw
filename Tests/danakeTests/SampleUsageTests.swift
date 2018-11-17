@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import danake
+import PromiseKit
 
 class SampleUsageTests: XCTestCase {
     
@@ -81,32 +82,30 @@ class SampleUsageTests: XCTestCase {
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         batch.commitSync()
         companyEntity1.sync() { company in
-            switch company.employees() {
-            case .ok (let employees):
+            do {
+                let employees = try company.employeesSync()
                 XCTAssertEqual (2, employees.count)
                 XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
                 XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
-            default:
-                XCTFail ("Expected .ok")
+            } catch {
+                XCTFail("testCompanyEmployees.1: Expected success but got \(error)")
             }
         }
         companyEntity2.sync() { company in
-            switch company.employees() {
-            case .ok (let employees):
+            do {
+                let employees = try company.employeesSync()
                 XCTAssertEqual (2, employees.count)
-            default:
-                XCTFail ("Expected .ok")
+            } catch {
+                XCTFail("testCompanyEmployees.2: Expected success but got \(error)")
             }
-            
         }
         companyEntity3.sync() { company in
-            switch company.employees() {
-            case .ok (let employees):
+            do {
+                let employees = try company.employeesSync()
                 XCTAssertEqual (0, employees.count)
-            default:
-                XCTFail ("Expected .ok")
+            } catch {
+                XCTFail("testCompanyEmployees.3: Expected success but got \(error)")
             }
-            
         }
     }
     
@@ -122,44 +121,44 @@ class SampleUsageTests: XCTestCase {
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp C", address: nil)
         let _ = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         batch.commitSync()
-        let group = DispatchGroup()
-        group.enter()
-        group.enter()
-        group.enter()
-        companyEntity1.async() { company in
-            switch company.employees() {
-            case .ok (let employees):
+        var promise1Fulfilled = false
+        var promise2Fulfilled = false
+        var promise3Fulfilled = false
+        let promise1 =
+            firstly {
+                companyEntity1.promiseFromItem() { company in
+                    return company.employees()
+                }
+            }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (2, employees.count)
                 XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
                 XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
-                group.leave()
-            default:
-                XCTFail("Expected .ok")
+                promise1Fulfilled = true
             }
-        }
-        companyEntity2.async() { company in
-            switch company.employees() {
-            case .ok (let employees):
+        let promise2 =
+            firstly {
+                companyEntity2.promiseFromItem() { company in
+                    return company.employees()
+                }
+            }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (2, employees.count)
-                group.leave()
-            default:
-                XCTFail("Expected .ok")
+                promise2Fulfilled = true
             }
-        }
-        companyEntity3.async() { company in
-            switch company.employees() {
-            case .ok (let employees):
+        let promise3 =
+            firstly {
+                companyEntity3.promiseFromItem() { company in
+                    return company.employees()
+                }
+            }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (0, employees.count)
-                group.leave()
-            default:
-                XCTFail ("Expected .ok")
+                promise3Fulfilled = true
             }
-        }
-        switch group.wait(timeout: DispatchTime.now() + 10.0) {
-        case .success:
-            break
-        default:
-            XCTFail("Expected success")
+        when (fulfilled: [promise1, promise2, promise3]).done {
+            XCTAssertTrue (promise1Fulfilled)
+            XCTAssertTrue (promise2Fulfilled)
+            XCTAssertTrue (promise3Fulfilled)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
     }
     
@@ -190,7 +189,7 @@ class SampleUsageTests: XCTestCase {
         }
     }
     
-    func testEmployeeCreation() {
+    func testEmployeeCreation() throws {
         let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let company = SampleCompany(employeeCache: caches.employees, id: UUID())
         let batch = EventuallyConsistentBatch()
@@ -198,22 +197,22 @@ class SampleUsageTests: XCTestCase {
         let selfReference = EntityReferenceData<SampleEmployee> (cache: caches.employees, id: UUID(), version: 0)
         // Without address
         var employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: nil)
-        var referencedCompanyEntity = employee.company.get().item()!
+        var referencedCompanyEntity = try employee.company.getSync()!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
         }
         XCTAssertEqual ("Bob Carol", employee.name)
-        XCTAssertNil (employee.address.get().item())
+        try XCTAssertNil (employee.address.getSync())
         // With address
         let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: addressEntity)
-        referencedCompanyEntity = employee.company.get().item()!
+        referencedCompanyEntity = try employee.company.getSync()!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
         }
         XCTAssertEqual ("Bob Carol", employee.name)
-        XCTAssertTrue (employee.address.get().item() === addressEntity)
+        try XCTAssertTrue (employee.address.getSync() === addressEntity)
         // resetName()
         employee.resetName()
         XCTAssertEqual ("", employee.name)
@@ -227,17 +226,30 @@ class SampleUsageTests: XCTestCase {
         // Without address
         var employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: nil)
         employeeEntity.sync() { employee in
-            XCTAssertTrue (employee.company.get().item()! === companyEntity)
-            XCTAssertEqual ("Bob Carol", employee.name)
-            XCTAssertNil (employee.address.get().item())
+            do {
+                // XCode apparently can't figure out that the try can trigger the catch block if it is within an assertion
+                let retrievedCompany = try employee.company.getSync()!
+                XCTAssertTrue (retrievedCompany === companyEntity)
+                XCTAssertEqual ("Bob Carol", employee.name)
+                let retrievedAddress = try employee.address.getSync()
+                XCTAssertNil (retrievedAddress)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
         }
         let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: addressEntity)
         employeeEntity.sync() { employee in
-            XCTAssertTrue (employee.company.get().item()! === companyEntity)
-            XCTAssertEqual ("Bob Carol", employee.name)
-            XCTAssertTrue (employee.address.get().item()! === addressEntity)
+            do {
+                let retrievedCompany = try employee.company.getSync()!
+                XCTAssertTrue (retrievedCompany === companyEntity)
+                XCTAssertEqual ("Bob Carol", employee.name)
+                let retrievedAddress = try employee.address.getSync()!
+                XCTAssertTrue (retrievedAddress === addressEntity)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
         }
     }
     
@@ -254,31 +266,31 @@ class SampleUsageTests: XCTestCase {
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         batch.commitSync()
         companyEntity1.sync() { company in
-            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
-            case .ok (let company1Employees):
+            do {
+                let company1Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
                 XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
-            default:
-                XCTFail ("expected .ok")
+            } catch {
+                XCTFail("Expected success but got \(error)")
             }
         }
         companyEntity2.sync() { company in
-            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
-            case .ok (let company2Employees):
+            do {
+                let company2Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
-            default:
-                XCTFail ("expected .ok")
+            } catch {
+                XCTFail("Expected success but got \(error)")
             }
         }
         companyEntity3.sync() { company in
-            switch accessor.employeesForCompany(cache: caches.employees, company: company) {
-            case .ok (let company3Employees):
+            do {
+                let company3Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
                 XCTAssertEqual (0, company3Employees.count)
-            default:
-                XCTFail ("expected .ok")
+            } catch {
+                XCTFail("Expected success but got \(error)")
             }
         }
     }
@@ -295,23 +307,23 @@ class SampleUsageTests: XCTestCase {
         let employeeEntity4 = caches.employees.new(batch: batch, company: companyEntity2, name: "Emp D", address: nil)
         batch.commitSync()
         companyEntity1.sync() { company in
-            switch caches.employees.forCompany(company) {
-            case .ok (let company1Employees):
+            do {
+                let company1Employees = try caches.employees.forCompanySync(company)
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
                 XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
-            default:
-                XCTFail ("expected .ok")
+            } catch {
+                XCTFail ("Expected success but got \(error)")
             }
         }
         companyEntity2.sync() { company in
-            switch caches.employees.forCompany(company) {
-            case .ok (let company2Employees):
+            do {
+                let company2Employees = try caches.employees.forCompanySync(company)
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
-            default:
-                XCTFail ("expected .ok")
+            } catch {
+                XCTFail ("Expected success but got \(error)")
             }
         }
     }
@@ -331,29 +343,30 @@ class SampleUsageTests: XCTestCase {
         group.enter()
         group.enter()
         companyEntity1.sync() { company in
-            caches.employees.forCompany(company) { result in
-                switch result {
-                case .ok (let company1Employees):
-                    XCTAssertEqual (2, company1Employees.count)
-                    XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
-                    XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
-                default:
-                    XCTFail ("expected .ok")
-                }
+            firstly {
+                caches.employees.forCompany(company)
+            }.done { company1Employees in
+                XCTAssertEqual (2, company1Employees.count)
+                XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
+                XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
+            }.ensure {
                 group.leave()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
             }
         }
         companyEntity2.sync() { company in
-            caches.employees.forCompany(company) { result in
-                switch result {
-                case .ok (let company2Employees):
-                    XCTAssertEqual (2, company2Employees.count)
-                    XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
-                    XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
-                default:
-                    XCTFail ("expected .ok")
-                }
+            firstly {
+                caches.employees.forCompany(company)
+            }.done { company2Employees in
+                XCTAssertEqual (2, company2Employees.count)
+                XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
+                XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
+                
+            }.ensure {
                 group.leave()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
             }
         }
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
@@ -364,7 +377,7 @@ class SampleUsageTests: XCTestCase {
         }
     }
     
-    func testRemoveAll() {
+    func testRemoveAll() throws {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
         let batch = EventuallyConsistentBatch()
@@ -391,13 +404,13 @@ class SampleUsageTests: XCTestCase {
             employee.address.set(entity: address4, batch: batch)
         }
         batch.commitSync()
-        XCTAssertEqual (2, caches.companies.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (4, caches.employees.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (4, caches.addresses.scan(criteria: nil).item()!.count)
-        SampleUsage .removeAll(caches: caches)
-        XCTAssertEqual (0, caches.companies.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (0, caches.employees.scan(criteria: nil).item()!.count)
-        XCTAssertEqual (0, caches.addresses.scan(criteria: nil).item()!.count)
+        try XCTAssertEqual (2, caches.companies.scanSync(criteria: nil).count)
+        try XCTAssertEqual (4, caches.employees.scanSync(criteria: nil).count)
+        try XCTAssertEqual (4, caches.addresses.scanSync(criteria: nil).count)
+        try SampleUsage .removeAll(caches: caches)
+        try XCTAssertEqual (0, caches.companies.scanSync(criteria: nil).count)
+        try XCTAssertEqual (0, caches.employees.scanSync(criteria: nil).count)
+        try XCTAssertEqual (0, caches.addresses.scanSync(criteria: nil).count)
     }
 
 }

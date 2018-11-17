@@ -99,11 +99,9 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
     }
 
 /**
-     Asynchronously retrieve Entity<T> (if any) from cache or persistent media and then apply
-     **closure** to the retrieval result.
+     Returns the Promise (fulfilled asynchronously) of the Entity with id.
      
      - parameter id: UUID of the Entity to be retrieved.
-     - parameter closure: The closure to call when the retrieval has completed.
 */
     public func get (id: UUID) -> Promise<Entity<T>> {
         return Promise { seal in
@@ -149,7 +147,6 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
  
         - parameter criteria: If provided, only those Entities whose item match the criteria
                               will be included in the results
-        - parameter closure: The closure to call when the retrieval operation has completed.
  */
     public func scan (criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
         return Promise { seal in
