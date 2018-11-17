@@ -87,7 +87,11 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
             return result
         } else {
             do {
-                return try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id)
+                if let result = try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id) {
+                    return result
+                } else {
+                    throw AccessorError.unknownUUID
+                }
             } catch AccessorError.unknownUUID {
                 self.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
                 throw AccessorError.unknownUUID

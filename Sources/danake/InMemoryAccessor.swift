@@ -27,7 +27,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
 
     
-    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T> {
+    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>? {
         var result: Entity<T>? = nil
         if let preFetch = preFetch {
             preFetch (id)
@@ -49,10 +49,7 @@ public class InMemoryAccessor: DatabaseAccessor {
                 }
             }
         }
-        if let result = result {
-            return result
-        }
-        throw AccessorError.unknownUUID
+        return result
     }
     
     public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {

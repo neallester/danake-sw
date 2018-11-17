@@ -447,23 +447,27 @@ class BatchTests: XCTestCase {
             var counter = 1
             var unexpectedStateFound = false
             for uuid in result {
-                let entity = persistenceObjects.myStructCollection.get(id: uuid).item()!
-                entity.sync { myStruct in
-                    let expectedInt = counter * 10
-                    XCTAssertEqual (expectedInt, myStruct.myInt)
-                    XCTAssertEqual ("\(expectedInt)", myStruct.myString)
-                }
-                if !batchTimedOut {
-                    let state = entity.persistenceState
-                    switch state {
-                    case .persistent:
-                        break
-                    default:
-                        unexpectedStateFound = true
-                        print ("Entity: \(entity.id.uuidString); Counter \(counter): Expected .persistent but got .\(state)")
+                do {
+                    let entity = try persistenceObjects.myStructCollection.getSync(id: uuid)
+                    entity.sync { myStruct in
+                        let expectedInt = counter * 10
+                        XCTAssertEqual (expectedInt, myStruct.myInt)
+                        XCTAssertEqual ("\(expectedInt)", myStruct.myString)
                     }
+                    if !batchTimedOut {
+                        let state = entity.persistenceState
+                        switch state {
+                        case .persistent:
+                            break
+                        default:
+                            unexpectedStateFound = true
+                            print ("Entity: \(entity.id.uuidString); Counter \(counter): Expected .persistent but got .\(state)")
+                        }
+                    }
+                    counter = counter + 1
+                } catch {
+                    XCTFail("Expected success but got \(error)")
                 }
-                counter = counter + 1
             }
             if unexpectedStateFound {
                 print ("Batch Start Time:     \(startTime.timeIntervalSince1970)")

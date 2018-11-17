@@ -254,7 +254,7 @@ public enum AccessorError: Error {
 */
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>
+    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>?
     func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
     
 /**
