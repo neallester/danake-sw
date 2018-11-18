@@ -739,49 +739,56 @@ class EntityTests: XCTestCase {
         let parentCollection = EntityCache<EntityReferenceContainer> (database: database, name: "parentCollection")
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
         let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
-        let parent = parentCollection.get(id: parentId).item()!
-        var parentVersion = parent.version
-        parent.sync() { item in
-            XCTAssertNotNil(item.entityReference)
-            item.entityReference.sync() { reference in
-                XCTAssertNil (reference.entity)
-                XCTAssertTrue (reference.parent === parent)
-                XCTAssertTrue (reference.parentData.cache === parentCollection)
-                XCTAssertTrue (reference.parentData.id.uuidString == parent.id.uuidString)
-                XCTAssertEqual (parentVersion, reference.parentData.version)
-                XCTAssertNil (reference.referenceData)
-                switch reference.state {
-                case .loaded:
-                    break
-                default:
-                    XCTFail ("Expected .loaded")
+        do {
+            let parent = try parentCollection.getSync(id: parentId)
+            var parentVersion = parent.version
+            parent.sync() { item in
+                XCTAssertNotNil(item.entityReference)
+                item.entityReference.sync() { reference in
+                    XCTAssertNil (reference.entity)
+                    XCTAssertTrue (reference.parent === parent)
+                    XCTAssertTrue (reference.parentData.cache === parentCollection)
+                    XCTAssertTrue (reference.parentData.id.uuidString == parent.id.uuidString)
+                    XCTAssertEqual (parentVersion, reference.parentData.version)
+                    XCTAssertNil (reference.referenceData)
+                    switch reference.state {
+                    case .loaded:
+                        break
+                    default:
+                        XCTFail ("Expected .loaded")
+                    }
+                    XCTAssertFalse (reference.isEager)
+                    XCTAssertEqual (0, reference.pendingResolverCount)
                 }
-                XCTAssertFalse (reference.isEager)
-                XCTAssertEqual (0, reference.pendingEntityClosureCount)
             }
-
+        } catch {
+            XCTFail("Expected success but got \(error)")
         }
-        let parent2 = parentCollection.get(id: parentId2).item()!
-        parentVersion = parent2.version
-        parent2.sync() { item in
-            XCTAssertNotNil(item.entityReference)
-            item.entityReference.sync() { reference in
-                XCTAssertNil (reference.entity)
-                XCTAssertTrue (reference.parent === parent2)
-                XCTAssertTrue (reference.parentData.cache === parentCollection)
-                XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
-                XCTAssertEqual (parentVersion, reference.parentData.version)
-                XCTAssertEqual (Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: "childCollection") , reference.referenceData!.qualifiedCacheName)
-                XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
-                switch reference.state {
-                case .decoded:
-                    break
-                default:
-                    XCTFail ("Expected .decoded")
+        do {
+            let parent2 = parentCollection.get(id: parentId2)
+            parentVersion = parent2.version
+            parent2.sync() { item in
+                XCTAssertNotNil(item.entityReference)
+                item.entityReference.sync() { reference in
+                    XCTAssertNil (reference.entity)
+                    XCTAssertTrue (reference.parent === parent2)
+                    XCTAssertTrue (reference.parentData.cache === parentCollection)
+                    XCTAssertTrue (reference.parentData.id.uuidString == parentId2.uuidString)
+                    XCTAssertEqual (parentVersion, reference.parentData.version)
+                    XCTAssertEqual (Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: "childCollection") , reference.referenceData!.qualifiedCacheName)
+                    XCTAssertEqual ("A7E75632-9780-42EE-BD4C-6D4A61943285", reference.referenceData!.id.uuidString)
+                    switch reference.state {
+                    case .decoded:
+                        break
+                    default:
+                        XCTFail ("Expected .decoded")
+                    }
+                    XCTAssertFalse (reference.isEager)
+                    XCTAssertEqual (0, reference.pendingResolverCount)
                 }
-                XCTAssertFalse (reference.isEager)
-                XCTAssertEqual (0, reference.pendingEntityClosureCount)
             }
+        } catch {
+            XCTFail("Expected success but got \(error)")
         }
     }
     
