@@ -55,21 +55,6 @@ class DatabaseTests: XCTestCase {
         XCTAssertEqual (0, Database.registrar.count())
     }
     
-    func testRetrievalResult() {
-        var result = RetrievalResult.ok("String")
-        XCTAssertTrue (result.isOk())
-        XCTAssertEqual ("String", result.item()!)
-        switch result {
-        case .ok (let item):
-            XCTAssertEqual ("String", item!)
-        default:
-            XCTFail("Expected OK")
-        }
-        result = .error ("An Error")
-        XCTAssertFalse (result.isOk())
-        XCTAssertNil (result.item())
-    }
-    
     func testRegistrar() {
         let registrar = Registrar<Int, RegistrarTestItem>()
         XCTAssertEqual (0, registrar.count())
