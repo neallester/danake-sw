@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import danake
+import PromiseKit
 
 class ReferenceManagerTests: XCTestCase {
 
@@ -191,8 +192,12 @@ class ReferenceManagerTests: XCTestCase {
         } else {
             XCTFail ("Expected testReference.contents")
         }
-        reference.appendClosure() { result in
+        var promiseResolver: (promise: Promise<Entity<MyStruct>?>, resolver: Resolver<Entity<MyStruct>?>) = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -251,8 +256,12 @@ class ReferenceManagerTests: XCTestCase {
         } else {
             XCTFail("Expected .contents")
         }
-        reference.appendClosure() { result in
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -496,8 +505,14 @@ class ReferenceManagerTests: XCTestCase {
         } else {
             XCTFail("Expected .contents")
         }
-        reference.appendClosure() { retrievalResult in
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        let _ = promiseResolver.promise.done() { entity in
+            print ("done")
+        }.ensure {
             waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -726,8 +741,12 @@ class ReferenceManagerTests: XCTestCase {
         } else {
             XCTFail ("Expected .contents")
         }
-        reference.appendClosure() { RetrievalResult in
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -788,8 +807,12 @@ class ReferenceManagerTests: XCTestCase {
         } else {
             XCTFail("Expected .contents")
         }
-        reference.appendClosure() { retrievalResult in
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -1007,7 +1030,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
@@ -1035,7 +1058,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         parent.referenceContainers() { references in
@@ -1062,7 +1085,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (reference.entityId()!.uuidString, entity1.id.uuidString)
         parent.referenceContainers() { references in
@@ -1087,7 +1110,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (reference.entityId()!.uuidString, entity2.id.uuidString)
         parent.referenceContainers() { references in
@@ -1114,7 +1137,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertNil (reference.entityId())
         parent.referenceContainers() { references in
@@ -1140,7 +1163,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1156,13 +1179,16 @@ class ReferenceManagerTests: XCTestCase {
         reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
         parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         batch = EventuallyConsistentBatch()
-        var retrievalResult: RetrievalResult<Entity<MyStruct>>? = nil
+        var retrievedEntity: Entity<MyStruct>? = nil
         var waitFor = expectation(description: "waitFor1")
-        let closure: (RetrievalResult<Entity<MyStruct>>) -> () = { result in
-            retrievalResult = result
+        var promiseResolver: (promise: Promise<Entity<MyStruct>?>, resolver: Resolver<Entity<MyStruct>?>) = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
             waitFor.fulfill()
+        }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
-        reference.appendClosure(closure)
         reference.set (entity: nil, batch: batch)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -1177,7 +1203,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
@@ -1187,15 +1213,17 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual(0, entities.count)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertNil (retrievedEntity)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertNil (retrievedEntity)
         waitFor = expectation(description: "waitFor2")
-        retrievalResult = nil
-        reference.appendClosure(closure)
+        retrievedEntity = nil
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
+            waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+        }
         reference.set (entity: entity1, batch: batch)
         reference.sync() { reference in
             XCTAssertTrue (reference.entity === entity1)
@@ -1210,7 +1238,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1221,15 +1249,18 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertTrue (retrievedEntity === entity1)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertTrue (retrievedEntity === entity1)
         waitFor = expectation(description: "waitFor3")
-        retrievalResult = nil
-        reference.appendClosure(closure)
+        retrievedEntity = nil
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
+            waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+        }
+
         batch = EventuallyConsistentBatch()
         reference.set (entity: entity1, batch: batch)
         reference.sync() { reference in
@@ -1246,7 +1277,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1256,15 +1287,17 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertTrue (retrievedEntity === entity1)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertTrue (retrievedEntity === entity1)
         waitFor = expectation(description: "waitFor4")
-        retrievalResult = nil
-        reference.appendClosure(closure)
+        retrievedEntity = nil
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
+            waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+        }
         reference.set (entity: entity2, batch: batch)
         reference.sync() { reference in
             XCTAssertTrue (reference.entity === entity2)
@@ -1280,7 +1313,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1291,15 +1324,17 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertTrue (retrievedEntity === entity2)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertTrue (retrievedEntity === entity2)
         waitFor = expectation(description: "waitFor5")
-        retrievalResult = nil
-        reference.appendClosure(closure)
+        retrievedEntity = nil
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
+            waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+        }
         batch = EventuallyConsistentBatch()
         reference.set (entity: nil, batch: batch)
         reference.sync() { reference in
@@ -1316,7 +1351,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1327,15 +1362,18 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertNil (retrievedEntity)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertNil (retrievedEntity)
         waitFor = expectation(description: "waitFor6")
-        retrievalResult = nil
-        reference.appendClosure(closure)
+
+        retrievedEntity = nil
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
+            retrievedEntity = entity
+            waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+        }
         reference.set (entity: nil, batch: batch)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -1351,7 +1389,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1362,12 +1400,7 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
         waitForExpectations(timeout: 10, handler: nil)
-        switch retrievalResult! {
-        case .ok (let retrievedEntity):
-            XCTAssertNil (retrievedEntity)
-        default:
-            XCTFail ("Expected .ok")
-        }
+        XCTAssertNil (retrievedEntity)
     }
     
     public func testSetReferenceData() {
@@ -1393,7 +1426,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1419,7 +1452,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
@@ -1446,7 +1479,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
@@ -1474,7 +1507,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (entity2.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
@@ -1501,7 +1534,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1533,7 +1566,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (entity.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
@@ -1559,7 +1592,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         XCTAssertEqual (entity2.id.uuidString, reference.entityId()?.uuidString)
         batch.syncEntities() { entities in
@@ -1591,7 +1624,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1603,7 +1636,7 @@ class ReferenceManagerTests: XCTestCase {
         }
     }
     
-    public func testSetReferenceDataIsEager() {
+    public func testSetReferenceDataIsEager() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
@@ -1627,7 +1660,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1649,8 +1682,13 @@ class ReferenceManagerTests: XCTestCase {
         let entityReferenceData = ReferenceManagerData (databaseId: accessor.hashValue, cacheName: cache.name, id: entityId, version: 10)
         let _ = accessor.add(name: cache.name, id: entityId, data: entityData)
         var waitFor = expectation(description: "wait1")
-        reference.appendClosure() { result in
+        
+        var promiseResolver: (promise: Promise<Entity<MyStruct>?>, resolver: Resolver<Entity<MyStruct>?>) = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+        }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         accessor.setPreFetch() { id in
             switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
@@ -1674,7 +1712,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving but got \(reference.state)")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (2, reference.pendingEntityClosureCount)
+            XCTAssertEqual (1, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1699,9 +1737,9 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
-        let entity = reference.get().item()!
+        let entity = try reference.getSync()!
         // referenceData -> same referenceData
         batch = EventuallyConsistentBatch()
         reference.set(referenceData: entityReferenceData, batch: batch)
@@ -1718,7 +1756,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1740,9 +1778,16 @@ class ReferenceManagerTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        reference.appendClosure() { result in
+
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
+
+
         reference.set(referenceData: entity2ReferenceData, batch: batch)
         reference.sync() { reference in
             XCTAssertNil (reference.entity)
@@ -1757,7 +1802,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (2, reference.pendingEntityClosureCount)
+            XCTAssertEqual (1, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1782,7 +1827,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         // referenceData -> nil
         batch = EventuallyConsistentBatch()
@@ -1800,7 +1845,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1832,7 +1877,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(0, entities.count)
@@ -1873,7 +1918,7 @@ class ReferenceManagerTests: XCTestCase {
             }
             XCTAssertTrue (reference.isEager)
 
-            XCTAssertEqual (1, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         } else {
             XCTFail("Expected .contents")
         }
@@ -1885,8 +1930,12 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual (1, references.count)
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
-        reference.appendClosure() { result in
+        promiseResolver = Promise.pending()
+        reference.appendResolver(promiseResolver.resolver)
+        promiseResolver.promise.done() { entity in
             waitFor.fulfill()
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -1903,7 +1952,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
@@ -1930,7 +1979,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertTrue (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         batch.syncEntities() { entities in
             XCTAssertEqual(1, entities.count)
@@ -1961,14 +2010,14 @@ class ReferenceManagerTests: XCTestCase {
         }
         var wasNil = false
         var waitFor = expectation(description: "wait1")
-        reference.async() { result in
-            switch result {
-            case .ok (let entity):
-                wasNil = (entity == nil)
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+        firstly {
+            reference.get()
+        }.done { entity in
+            wasNil = (entity == nil)
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssert (wasNil)
@@ -1994,14 +2043,14 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         waitFor = expectation(description: "wait2")
-        reference.async() { result in
-            switch result {
-            case .ok (let entity):
-                retrievedEntity = entity
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+        firstly {
+            reference.get()
+        }.done { entity in
+            retrievedEntity = entity
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssertTrue (entity === retrievedEntity)
@@ -2025,14 +2074,15 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         waitFor = expectation(description: "wait3")
-        reference.async() { result in
-            switch result {
-            case .ok (let entity):
-                retrievedEntity = entity
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+        
+        firstly {
+            reference.get()
+        }.done { entity in
+            retrievedEntity = entity
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssertTrue (entity === retrievedEntity)
@@ -2056,21 +2106,22 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         waitFor = expectation(description: "wait4")
-        reference.async() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .error")
-            }
+        
+        firstly {
+            reference.get()
+        }.done { entity in
+            XCTFail ("Expected .error")
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         var suspendSeconds: TimeInterval = 0.0
         reference.sync() { contents in
             switch contents.state {
-            case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+            case .retrievalError(let suspendtime, let error):
+                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
                 let now = Date()
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + cache.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + cache.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
@@ -2081,20 +2132,21 @@ class ReferenceManagerTests: XCTestCase {
         }
         // retrievalError during suspense period        
         waitFor = expectation(description: "wait5")
-        reference.async() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
-                waitFor.fulfill()
-            default:
+        
+        firstly {
+            reference.get()
+            }.done { entity in
                 XCTFail ("Expected .error")
-            }
+            }.ensure {
+                waitFor.fulfill()
+            }.catch { error in
+                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         reference.sync() { contents in
             switch contents.state {
-            case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+            case .retrievalError(let suspendtime, let error):
+                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
                 XCTAssertEqual (suspendSeconds, suspendtime.timeIntervalSince1970)
             default:
                 XCTFail ("Expected .retrievalError")
@@ -2102,23 +2154,25 @@ class ReferenceManagerTests: XCTestCase {
         }
         // retrievalError after suspense period
         let oldTime = Date (timeIntervalSince1970: Date().timeIntervalSince1970 - 1000.0)
-        reference.setState(state: .retrievalError(oldTime, "Test Error"))
+        let badId = UUID()
+        reference.setState(state: .retrievalError(oldTime, AccessorError.unknownUUID (badId)))
         waitFor = expectation(description: "wait6")
-        reference.async() { result in
-            switch result {
-            case .error(let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
-                waitFor.fulfill()
-            default:
+
+        firstly {
+            reference.get()
+            }.done { entity in
                 XCTFail ("Expected .error")
-            }
+            }.ensure {
+                waitFor.fulfill()
+            }.catch { error in
+                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         suspendSeconds = 0.0
         reference.sync() { contents in
             switch contents.state {
-            case .retrievalError(let suspendtime, let errorMessage):
-                XCTAssertEqual ("ReferenceManager<MyStruct, MyStruct>: Unknown id \(invalidReferenceData.id.uuidString)", errorMessage)
+            case .retrievalError(let suspendtime, let error):
+                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
                 let now = Date()
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 > (now + cache.database.referenceRetryInterval - 1.0).timeIntervalSince1970)
                 XCTAssertTrue (suspendtime.timeIntervalSince1970 < (now + cache.database.referenceRetryInterval + 1.0).timeIntervalSince1970)
@@ -2135,16 +2189,17 @@ class ReferenceManagerTests: XCTestCase {
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
         var persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
-        reference.setState(state: .retrievalError(oldTime, "Test Error"))
+        reference.setState(state: .retrievalError(oldTime, AccessorError.unknownUUID (badId)))
         waitFor = expectation(description: "wait7")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+
+        firstly {
+            reference.get()
+            }.done { entity in
+                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+            }.ensure {
                 waitFor.fulfill()
-            default:
-                XCTFail ("Expected .error")
-            }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         suspendSeconds = 0.0
@@ -2184,43 +2239,42 @@ class ReferenceManagerTests: XCTestCase {
         default:
             XCTFail ("Expected .success")
         }
-        
-        waitFor = expectation(description: "wait7")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+        waitFor = expectation(description: "wait7a")
+        firstly {
+            reference.get()
+            }.done { entity in
+                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+            }.ensure {
                 waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+                XCTAssertEqual (1, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
         }
         var waitFor2 = expectation(description: "wait7a")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (persistentUUID.uuidString, retrievedEntity!.id.uuidString)
+        firstly {
+            reference.get()
+            }.done { entity in
+                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+            }.ensure {
                 waitFor2.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+                XCTAssertEqual (2, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
@@ -2259,41 +2313,42 @@ class ReferenceManagerTests: XCTestCase {
         }
         
         waitFor = expectation(description: "wait8")
-        reference.async() { result in
-            switch result {
-            case .error (let errorMessage):
-                XCTAssertEqual ("getError", errorMessage)
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .error")
-            }
+        
+        firstly {
+            reference.get()
+        }.done { entity in
+            XCTFail ("Expected .error")
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTAssertEqual ("getError", "\(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+                XCTAssertEqual (1, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
         }
         waitFor2 = expectation(description: "wait8a")
-        reference.async() { result in
-            switch result {
-            case .error (let errorMessage):
-                XCTAssertEqual ("getError", errorMessage)
-                waitFor2.fulfill()
-            default:
-                XCTFail ("Expected .error")
-            }
+        firstly {
+            reference.get()
+        }.done { entity in
+            XCTFail ("Expected .error")
+        }.ensure {
+            waitFor2.fulfill()
+        }.catch { error in
+            XCTAssertEqual ("getError", "\(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+                XCTAssertEqual (2, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
@@ -2329,41 +2384,44 @@ class ReferenceManagerTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         waitFor = expectation(description: "wait9")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
+
+        firstly {
+            reference.get()
+            }.done { entity in
+                XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+            }.ensure {
                 waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+                XCTAssertEqual (1, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
         }
         waitFor2 = expectation(description: "wait9a")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
+        
+        firstly {
+            reference.get()
+            }.done { entity in
+                XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+            }.ensure {
                 waitFor2.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
         }
+
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+                XCTAssertEqual (2, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
@@ -2400,41 +2458,42 @@ class ReferenceManagerTests: XCTestCase {
             XCTFail ("Expected .success")
         }
         waitFor = expectation(description: "wait9")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
-                waitFor.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+        
+        firstly {
+            reference.get()
+        }.done { entity in
+            XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+        }.ensure {
+            waitFor.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (1, contents.pendingEntityClosureCount)
+                XCTAssertEqual (1, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
         }
         waitFor2 = expectation(description: "wait9a")
-        reference.async() { result in
-            switch result {
-            case .ok(let retrievedEntity):
-                XCTAssertEqual (entity.id.uuidString, retrievedEntity!.id.uuidString)
-                waitFor2.fulfill()
-            default:
-                XCTFail ("Expected .ok")
-            }
+        firstly {
+            reference.get()
+        }.done { entity in
+            XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+        }.ensure {
+            waitFor2.fulfill()
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
         }
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
                 XCTAssertEqual (data.id.uuidString, persistentUUID.uuidString)
                 XCTAssertEqual (cache.qualifiedName, data.qualifiedCacheName)
-                XCTAssertEqual (2, contents.pendingEntityClosureCount)
+                XCTAssertEqual (2, contents.pendingResolverCount)
             default:
                 XCTFail ("Expected .retrieving")
             }
@@ -2444,7 +2503,7 @@ class ReferenceManagerTests: XCTestCase {
         waitForExpectations(timeout: 10.0, handler: nil)
     }
     
-    public func testGet() {
+    public func testGet() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
@@ -2459,11 +2518,10 @@ class ReferenceManagerTests: XCTestCase {
         let _ = accessor.add(name: cache.name, id: entityId, data: json.data(using: .utf8)!)
         let persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: entityId, version: 10)
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
-        switch reference.get() {
-        case .ok(let retrievedEntity):
-            XCTAssertEqual (entityId.uuidString, retrievedEntity!.id.uuidString)
-        default:
-            XCTFail ("Expected .ok")
+        if let retrievedEntity = try reference.getSync() {
+            XCTAssertEqual (entityId.uuidString, retrievedEntity.id.uuidString)
+        } else {
+            XCTFail ("Expected entity")
         }
     }
     
@@ -2645,7 +2703,7 @@ class ReferenceManagerTests: XCTestCase {
 
     }
 
-    public func testDereference() {
+    public func testDereference() throws {
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
         var parentId = UUID()
@@ -2666,7 +2724,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         reference.dereference()
         reference.sync() { reference in
@@ -2682,7 +2740,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .dereferenced")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         // loaded entity
         let entity = newTestEntity(myInt: 10, myString: "10")
@@ -2703,7 +2761,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         reference.dereference()
         reference.sync() { reference in
@@ -2719,7 +2777,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .dereferenced")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         // Decoded with refeference
         parentId = UUID()
@@ -2739,7 +2797,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         reference.dereference()
         reference.sync() { reference in
@@ -2755,7 +2813,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .dereferenced")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
@@ -2766,7 +2824,7 @@ class ReferenceManagerTests: XCTestCase {
         parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
         reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: entity.referenceData())
         parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
-        let _ = reference.get().item()!
+        let _ = try reference.getSync()!
         reference.sync() { reference in
             XCTAssertTrue (reference.entity! === entity)
             XCTAssertTrue (reference.parent! === parent)
@@ -2780,7 +2838,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         reference.dereference()
         reference.sync() { reference in
@@ -2796,7 +2854,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .dereferenced")
             }
             XCTAssertFalse (reference.isEager)
-            XCTAssertEqual (0, reference.pendingEntityClosureCount)
+            XCTAssertEqual (0, reference.pendingResolverCount)
         }
         parent.referenceContainers() { references in
             XCTAssertEqual (1, references.count)
@@ -2806,7 +2864,7 @@ class ReferenceManagerTests: XCTestCase {
     
     // Verify that when the Child of ReferenceManager is updated (i.e. its version is incremented)
     // That this does not produce a spurious lostData message in its parent
-    func testUpdateLogging() {
+    func testUpdateLogging() throws {
 
         class ReferenceContainer : Codable {
             
@@ -2846,7 +2904,7 @@ class ReferenceManagerTests: XCTestCase {
         }
         let structEntity2: Entity<MyStruct> = structCache.new(batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
         batch!.commitSync()
-        containerEntity = containerCache.get(id: containerId).item()
+        containerEntity = try containerCache.getSync(id: containerId)
         containerEntity!.sync() { container in
             container.child.set(entity: structEntity2, batch: batch!)
         }

@@ -173,7 +173,7 @@ class InMemoryAccessorTests: XCTestCase {
         // Test get and scan throwError
         accessor.setThrowError()
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
@@ -516,7 +516,7 @@ class InMemoryAccessorTests: XCTestCase {
             let _ = try accessor.get(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
             XCTFail ("Expected error")
         } catch {
-            XCTAssertEqual ("missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \"struct\"))", "\(error)")
+            XCTAssertEqual ("creationError(\"missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \\\"struct\\\"))\")", "\(error)")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
         cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName) { userInfo in

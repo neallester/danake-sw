@@ -606,14 +606,14 @@ public class ParallelTest {
                                     Fail(testResult: &overallTestResult, message: "\(error)")
                                 }
                             }
-                            switch entity.persistenceState {
-                            case .persistent:
-                                break
-                            default:
-                                ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResult.4, counter=\(counter): Expected .persistent")
-                            }
-                            counter = counter + 1
                         }
+                        switch entity.persistenceState {
+                        case .persistent:
+                            break
+                        default:
+                            ParallelTest.Fail (testResult: &overallTestResult, message: "test100nResult.4, counter=\(counter): Expected .persistent")
+                        }
+                        counter = counter + 1
                     } catch {
                         Fail(testResult: &overallTestResult, message: "\(error)")
                     }

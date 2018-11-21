@@ -143,16 +143,20 @@ class EntityCacheTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let data = try accessor.encoder.encode(entity)
-        var result = try cache.getSync (id: entity.id)
-        XCTAssertNil (result)
+        do {
+            let _ = try cache.getSync (id: entity.id)
+            XCTFail ("Expected Errr")
+        } catch {
+            XCTAssertEqual ("unknownUUID(\(entity.id))", "\(error)")
+        }
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.get|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id)", entry)
+            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.getSync|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
         let _ = accessor.add(name: standardCacheName, id: entity.id, data: data)
-        result = try cache.getSync(id: entity.id)
+        let result = try cache.getSync(id: entity.id)
         let retrievedEntity = result
         XCTAssertEqual (entity.id.uuidString, retrievedEntity.id.uuidString)
         XCTAssertEqual (entity.version, retrievedEntity.version)
@@ -221,12 +225,12 @@ class EntityCacheTests: XCTestCase {
             let _ = try cache.getSync(id: invalidDataUuid)
             XCTFail ("Expected error")
         } catch {
-            XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
+            XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
         }
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -242,7 +246,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.get|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError", entry)
         }
     }
     
@@ -385,7 +389,7 @@ class EntityCacheTests: XCTestCase {
             }.ensure {
                 waitFor1.fulfill()
             }.catch { error in
-                XCTAssertEqual ("", "\(error)")
+                XCTAssertEqual ("unknownUUID(\(entity1.id))", "\(error)")
             }
             firstly {
                 cache.get (id: entity2.id)
@@ -394,7 +398,7 @@ class EntityCacheTests: XCTestCase {
             }.ensure {
                 waitFor2.fulfill()
             }.catch { error in
-                XCTAssertEqual ("", "\(error)")
+                XCTAssertEqual ("unknownUUID(\(entity2.id))", "\(error)")
             }
             waitForExpectations(timeout: 10, handler: nil)
             XCTAssertNil (result1)
@@ -427,8 +431,8 @@ class EntityCacheTests: XCTestCase {
                 XCTFail ("Expected success but got \(error)")
             }
             waitForExpectations(timeout: 10, handler: nil)
-            let retrievedEntity1 = result1!
-            let retrievedEntity2 = result2!
+            var retrievedEntity1 = result1!
+            var retrievedEntity2 = result2!
             XCTAssertEqual (entity1.id.uuidString, retrievedEntity1.id.uuidString)
             XCTAssertEqual (entity1.version, retrievedEntity1.version)
             XCTAssertEqual (entity2.id.uuidString, retrievedEntity2.id.uuidString)
@@ -515,6 +519,8 @@ class EntityCacheTests: XCTestCase {
             // Data In Cache=Yes; Data in Accessor=Yes
             waitFor1 = expectation(description: "wait1.4")
             waitFor2 = expectation(description: "wait2.4")
+            result1 = nil
+            result2 = nil
             firstly {
                 cache.get (id: entity1.id)
             }.done { item in
@@ -535,8 +541,8 @@ class EntityCacheTests: XCTestCase {
                 XCTFail ("Expected success but got \(error)")
             }
             waitForExpectations(timeout: 10, handler: nil)
-            XCTAssertTrue (entity1 === result1!)
-            XCTAssertTrue (entity2 === result2!)
+            retrievedEntity1 = result1!
+            retrievedEntity2 = result2!
             cache.sync() { cache in
                 XCTAssertEqual (4, cache.count)
                 XCTAssertTrue (retrievedEntity1 === cache[entity1.id]!.codable!)
@@ -573,7 +579,7 @@ class EntityCacheTests: XCTestCase {
                 #if os(Linux)
                     XCTAssertEqual ("The operation could not be completed", "\(error)")
                 #else
-                    XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"Unexpected end of file during JSON parse.\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))", "\(error)")
+                    XCTAssertEqual ("creationError(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
                 #endif
             }
             firstly {
@@ -583,7 +589,7 @@ class EntityCacheTests: XCTestCase {
             }.ensure {
                 waitFor2.fulfill()
             }.catch { error in
-                XCTAssertEqual ("keyNotFound(CodingKeys(stringValue: \"id\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \"No value associated with key CodingKeys(stringValue: \\\"id\\\", intValue: nil) (\\\"id\\\").\", underlyingError: nil))", "\(error)")
+                XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
             }
             waitForExpectations(timeout: 10, handler: nil)
             logger.sync() { entries in
@@ -1112,9 +1118,9 @@ class EntityCacheTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 var entry = entries[0].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
                 entry = entries[1].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scan|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
             }
         }
     }

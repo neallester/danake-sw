@@ -90,11 +90,11 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
                 if let result = try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id) {
                     return result
                 } else {
-                    throw AccessorError.unknownUUID
+                    throw AccessorError.unknownUUID (id)
                 }
             } catch AccessorError.unknownUUID {
                 self.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
-                throw AccessorError.unknownUUID
+                throw AccessorError.unknownUUID (id)
             } catch {
                 self.database.logger?.log (level: .emergency, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
                 throw error
@@ -129,18 +129,23 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      - throws:  Any errors originating in underlying persistent media
 */
     public func scanSync (criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
-        let result = try database.accessor.scan(type: Entity<T>.self, cache: self)
-        if let criteria = criteria  {
-            let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
-                var result = true
-                entity.sync() { item in
-                    result = criteria (item)
+        do {
+            let result = try database.accessor.scan(type: Entity<T>.self, cache: self)
+            if let criteria = criteria  {
+                let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
+                    var result = true
+                    entity.sync() { item in
+                        result = criteria (item)
+                    }
+                    return result
                 }
+                return result.filter (criteriaWrapper)
+            } else {
                 return result
             }
-            return result.filter (criteriaWrapper)
-        } else {
-            return result
+        } catch {
+            database.logger?.log(level: .emergency, source: self, featureName: "scanSync", message: "Database Error", data: [(name: "databaseHashValue", value: database.accessor.hashValue), (name: "cache", value: name), (name: "errorMessage", value: "\(error)")])
+            throw error
         }
     }
     

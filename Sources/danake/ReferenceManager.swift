@@ -62,6 +62,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
     enum Errors: Error {
         case CacheWrongType (name: String, type: String)
         case UnknownCacheName (String)
+        case UnknownId (UUID)
         case Dereferenced
     }
 
@@ -132,9 +133,11 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
             }
             parentData.cache.registerOnEntityCached(id: parentData.id, closure: setParent)
             if self.isEager {
-                do {
-                    try self.retrieve()
-                } catch {}
+                queue.async {
+                    do {
+                        try self.retrieve()
+                    } catch {}
+                }
             }
         } else {
             throw ReferenceManagerSerializationError.noParentData
@@ -258,37 +261,37 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 firstly {
                     cache.get(id: referenceData.id)
                 }.done { retrievedEntity in
-                    var resolversToProcess: [Resolver<Entity<T>?>] = []
                     self.queue.sync {
                         switch self.state {
                         case .retrieving (let pendingReferenceData):
                             if referenceData.id.uuidString == pendingReferenceData.id.uuidString, retrievedEntity.id.uuidString == referenceData.id.uuidString {
                                 self.state = .loaded
                                 self.entity = retrievedEntity
-                                resolversToProcess = self.pendingResolvers
+                                self.referenceData = nil
+                                for resolver in self.pendingResolvers {
+                                    retrievedEntity.cache.database.workQueue.async {
+                                        resolver.fulfill(retrievedEntity)
+                                    }
+                                }
                                 self.pendingResolvers = []
                             }
                         default:
                             break
                         }
-                    }
-                    for resolver in resolversToProcess {
-                        resolver.fulfill(retrievedEntity)
+                        
                     }
                 }.catch { error in
-                    var resolversToProcess: [Resolver<Entity<T>?>] = []
                     self.queue.sync {
                         switch self.state {
                         case .retrieving:
                                 self.state = .retrievalError(Date() + cache.database.referenceRetryInterval, error)
-                                resolversToProcess = self.pendingResolvers
+                                for resolver in self.pendingResolvers {
+                                    resolver.reject(error)
+                                }
                                 self.pendingResolvers = []
                         default:
                             break
                         }
-                    }
-                    for resolver in resolversToProcess {
-                        resolver.reject(error)
                     }
                 }
             }
@@ -315,18 +318,31 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 self.entity = entity
                 self.referenceData = nil
                 self.state = .loaded
-                for resolver in self.pendingResolvers {
-                    resolver.resolve(.fulfilled (entity))
-                }
                 if let entity = entity {
                     self.cache = entity.cache
                 }
-                self.pendingResolvers = []
                 if wasUpdated {
                     self.addParentTo(batch: batch)
                 }
+                var workQueue: DispatchQueue? = nil
+                if let cache = cache {
+                    workQueue = cache.database.workQueue
+                } else if let entity = entity {
+                    workQueue = entity.cache.database.workQueue
+                }
+                for resolver in  self.pendingResolvers {
+                    if let workQueue = workQueue {
+                        workQueue.async() {
+                            resolver.resolve(.fulfilled (entity))
+                        }
+                    } else {
+                        resolver.resolve(.fulfilled (entity))
+                    }
+                }
+                self.pendingResolvers = []
             }
         }
+
     }
 
 /**
@@ -455,7 +471,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
         }
     }
     
-    internal func appendClosure (_ resolver: Resolver<Entity<T>?>) {
+    internal func appendResolver (_ resolver: Resolver<Entity<T>?>) {
         queue.async {
             self.pendingResolvers.append(resolver)
         }

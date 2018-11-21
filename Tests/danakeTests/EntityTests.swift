@@ -741,7 +741,7 @@ class EntityTests: XCTestCase {
         let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
         do {
             let parent = try parentCollection.getSync(id: parentId)
-            var parentVersion = parent.version
+            let parentVersion = parent.version
             parent.sync() { item in
                 XCTAssertNotNil(item.entityReference)
                 item.entityReference.sync() { reference in
@@ -765,8 +765,8 @@ class EntityTests: XCTestCase {
             XCTFail("Expected success but got \(error)")
         }
         do {
-            let parent2 = parentCollection.get(id: parentId2)
-            parentVersion = parent2.version
+            let parent2 = try parentCollection.getSync(id: parentId2)
+            let parentVersion = parent2.version
             parent2.sync() { item in
                 XCTAssertNotNil(item.entityReference)
                 item.entityReference.sync() { reference in
@@ -1249,7 +1249,7 @@ class EntityTests: XCTestCase {
         XCTAssertEqual (entity.version, data.version)
     }
     
-    func testReferenceManagerCycle() {
+    func testReferenceManagerCycle() throws {
         
         class Node : Codable {
             
@@ -1291,7 +1291,7 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        parent = cache.get(id: UUID (uuidString: parentId)!).item()!
+        parent = try cache.getSync (id: UUID (uuidString: parentId)!)
         var child: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
@@ -1320,9 +1320,11 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = cache.get(id: UUID (uuidString: childId)!).item()!
-        child?.sync() { node in
-            parent = node.parent.get().item()!
+        child = try cache.getSync(id: UUID (uuidString: childId)!)
+        child!.sync() { node in
+            do {
+                parent = try node.parent.getSync()
+            } catch {}
         }
         // Set up a reference cycle;
         // child.parent = parent
@@ -1336,12 +1338,16 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
-        child = cache.get(id: UUID (uuidString: childId)!).item()!
+        child = try cache.getSync(id: UUID (uuidString: childId)!)
         child!.sync() { node in
-            parent = node.parent.get().item()!
+            do {
+                try parent = node.parent.getSync()
+            } catch {}
         }
         parent!.sync() { node in
-            child = node.parent.get().item()!
+            do {
+                child = try node.parent.getSync()
+            } catch {}
         }
         child!.breakReferences()
         child = nil
@@ -1359,12 +1365,17 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = cache.get(id: UUID (uuidString: childId)!).item()!
+        child = try cache.getSync(id: UUID (uuidString: childId)!)
         child!.sync() { node in
-            parent = node.parent.get().item()!
+            do {
+                parent = try node.parent.getSync()
+                
+            } catch {}
         }
         parent!.sync() { node in
-            child = node.parent.get().item()!
+            do {
+                child = try node.parent.getSync()
+            } catch {}
         }
         cache.sync() { entities in
             XCTAssertEqual (2, entities.count)

@@ -16,7 +16,12 @@ class SampleUsageTests: XCTestCase {
         XCTAssertTrue (SampleUsage.runSample (accessor: accessor))
         XCTAssertTrue (SampleUsage.demonstrateThrowError())
         XCTAssertTrue (SampleUsage.testDemonstratePrefetchWithGet())
-        XCTAssertTrue (SampleUsage.testDemonstrateUpdateErrors())
+        do {
+            let demonstrateErrorsResult = try SampleUsage.testDemonstrateUpdateErrors()
+            XCTAssertTrue (demonstrateErrorsResult)
+        } catch {
+            XCTFail ("Expected success but got \(error)")
+        }
         
     }
     

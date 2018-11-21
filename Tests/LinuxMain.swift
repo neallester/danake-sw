@@ -22,7 +22,6 @@ extension BatchTests {
 extension DatabaseTests {
   static var allTests = [
     ("testDatabaseCreation", testDatabaseCreation),
-    ("testRetrievalResult", testRetrievalResult),
     ("testRegistrar", testRegistrar),
     ("testValidationResult", testValidationResult),
     ("testEntityCreation", testEntityCreation),
@@ -41,7 +40,7 @@ extension EntityCacheTests {
     ("testCreation", testCreation),
     ("testCreationInvalidName", testCreationInvalidName),
     ("testPersistenceCollectionNew", testPersistenceCollectionNew),
-    ("testGet", testGet),
+    ("testGetSync", testGetSync),
     ("testPerssistentCollectionGetParallel", testPerssistentCollectionGetParallel),
     ("testGetAsync ", testGetAsync ),
     ("testScan", testScan),

@@ -245,7 +245,7 @@ open class Database {
 }
 
 public enum AccessorError: Error {
-    case unknownUUID
+    case unknownUUID (UUID)
     case creationError (String)
 }
 
