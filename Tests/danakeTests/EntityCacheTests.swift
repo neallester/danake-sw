@@ -577,7 +577,7 @@ class EntityCacheTests: XCTestCase {
                 waitFor1.fulfill()
             }.catch { error in
                 #if os(Linux)
-                    XCTAssertEqual ("The operation could not be completed", "\(error)")
+                    XCTAssertEqual ("creationError(\"The operation could not be completed\")", "\(error)")
                 #else
                     XCTAssertEqual ("creationError(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
                 #endif
