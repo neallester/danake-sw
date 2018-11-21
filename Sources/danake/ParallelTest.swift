@@ -341,9 +341,10 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test2Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     do {
-                        ParallelTest.AssertNil (label: "test2Results.2", testResult: &overallTestResult, try persistenceObjects!.myStructCollection.getSync(id: uuid))
+                        let _ = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        Fail(testResult: &overallTestResult, message: "test2Reslts1b: Expected error")
                     } catch {
-                        Fail(testResult: &overallTestResult, message: "\(error)")
+                        ParallelTest.AssertTrue(label: "test2Results2", testResult: &overallTestResult, "\(error)".contains("unknownUUID"))
                     }
                 }
             }
@@ -351,10 +352,10 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test2Results.3", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     do {
-                        ParallelTest.AssertNil (label: "test2Results.4", testResult: &overallTestResult, try persistenceObjects!.myStructCollection.getSync(id: uuid))
-
+                        let _ = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        Fail(testResult: &overallTestResult, message: "test2Results.4a: Expected Error")
                     } catch {
-                        Fail(testResult: &overallTestResult, message: "\(error)")
+                        ParallelTest.AssertTrue(label: "test2Results4", testResult: &overallTestResult, "\(error)".contains("unknownUUID"))
                     }
 
                 }
@@ -403,10 +404,10 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test3Results.8: Expected .persistent")
                         }
-                        counter = counter + 1
                     } catch {
                         Fail(testResult: &overallTestResult, message: "\(error)")
                     }
+                    counter = counter + 1
                 }
             }
             // Test 4
@@ -428,10 +429,8 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test4Results.4: Expected .persistent")
                         }
-                        counter = counter + 1
-                    } catch {
-                        Fail(testResult: &overallTestResult, message: "\(error)")
-                    }
+                    } catch {}
+                    counter = counter + 1
                 }
             }
             for testResult in test4Results {
@@ -451,10 +450,8 @@ public class ParallelTest {
                         default:
                             ParallelTest.Fail (testResult: &overallTestResult, message: "test4Results.8, counter=\(counter): Expected .persistent")
                         }
-                        counter = counter + 1
-                    } catch {
-                        Fail(testResult: &overallTestResult, message: "\(error)")
-                    }
+                    } catch {}
+                    counter = counter + 1
                 }
             }
             // Test 100
