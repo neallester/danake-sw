@@ -606,6 +606,7 @@ class EntityCacheTests: XCTestCase {
             waitFor1 = expectation(description: "wait1.6")
             waitFor2 = expectation(description: "wait2.6")
             var errorsReported = 0
+            let errorsReportedQueue = DispatchQueue(label: "errorsReported")
             firstly {
                 cache.get(id: entity5.id)
             }.done { item in
@@ -613,7 +614,9 @@ class EntityCacheTests: XCTestCase {
             }.ensure {
                 waitFor1.fulfill()
             }.catch {error in
-                errorsReported = errorsReported + 1
+                errorsReportedQueue.sync {
+                    errorsReported = errorsReported + 1
+                }
             }
             firstly {
                 cache.get(id: entity6.id)
@@ -622,10 +625,14 @@ class EntityCacheTests: XCTestCase {
             }.ensure {
                 waitFor2.fulfill()
             }.catch {error in
-                errorsReported = errorsReported + 1
+                errorsReportedQueue.sync {
+                    errorsReported = errorsReported + 1
+                }
             }
             waitForExpectations(timeout: 10, handler: nil)
-            XCTAssertEqual (1, errorsReported)
+            errorsReportedQueue.sync {
+                XCTAssertEqual (1, errorsReported)
+            }
             logger.sync() { entries in
                 XCTAssertEqual (5, entries.count)
             }
