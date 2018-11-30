@@ -506,9 +506,9 @@ public class SampleUsage  {
             // Using Extensions to Promise
             
             group.enter()
-            //firstly {
+            firstly {
                 caches.employees.get(id: employee2!.id) // Retrieve the promise of an employee
-            .referenceFromItem() { employee in         // Obtain the promise of the company referenced by employee.company
+            }.referenceFromItem() { employee in         // Obtain the promise of the company referenced by employee.company
                 return employee.company                 // by providing referenceFromItem a closure pointing to that ReferenceManager
             }.done { companyEntity in                         // Use done to obtain the Entity from the promise (could use sync to directly access the item)
                 ParallelTest.AssertTrue(label: "runSample.20", testResult: &overallTestResult, companyEntity! === company2)
