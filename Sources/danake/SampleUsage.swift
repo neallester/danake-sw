@@ -503,23 +503,66 @@ public class SampleUsage  {
             group.wait()
             batch.commitSync()
             
-            // Retrieving Employees of a Company using a promise chain with promiseFrtomItem
+            // Using Extensions to Promise
+            
+            group.enter()
+            //firstly {
+                caches.employees.get(id: employee2!.id) // Retrieve the promise of an employee
+            .referenceFromItem() { employee in         // Obtain the promise of the company referenced by employee.company
+                return employee.company                 // by providing referenceFromItem a closure pointing to that ReferenceManager
+            }.done { companyEntity in                         // Use done to obtain the Entity from the promise (could use sync to directly access the item)
+                ParallelTest.AssertTrue(label: "runSample.20", testResult: &overallTestResult, companyEntity! === company2)
+            }.catch { error in
+                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.21: Expected success but got \(error)")
+            }.finally {
+                group.leave()
+            }
+            group.wait()
+            // Retrieving Employees of a Company using a promise chain with promiseFromItem
             group.enter()
             firstly {
                 caches.companies.get(id: company2.id)
             }.promiseFromItem() { company in
                 return company.employees()
             }.done { employees in
-                ParallelTest.AssertEqual (label: "runSample.20", testResult: &overallTestResult, 1, employees.count)
-                ParallelTest.AssertTrue(label: "runSample.21", testResult: &overallTestResult, employees[0] === employee2)
+                ParallelTest.AssertEqual (label: "runSample.22a", testResult: &overallTestResult, 1, employees.count)
+                ParallelTest.AssertTrue(label: "runSample.22b", testResult: &overallTestResult, employees[0] === employee2)
             }.catch { error in
-                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22: Expected success but got \(error)")
+                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22c: Expected success but got \(error)")
             }.finally {
                 group.leave()
             }
             group.wait()
-            
-            //
+
+            // Accessing an employee retrieved in a promise chain
+            group.enter()
+            firstly {
+                caches.employees.get(id: employee2!.id)
+            }.sync() { employee in
+                ParallelTest.AssertEqual (label: "runSample22d", testResult: &overallTestResult, "Name Updated2", employee.name)
+            }.catch { error in
+                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22e: Expected success but got \(error)")
+            }.finally {
+                group.leave()
+            }
+
+            // Updating an employee retrieved in a promise chain
+            group.enter()
+            firstly {
+                caches.employees.get(id: employee2!.id)
+            }.update(batch: batch) { employee in
+                employee.name = "Updated3"
+            }.catch { error in
+                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22f: Expected success but got \(error)")
+            }.finally {
+                group.leave()
+            }
+            group.wait()
+            batch.commitSync()
+            employee2!.sync() { employee in
+                ParallelTest.AssertEqual (label: "runSample.22g", testResult: &overallTestResult, "Updated3", employee.name)
+        
+            }
             
             // Gotchas
             
