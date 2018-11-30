@@ -367,10 +367,10 @@ public class SampleUsage  {
                 caches.companies.scan()
             }.done { (companies: [Entity<SampleCompany>]) in
                 ParallelTest.AssertEqual (label: "runSample.3async", testResult: &overallTestResult, 0, companies.count)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.4async: Expected valid item")
+            }.finally {
+                group.leave()
             }
             group.wait()
             
@@ -409,10 +409,10 @@ public class SampleUsage  {
                 caches.companies.get(id: company2.id)
             }.done { sampleCompanyEntity in
                 ParallelTest.AssertTrue (label: "runSample.9", testResult: &overallTestResult, sampleCompanyEntity === company2)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.10: Expected valid (\(error))")
+            }.finally {
+                group.leave()
             }
             group.wait()
             
@@ -422,10 +422,10 @@ public class SampleUsage  {
                 caches.companies.scan()
             }.done { companies in
                 ParallelTest.AssertEqual (label: "runSample.11", testResult: &overallTestResult, 2, companies.count)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.12: Expected valid")
+            }.finally {
+                group.leave()
             }
             group.wait()
 
@@ -436,10 +436,10 @@ public class SampleUsage  {
                 caches.companies.get(id: badId)
             }.done { retrievalResult in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.13: Expected Error")
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.AssertEqual(label: "runSample.14", testResult: &overallTestResult, "unknownUUID(\(badId.uuidString))", "\(error)")
+            }.finally {
+                group.leave()
             }
             group.wait()
             
@@ -460,10 +460,10 @@ public class SampleUsage  {
             }.done { companies in
                 ParallelTest.AssertEqual (label: "runSample.17", testResult: &overallTestResult, 1, companies.count)
                 ParallelTest.AssertEqual (label: "runSample.18", testResult: &overallTestResult, companies[0].id.uuidString, company2.id.uuidString)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.19: Expected valid item")
+            }.finally {
+                group.leave()
             }
             group.wait()
             
@@ -503,21 +503,19 @@ public class SampleUsage  {
             group.wait()
             batch.commitSync()
             
-            // Retrieving Employees of a Company using a promise chain
+            // Retrieving Employees of a Company using a promise chain with promiseFrtomItem
             group.enter()
             firstly {
                 caches.companies.get(id: company2.id)
-            }.then { (companyEntity: Entity<SampleCompany>) -> Promise<[Entity<SampleEmployee>]> in
-                return companyEntity.promiseFromItem() { company in
-                    company.employees()
-                }
+            }.promiseFromItem() { company in
+                return company.employees()
             }.done { employees in
                 ParallelTest.AssertEqual (label: "runSample.20", testResult: &overallTestResult, 1, employees.count)
                 ParallelTest.AssertTrue(label: "runSample.21", testResult: &overallTestResult, employees[0] === employee2)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22: Expected success but got \(error)")
+            }.finally {
+                group.leave()
             }
             group.wait()
             
@@ -677,14 +675,14 @@ public class SampleUsage  {
             caches.companies.get(id: companyId)
         }.done { companyEntity in
             ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowerror.4: Expected error")
-        }.ensure {
-            group.leave()
         }.catch { error in
             ParallelTest.AssertEqual (label: "demonstrateThrowError.1", testResult: &overallTestResult, "getError", "\(error)")
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "demonstrateThrowError.2", testResult: &overallTestResult, 1, entries.count)
                 ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleCompanyCache.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
+        }.finally {
+            group.leave()
         }
         group.wait()
         group.enter()
@@ -697,10 +695,10 @@ public class SampleUsage  {
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "demonstrateThrowError.6", testResult: &overallTestResult, 1, entries.count)
             }
-        }.ensure {
-            group.leave()
         }.catch { error in
             ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowError.7: Expected success")
+        }.finally {
+            group.leave()
         }
         group.wait()
         
@@ -742,10 +740,10 @@ public class SampleUsage  {
         }.done { sampleCompany in
             ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.2", testResult: &overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
             retrievedCompany = sampleCompany
-        }.ensure {
-            group.leave()
         }.catch { error in
             ParallelTest.Fail (testResult: &overallTestResult, message: "testDemonstratePrefetchWithGet.3: Expected .ok")
+        }.finally {
+            group.leave()
         }
         // SampleCompany has not yet been retrieved
         ParallelTest.AssertNil (label: "testDemonstratePrefetchWithGet.4", testResult: &overallTestResult, retrievedCompany)

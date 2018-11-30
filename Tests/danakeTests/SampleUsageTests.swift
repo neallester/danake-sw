@@ -354,10 +354,10 @@ class SampleUsageTests: XCTestCase {
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
                 XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
-            }.ensure {
-                group.leave()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                group.leave()
             }
         }
         companyEntity2.sync() { company in
@@ -367,11 +367,10 @@ class SampleUsageTests: XCTestCase {
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
-                
-            }.ensure {
-                group.leave()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                group.leave()
             }
         }
         switch group.wait(timeout: DispatchTime.now() + 10.0) {

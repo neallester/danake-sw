@@ -399,9 +399,21 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
     
 /**
-     Obtain a promise from the item
+     Obtain the promise from a referenced entity contained in the item
 */
 
+    public func referenceFromItem<R> (closure: (T) -> ReferenceManager<T, R>) -> Promise<Entity<R>?> {
+        var result: Promise<Entity<R>?>? = nil
+        queue.sync {
+            result = closure (self.item).get()
+        }
+        return result!
+    }
+    
+/**
+     Obtain a promise from the item
+*/
+    
     public func promiseFromItem<P> (closure: (T) -> Promise<P>) -> Promise<P> {
         var result: Promise<P>? = nil
         queue.sync {

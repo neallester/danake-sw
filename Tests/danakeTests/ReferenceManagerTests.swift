@@ -509,10 +509,10 @@ class ReferenceManagerTests: XCTestCase {
         reference.appendResolver(promiseResolver.resolver)
         let _ = promiseResolver.promise.done() { entity in
             print ("done")
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         testReference.semaphore.signal()
         waitForExpectations(timeout: 10, handler: nil)
@@ -2014,10 +2014,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             wasNil = (entity == nil)
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssert (wasNil)
@@ -2047,10 +2047,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             retrievedEntity = entity
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssertTrue (entity === retrievedEntity)
@@ -2079,10 +2079,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             retrievedEntity = entity
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         XCTAssertTrue (entity === retrievedEntity)
@@ -2111,10 +2111,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         var suspendSeconds: TimeInterval = 0.0
@@ -2135,12 +2135,12 @@ class ReferenceManagerTests: XCTestCase {
         
         firstly {
             reference.get()
-            }.done { entity in
+        }.done { entity in
                 XCTFail ("Expected .error")
-            }.ensure {
-                waitFor.fulfill()
-            }.catch { error in
+        }.catch { error in
                 XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         reference.sync() { contents in
@@ -2160,12 +2160,12 @@ class ReferenceManagerTests: XCTestCase {
 
         firstly {
             reference.get()
-            }.done { entity in
-                XCTFail ("Expected .error")
-            }.ensure {
-                waitFor.fulfill()
-            }.catch { error in
-                XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
+        }.done { entity in
+            XCTFail ("Expected .error")
+        }.catch { error in
+            XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         suspendSeconds = 0.0
@@ -2194,12 +2194,12 @@ class ReferenceManagerTests: XCTestCase {
 
         firstly {
             reference.get()
-            }.done { entity in
-                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
-            }.ensure {
-                waitFor.fulfill()
-            }.catch { error in
-                XCTFail ("Expected success but got \(error)")
+        }.done { entity in
+            XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         suspendSeconds = 0.0
@@ -2242,12 +2242,12 @@ class ReferenceManagerTests: XCTestCase {
         waitFor = expectation(description: "wait7a")
         firstly {
             reference.get()
-            }.done { entity in
-                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
-            }.ensure {
-                waitFor.fulfill()
-            }.catch { error in
-                XCTFail ("Expected success but got \(error)")
+        }.done { entity in
+            XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2262,12 +2262,12 @@ class ReferenceManagerTests: XCTestCase {
         var waitFor2 = expectation(description: "wait7a")
         firstly {
             reference.get()
-            }.done { entity in
-                XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
-            }.ensure {
-                waitFor2.fulfill()
-            }.catch { error in
-                XCTFail ("Expected success but got \(error)")
+        }.done { entity in
+            XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor2.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2318,10 +2318,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTAssertEqual ("getError", "\(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2338,10 +2338,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
-        }.ensure {
-            waitFor2.fulfill()
         }.catch { error in
             XCTAssertEqual ("getError", "\(error)")
+        }.finally {
+            waitFor2.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2387,12 +2387,12 @@ class ReferenceManagerTests: XCTestCase {
 
         firstly {
             reference.get()
-            }.done { entity in
-                XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
-            }.ensure {
-                waitFor.fulfill()
-            }.catch { error in
-                XCTFail ("Expected success but got \(error)")
+        }.done { entity in
+            XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2408,14 +2408,13 @@ class ReferenceManagerTests: XCTestCase {
         
         firstly {
             reference.get()
-            }.done { entity in
-                XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
-            }.ensure {
-                waitFor2.fulfill()
-            }.catch { error in
-                XCTFail ("Expected success but got \(error)")
+        }.done { entity in
+            XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
+        }.catch { error in
+            XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor2.fulfill()
         }
-
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2463,10 +2462,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
-        }.ensure {
-            waitFor.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {
@@ -2483,10 +2482,10 @@ class ReferenceManagerTests: XCTestCase {
             reference.get()
         }.done { entity in
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
-        }.ensure {
-            waitFor2.fulfill()
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
+        }.finally {
+            waitFor2.fulfill()
         }
         reference.sync() { contents in
             switch contents.state {

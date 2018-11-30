@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		0859B4F821AEA3EE007AD389 /* promise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0859B4F721AEA3EE007AD389 /* promise.swift */; };
 		OBJ_104 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
 		OBJ_115 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* BatchTests.swift */; };
 		OBJ_116 /* DatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* DatabaseTests.swift */; };
@@ -66,28 +67,28 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		083A5F9B219B2E2B00E2A43D /* PBXContainerItemProxy */ = {
+		08D6DC4121A9DC5000C16564 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "PromiseKit::PromiseKit";
 			remoteInfo = PromiseKit;
 		};
-		083A5F9C219B2E2B00E2A43D /* PBXContainerItemProxy */ = {
+		08D6DC4221A9DC5000C16564 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "danake::danake";
 			remoteInfo = danake;
 		};
-		083A5F9D219B2E2B00E2A43D /* PBXContainerItemProxy */ = {
+		08D6DC4321A9DC5000C16564 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "PromiseKit::PromiseKit";
 			remoteInfo = PromiseKit;
 		};
-		083A5F9E219B2E2B00E2A43D /* PBXContainerItemProxy */ = {
+		08D6DC4421A9DC5100C16564 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
@@ -97,6 +98,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0859B4F721AEA3EE007AD389 /* promise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = promise.swift; sourceTree = "<group>"; };
 		OBJ_10 /* InMemoryAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryAccessor.swift; sourceTree = "<group>"; };
 		OBJ_11 /* ParallelTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallelTest.swift; sourceTree = "<group>"; };
 		OBJ_12 /* ReferenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceManager.swift; sourceTree = "<group>"; };
@@ -120,7 +122,7 @@
 		OBJ_32 /* SampleUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleUsageTests.swift; sourceTree = "<group>"; };
 		OBJ_33 /* common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = common.swift; sourceTree = "<group>"; };
 		OBJ_34 /* sourcery */ = {isa = PBXFileReference; lastKnownFileType = folder; path = sourcery; sourceTree = SOURCE_ROOT; };
-		OBJ_37 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/neal/xcode/danake/.build/checkouts/PromiseKit-7388190045221681668/Package.swift"; sourceTree = "<group>"; };
+		OBJ_37 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/neal/xcode/danake-sw/.build/checkouts/PromiseKit--4210243614125454789/Package.swift"; sourceTree = "<group>"; };
 		OBJ_38 /* Box.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Box.swift; sourceTree = "<group>"; };
 		OBJ_39 /* Catchable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catchable.swift; sourceTree = "<group>"; };
 		OBJ_40 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
@@ -138,8 +140,8 @@
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_9 /* EntityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCache.swift; sourceTree = "<group>"; };
 		"PromiseKit::PromiseKit::Product" /* PromiseKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = PromiseKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"danake::danake::Product" /* danake.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = danake.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"danake::danakeTests::Product" /* danakeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = danakeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		"danake::danake::Product" /* danake.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = danake.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"danake::danakeTests::Product" /* danakeTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = danakeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,12 +205,12 @@
 		OBJ_35 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_36 /* PromiseKit 6.5.2 */,
+				OBJ_36 /* PromiseKit 6.5.3 */,
 			);
 			name = Dependencies;
 			sourceTree = "<group>";
 		};
-		OBJ_36 /* PromiseKit 6.5.2 */ = {
+		OBJ_36 /* PromiseKit 6.5.3 */ = {
 			isa = PBXGroup;
 			children = (
 				OBJ_37 /* Package.swift */,
@@ -227,11 +229,11 @@
 				OBJ_50 /* race.swift */,
 				OBJ_51 /* when.swift */,
 			);
-			name = "PromiseKit 6.5.2";
-			path = ".build/checkouts/PromiseKit-7388190045221681668/Sources";
+			name = "PromiseKit 6.5.3";
+			path = ".build/checkouts/PromiseKit--4210243614125454789/Sources";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -241,14 +243,13 @@
 				OBJ_35 /* Dependencies */,
 				OBJ_52 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_52 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				"danake::danake::Product" /* danake.framework */,
 				"danake::danakeTests::Product" /* danakeTests.xctest */,
+				"danake::danake::Product" /* danake.framework */,
 				"PromiseKit::PromiseKit::Product" /* PromiseKit.framework */,
 			);
 			name = Products;
@@ -274,6 +275,7 @@
 				OBJ_15 /* database.swift */,
 				OBJ_16 /* entity.swift */,
 				OBJ_17 /* logging.swift */,
+				0859B4F721AEA3EE007AD389 /* promise.swift */,
 			);
 			name = danake;
 			path = Sources/danake;
@@ -349,7 +351,7 @@
 			buildPhases = (
 				OBJ_114 /* Sources */,
 				OBJ_129 /* Frameworks */,
-				083A5F9F219B2E8700E2A43D /* ShellScript */,
+				08D6DC4521A9DC6600C16564 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -368,15 +370,7 @@
 		OBJ_1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1010;
-				TargetAttributes = {
-					"danake::danake" = {
-						LastSwiftMigration = 1010;
-					};
-					"danake::danakeTests" = {
-						LastSwiftMigration = 1010;
-					};
-				};
+				LastUpgradeCheck = 9999;
 			};
 			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "danake" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -385,7 +379,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_52 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -401,7 +395,7 @@
 /* End PBXProject section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		083A5F9F219B2E8700E2A43D /* ShellScript */ = {
+		08D6DC4521A9DC6600C16564 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -486,6 +480,7 @@
 				OBJ_87 /* EntityCache.swift in Sources */,
 				OBJ_88 /* InMemoryAccessor.swift in Sources */,
 				OBJ_89 /* ParallelTest.swift in Sources */,
+				0859B4F821AEA3EE007AD389 /* promise.swift in Sources */,
 				OBJ_90 /* ReferenceManager.swift in Sources */,
 				OBJ_91 /* SampleUsage.swift in Sources */,
 				OBJ_92 /* batch.swift in Sources */,
@@ -501,22 +496,22 @@
 		OBJ_109 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "danake::danakeTests" /* danakeTests */;
-			targetProxy = 083A5F9E219B2E2B00E2A43D /* PBXContainerItemProxy */;
+			targetProxy = 08D6DC4421A9DC5100C16564 /* PBXContainerItemProxy */;
 		};
 		OBJ_132 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "danake::danake" /* danake */;
-			targetProxy = 083A5F9C219B2E2B00E2A43D /* PBXContainerItemProxy */;
+			targetProxy = 08D6DC4221A9DC5000C16564 /* PBXContainerItemProxy */;
 		};
 		OBJ_133 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "PromiseKit::PromiseKit" /* PromiseKit */;
-			targetProxy = 083A5F9D219B2E2B00E2A43D /* PBXContainerItemProxy */;
+			targetProxy = 08D6DC4321A9DC5000C16564 /* PBXContainerItemProxy */;
 		};
 		OBJ_98 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "PromiseKit::PromiseKit" /* PromiseKit */;
-			targetProxy = 083A5F9B219B2E2B00E2A43D /* PBXContainerItemProxy */;
+			targetProxy = 08D6DC4121A9DC5000C16564 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -554,8 +549,8 @@
 		OBJ_112 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_MODULES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
@@ -567,7 +562,7 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 4.0;
 				TARGET_NAME = danakeTests;
 			};
 			name = Debug;
@@ -575,8 +570,8 @@
 		OBJ_113 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CLANG_ENABLE_MODULES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
@@ -588,7 +583,7 @@
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 4.0;
 				TARGET_NAME = danakeTests;
 			};
 			name = Release;
@@ -597,42 +592,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_NS_ASSERTIONS = YES;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-DXcode";
@@ -649,36 +618,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_SWIFT_FLAGS = "-DXcode";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -775,7 +719,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 4.0;
 				TARGET_NAME = danake;
 			};
 			name = Debug;
@@ -799,7 +743,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 4.0;
 				TARGET_NAME = danake;
 			};
 			name = Release;

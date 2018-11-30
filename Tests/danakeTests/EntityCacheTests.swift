@@ -386,19 +386,19 @@ class EntityCacheTests: XCTestCase {
                 cache.get (id: entity1.id)
             }.done { item in
                 XCTFail ("Expected error")
-            }.ensure {
-                waitFor1.fulfill()
             }.catch { error in
                 XCTAssertEqual ("unknownUUID(\(entity1.id))", "\(error)")
+            }.finally {
+                waitFor1.fulfill()
             }
             firstly {
                 cache.get (id: entity2.id)
             }.done { item in
                 XCTFail ("Expected error")
-            }.ensure {
-                waitFor2.fulfill()
             }.catch { error in
                 XCTAssertEqual ("unknownUUID(\(entity2.id))", "\(error)")
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             XCTAssertNil (result1)
@@ -415,20 +415,20 @@ class EntityCacheTests: XCTestCase {
                 cache.get(id: entity1.id)
             }.done { item in
                 result1 = item
-            }.ensure {
-                waitFor1.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor1.fulfill()
             }
             
             firstly {
                 cache.get(id: entity2.id)
             }.done { item in
                 result2 = item
-            }.ensure {
-                waitFor2.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             var retrievedEntity1 = result1!
@@ -483,20 +483,20 @@ class EntityCacheTests: XCTestCase {
                 cache.get(id: entity3.id)
             }.done { item in
                 result1 = item
-            }.ensure {
-                waitFor1.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor1.fulfill()
             }
             
             firstly {
                 cache.get(id: entity4.id)
             }.done { item in
                 result2 = item
-            }.ensure {
-                waitFor2.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             XCTAssertTrue (entity3 === result1!)
@@ -525,20 +525,20 @@ class EntityCacheTests: XCTestCase {
                 cache.get (id: entity1.id)
             }.done { item in
                 result1 = item
-            }.ensure {
-                waitFor1.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor1.fulfill()
             }
             
             firstly {
                 cache.get (id: entity2.id)
             }.done { item in
                 result2 = item
-            }.ensure {
-                waitFor2.fulfill()
             }.catch { error in
                 XCTFail ("Expected success but got \(error)")
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             retrievedEntity1 = result1!
@@ -573,23 +573,23 @@ class EntityCacheTests: XCTestCase {
                 cache.get(id: invalidDataUuid1)
             }.done { item in
                 XCTFail ("Expected error")
-            }.ensure {
-                waitFor1.fulfill()
             }.catch { error in
                 #if os(Linux)
                     XCTAssertEqual ("creationError(\"The operation could not be completed\")", "\(error)")
                 #else
                     XCTAssertEqual ("creationError(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
                 #endif
+            }.finally {
+                waitFor1.fulfill()
             }
             firstly {
                 cache.get(id: invalidDataUuid2)
             }.done { item in
                 XCTFail ("Expected error")
-            }.ensure {
-                waitFor2.fulfill()
             }.catch { error in
                 XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             logger.sync() { entries in
@@ -611,23 +611,23 @@ class EntityCacheTests: XCTestCase {
                 cache.get(id: entity5.id)
             }.done { item in
                 // Do Nothing
-            }.ensure {
-                waitFor1.fulfill()
             }.catch {error in
                 errorsReportedQueue.sync {
                     errorsReported = errorsReported + 1
                 }
+            }.finally {
+                waitFor1.fulfill()
             }
             firstly {
                 cache.get(id: entity6.id)
             }.done { item in
                 // Do Nothing
-            }.ensure {
-                waitFor2.fulfill()
             }.catch {error in
                 errorsReportedQueue.sync {
                     errorsReported = errorsReported + 1
                 }
+            }.finally {
+                waitFor2.fulfill()
             }
             waitForExpectations(timeout: 10, handler: nil)
             errorsReportedQueue.sync {
@@ -1241,10 +1241,10 @@ class EntityCacheTests: XCTestCase {
                         XCTAssertEqual (entity4.id.uuidString, retrievedEntity4?.id.uuidString)
                         XCTAssertTrue (entity4 === retrievedEntity4!)
 
-                    }.ensure {
-                        dispatchGroup.leave()
                     }.catch { error in
                         XCTFail ("Expected success but got \(error)")
+                    }.finally {
+                        dispatchGroup.leave()
                     }
                 }
                 let test1b = {
@@ -1295,11 +1295,10 @@ class EntityCacheTests: XCTestCase {
                         XCTAssertTrue (entity3 === retrievedEntity3!)
                         XCTAssertEqual (entity4.id.uuidString, retrievedEntity4?.id.uuidString)
                         XCTAssertTrue (entity4 === retrievedEntity4!)
-
-                    }.ensure {
-                        dispatchGroup.leave()
                     }.catch { error in
                         XCTFail ("Expected success but got \(error)")
+                    }.finally {
+                        dispatchGroup.leave()
                     }
                 }
                 let test2 = {
@@ -1321,10 +1320,10 @@ class EntityCacheTests: XCTestCase {
                             XCTAssertEqual ("A String 1", retrievedItem.myString)
                         }
 
-                    }.ensure {
-                        dispatchGroup.leave()
                     }.catch { error in
                         XCTFail ("Expected success but got \(error)")
+                    }.finally {
+                        dispatchGroup.leave()
                     }
                 }
                 let test3 = {
@@ -1343,14 +1342,13 @@ class EntityCacheTests: XCTestCase {
                             XCTFail ("Expected .persistent")
                         }
                         XCTAssert (entity3 === retrievedEntity)
-
-                    }.ensure {
-                        dispatchGroup.leave()
                     }.catch { error in
                         XCTFail ("Expected success but got \(error)")
+                    }.finally {
+                        dispatchGroup.leave()
                     }
                 }
-                var jobs: [() -> PMKFinalizer] = []
+                var jobs: [() -> ()] = []
                 switch orderCode {
                 case 0:
                     jobs = [test1a, test2, test3]
