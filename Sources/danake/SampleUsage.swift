@@ -545,7 +545,7 @@ public class SampleUsage  {
             }.finally {
                 group.leave()
             }
-
+            group.wait()
             // Updating an employee retrieved in a promise chain
             group.enter()
             firstly {
