@@ -1288,6 +1288,14 @@ class EntityTests: XCTestCase {
             XCTAssertEqual (1, entities.count)
         }
         parent = nil
+        let timeout2 = Date().timeIntervalSince1970 + 10
+        var count = 1
+        while count > 0 && timeout2 > Date().timeIntervalSince1970 {
+            cache.sync { entities in
+                count = entities.count
+            }
+            usleep(100000)
+        }
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
