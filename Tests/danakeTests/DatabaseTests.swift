@@ -7,6 +7,7 @@
 
 import XCTest
 @testable import danake
+import PromiseKit
 
 class RegistrarTestItem {
     
@@ -25,8 +26,9 @@ class DatabaseTests: XCTestCase {
         // This could be cause by the deallocation occuring on another thread (in which case one would expect to see it occasionally
         // on OSX, or because Linux occasionally has problem with deterministic deallocation of constructs (which I have seen some other
         // evience for.
-        let now = Date().timeIntervalSince1970
-        while (Database.registrar.count() > 0 && (now + 30.0 > Date().timeIntervalSince1970)) {
+        Database.registrar.clear()
+        let untilTime = Date().timeIntervalSince1970 + 30.0
+        while (Database.registrar.count() > 0 && Date().timeIntervalSince1970 < untilTime) {
             usleep(100)
         }
         XCTAssertEqual (0, Database.registrar.count())
@@ -247,4 +249,81 @@ class DatabaseTests: XCTestCase {
         XCTAssertEqual ("\(accessor.hashValue).\(standardCacheName)", database.qualifiedCacheName(standardCacheName))
     }
     
+//    public func testPromiseKitLogging() throws {
+//        let logger = InMemoryLogger()
+//        let accessor = InMemoryAccessor()
+//        let _ = Database (accessor: accessor, schemaVersion: 1, logger: logger)
+//        let promiseMainThread = Promise<Int>.pending()
+//        var waitFor = expectation(description: "wait1")
+//        let workQueue = DispatchQueue (label: "work")
+//        workQueue.async {
+//            promiseMainThread.resolver.fulfill (10)
+//            waitFor.fulfill()
+//        }
+//        let _ = try promiseMainThread.promise.wait()
+//        waitForExpectations(timeout: 10)
+//        logger.sync() { entries in
+//            XCTAssertEqual (2, entries.count)
+//            XCTAssertEqual ("ERROR|Database.init|promiseKit.waitOnMainThread", entries[1].asTestString())
+//        }
+//        do {
+//            let unusedPromise = Promise<Int>.pending()
+//            let _ = unusedPromise
+//        }
+//        logger.sync() { entries in
+//            XCTAssertEqual (3, entries.count)
+//            XCTAssertEqual ("ERROR|Database.init|promiseKit.pendingPromiseDeallocated", entries[2].asTestString())
+//        }
+//        waitFor = expectation(description: "wait2")
+//        enum TestError : Error {
+//            case reject
+//        }
+//        let promise = Promise<Int>.pending()
+//        workQueue.async {
+//            promise.resolver.reject (TestError.reject)
+//        }
+//        firstly {
+//            promise.promise
+//        }.cauterize().finally {
+//            waitFor.fulfill()
+//        }
+//        waitForExpectations(timeout: 10)
+//        logger.sync() { entries in
+//            XCTAssertEqual (4, entries.count)
+//            XCTAssertEqual ("DEBUG|Database.init|promiseKit.cauterized|error=reject", entries[3].asTestString())
+//        }
+//    }
+//
+//    // This test should not emit any console output
+//    public func testPromiseKitLoggingWithoutLogger() throws {
+//        let accessor = InMemoryAccessor()
+//        let _ = Database (accessor: accessor, schemaVersion: 1, logger: nil)
+//        let promiseMainThread = Promise<Int>.pending()
+//        var waitFor = expectation(description: "wait1")
+//        let workQueue = DispatchQueue (label: "work")
+//        workQueue.async {
+//            promiseMainThread.resolver.fulfill (10)
+//            waitFor.fulfill()
+//        }
+//        let _ = try promiseMainThread.promise.wait()
+//        waitForExpectations(timeout: 10)
+//        do {
+//            let unusedPromise = Promise<Int>.pending()
+//            let _ = unusedPromise
+//        }
+//        waitFor = expectation(description: "wait2")
+//        enum TestError : Error {
+//            case reject
+//        }
+//        let promise = Promise<Int>.pending()
+//        workQueue.async {
+//            promise.resolver.reject (TestError.reject)
+//        }
+//        firstly {
+//            promise.promise
+//            }.cauterize().finally {
+//                waitFor.fulfill()
+//        }
+//        waitForExpectations(timeout: 10)
+//    }
 }
