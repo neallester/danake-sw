@@ -195,6 +195,20 @@ open class Database {
         self.schemaVersion = schemaVersion
         workQueue = DispatchQueue (label: "workQueue Database \(hashValue)", attributes: .concurrent)
         PromiseKit.conf.Q = (map: workQueue, return: workQueue)
+        if let logger = logger {
+            PromiseKit.conf.logHandler = { event in
+                switch event {
+                case .waitOnMainThread:
+                    logger.log(level: .error, source: self, featureName: "init", message: "promiseKit.waitOnMainThread", data: nil)
+                case .pendingPromiseDeallocated:
+                    logger.log(level: .warning, source: self, featureName: "init", message: "promiseKit.pendingPromiseDeallocated", data: nil)
+                case .cauterized(let error):
+                    logger.log(level: .debug, source: self, featureName: "init", message: "promiseKit.cauterized", data: [(name: "error", value: "\(error)")])
+                }
+            }
+        } else {
+            PromiseKit.conf.logHandler = { event in }
+        }
         if Database.registrar.register(key: hashValue, value: self) {
             logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
         } else {
