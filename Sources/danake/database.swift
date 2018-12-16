@@ -172,6 +172,7 @@ public enum EntityConversionResult<T> {
 open class Database {
     
 /**
+     - parameter context: The logging context for this database
      - parameter accessor: A delegate implementing access to the persistent media.
      - parameter schemaVersion: The **schemaVersion** is stored as metadata with every Entity when it is stored in the database.
                                 The value of **schemaVersion** should be incremented whenever an Decodable incompatible change
@@ -187,7 +188,7 @@ open class Database {
                                          subsequent attempts to retrieve from a ReferenceManager will return the same error without
                                          hitting the persistent media.
 */
-    public init (accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger? = nil, referenceRetryInterval: TimeInterval = 120.0) {
+    public init (context: String, accessor: DatabaseAccessor, schemaVersion: Int, logger: Logger? = nil, referenceRetryInterval: TimeInterval = 120.0) {
         self.referenceRetryInterval = referenceRetryInterval
         self.accessor = accessor
         self.logger = logger
@@ -199,26 +200,30 @@ open class Database {
             PromiseKit.conf.logHandler = { event in
                 switch event {
                 case .waitOnMainThread:
-                    logger.log(level: .error, source: self, featureName: "init", message: "promiseKit.waitOnMainThread", data: nil)
+                    logger.log(level: .error, context: "\(context)", source: self, featureName: "init", message: "promiseKit.waitOnMainThread", data: nil)
                 case .pendingPromiseDeallocated:
-                    logger.log(level: .warning, source: self, featureName: "init", message: "promiseKit.pendingPromiseDeallocated", data: nil)
+                    I want to capture the application context and database context for each request
+                    logger.log(level: .warning, context: "\(context).\(accessor.hashValue)", source: self, featureName: "init", message: "promiseKit.pendingPromiseDeallocated", data: nil)
                 case .cauterized(let error):
-                    logger.log(level: .debug, source: self, featureName: "init", message: "promiseKit.cauterized", data: [(name: "error", value: "\(error)")])
+                    logger.log(level: .debug, context: "Database.\(accessor.hashValue)", source: self, featureName: "init", message: "promiseKit.cauterized", data: [(name: "error", value: "\(error)")])
                 }
             }
         } else {
             PromiseKit.conf.logHandler = { event in }
         }
         if Database.registrar.register(key: hashValue, value: self) {
-            logger?.log(level: .info, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
+            logger?.log(level: .info, context: nil, source: self, featureName: "init", message: "created", data: [(name:"hashValue", hashValue)])
         } else {
-            logger?.log(level: .emergency, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
+            logger?.log(level: .emergency, context: nil, source: self, featureName: "init", message: "registrationFailed", data: [(name:"hashValue", hashValue)])
         }
     }
     
     internal func qualifiedCacheName (_ cacheName: CacheName) -> QualifiedCacheName {
         return Database.qualifiedCacheName(databaseHash: accessor.hashValue, cacheName: cacheName)
     }
+    
+    // The logging context
+    internal let context: String
     
     /// A delegate implementing access to the persistent media.
     public let accessor: DatabaseAccessor
@@ -251,6 +256,7 @@ open class Database {
     static let cacheRegistrar = Registrar<QualifiedCacheName, UntypedEntityCache>()
     public static let cacheKey = CodingUserInfoKey (rawValue: "cache")!
     public static let parentDataKey = CodingUserInfoKey (rawValue: "parentData")!
+    public static let contextKey = CodingUserInfoKey (rawValue: "context")!
     internal static let encoder: JSONEncoder = {
         let result = JSONEncoder()
         result.dateEncodingStrategy = .millisecondsSince1970
@@ -268,8 +274,8 @@ public enum AccessorError: Error {
 */
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>?
-    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
+    func get<T> (context: String?, type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>?
+    func scan<T> (context: String?, type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
     
 /**
      - returns: Is the format of **name** a valid CacheName in this storage medium and,
@@ -291,7 +297,7 @@ public protocol DatabaseAccessor {
      
      - returns: A DatabaseActionResult with the closure (or error message).
 */
-    func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    func addAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
 
 /**
      Attempt to create a closure which **updatess** an existing Entity in the persistent medium. This function
@@ -301,7 +307,7 @@ public protocol DatabaseAccessor {
      
      - returns: A DatabaseActionResult with the closure (or error message).
 */
-    func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    func updateAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     
 /**
      Attempt to create a closure which **removes** an existing Entity in the persistent medium. This function
@@ -311,7 +317,7 @@ public protocol DatabaseAccessor {
      
      - returns: A DatabaseActionResult with the closure (or error message).
 */
-    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    func removeAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
     
 }
 

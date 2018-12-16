@@ -104,7 +104,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
         if self.isEager {
             queue.async {
                 do {
-                    try self.retrieve()
+                    try self.retrieve(context: nil)
                 } catch {}
             }
         }
@@ -135,7 +135,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
             if self.isEager {
                 queue.async {
                     do {
-                        try self.retrieve()
+                        try self.retrieve(context: decoder.userInfo[Database.contextKey] as? String)
                     } catch {}
                 }
             }
@@ -184,7 +184,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
      
      - parameter closure: The closure to which the retrieval result will be applied.
 */
-    public func get() -> Promise<Entity<T>?> {
+    public func get(context: String?) -> Promise<Entity<T>?> {
         let result: (promise: Promise<Entity<T>?>, resolver: Resolver<Entity<T>?>) = Promise.pending()
         queue.sync {
             switch self.state {
@@ -192,7 +192,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 result.resolver.resolve (.fulfilled (self.entity))
             case .decoded:
                 do {
-                    try self.retrieve ()
+                    try self.retrieve (context: context)
                     pendingResolvers.append(result.resolver)
                 } catch {
                     result.resolver.reject (error)
@@ -203,7 +203,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 let now = Date()
                 if now.timeIntervalSince1970 > retryTime.timeIntervalSince1970 {
                     do {
-                        try self.retrieve ()
+                        try self.retrieve (context: context)
                         pendingResolvers.append(result.resolver)
                     } catch {
                         result.resolver.reject (error)
@@ -223,12 +223,12 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
      
      **Note**: Retrieval result is cached so subsequent accesses will be fast.
      */
-    public func getSync(timeoutSeconds: Double = 20.0) throws -> Entity<T>? {
+    public func getSync(context: String?, timeoutSeconds: Double = 20.0) throws -> Entity<T>? {
         let group = DispatchGroup()
         group.enter()
         var result: Entity<T>? = nil
         firstly {
-            get()
+            get(context: context)
         }.done { entity in
             result = entity
         }.catch() { error in
@@ -236,7 +236,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
             if entityId == nil {
                 entityId = self.referenceData?.id
             }
-            self.cache?.database.logger?.log (level: .error, source: self, featureName: "getSync", message: "error", data: [(name: "parentId", self.parentData.id.uuidString), (name: "entityCollection", value: self.cache?.qualifiedName), (name: "entityId", value: entityId), (name: "message", value: "\(error)")])
+            self.cache?.database.logger?.log (level: .error, context: context, source: self, featureName: "getSync", message: "error", data: [(name: "parentId", self.parentData.id.uuidString), (name: "entityCollection", value: self.cache?.qualifiedName), (name: "entityId", value: entityId), (name: "message", value: "\(error)")])
         }.finally {
             group.leave()
         }
@@ -258,7 +258,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
     }
     
     // Not thread safe, must be called within queue
-    internal func retrieve () throws {
+    internal func retrieve (context: String?) throws {
         if let referenceData = self.referenceData {
             if cache == nil {
                 if let candidateCollection = Database.cacheRegistrar.value(key: referenceData.qualifiedCacheName) {
@@ -275,7 +275,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 self.state = .retrieving (referenceData)
                 self.retrievalGetHook()
                 firstly {
-                    cache.get(id: referenceData.id)
+                    cache.get(context: context, id: referenceData.id)
                 }.done { retrievedEntity in
                     self.queue.sync {
                         switch self.state {
@@ -328,7 +328,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
         queue.sync {
             switch self.state {
             case .dereferenced:
-                cache?.database.logger?.log(level: .error, source: self, featureName: "set(entity:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "entityCollection", value: entity?.cache.qualifiedName), (name: "entityId", value: entity?.id)])
+                cache?.database.logger?.log(level: .error, context: batch.context, source: self, featureName: "set(entity:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "entityCollection", value: entity?.cache.qualifiedName), (name: "entityId", value: entity?.id)])
             default:
                 let wasUpdated = self.willUpdate(newId: entity?.id)
                 self.entity = entity
@@ -381,7 +381,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                         self.state = .decoded
                         if self.isEager {
                             do {
-                                try self.retrieve()
+                                try self.retrieve(context: batch.context)
                             } catch {}
                         }
                     } else {
@@ -389,10 +389,10 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                     }
                 case .retrieving, .retrievalError:
                     do {
-                        try self.retrieve()
+                        try self.retrieve(context: batch.context)
                     } catch {}
                 case .dereferenced:
-                    cache?.database.logger?.log(level: .error, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCacheName), (name: "referenceDataId", value: referenceData?.id)])
+                    cache?.database.logger?.log(level: .error, context: batch.context, source: self, featureName: "set(referenceData:)", message: "alreadyDereferenced", data: [(name: "parentId", parent?.id.uuidString), (name: "referenceDataCollection", value: referenceData?.qualifiedCacheName), (name: "referenceDataId", value: referenceData?.id)])
                 }
             }
         }
@@ -410,7 +410,7 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
         if let parent = self.parent {
             parent.setDirty(batch: batch)
         } else {
-            self.parentData.cache.database.logger?.log (level: .error, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"cacheName", value: self.parentData.cache.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
+            self.parentData.cache.database.logger?.log (level: .error, context: batch.context, source: self, featureName: "addParentTo", message: "lostData:noParent", data: [(name:"cacheName", value: self.parentData.cache.qualifiedName), (name:"parentId", value: self.parentData.id.uuidString), (name:"parentVersion", value: self.parentData.version)])
         }
     }
     

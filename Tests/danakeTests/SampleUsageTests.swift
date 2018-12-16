@@ -77,7 +77,7 @@ class SampleUsageTests: XCTestCase {
     func testCompanyEmployees() {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let companyEntity3 = caches.companies.new(batch: batch)
@@ -88,7 +88,7 @@ class SampleUsageTests: XCTestCase {
         batch.commitSync()
         companyEntity1.sync() { company in
             do {
-                let employees = try company.employeesSync()
+                let employees = try company.employeesSync(context: nil)
                 XCTAssertEqual (2, employees.count)
                 XCTAssertTrue (employees[0] === employeeEntity1 || employees[0] === employeeEntity2)
                 XCTAssertTrue (employees[1] === employeeEntity1 || employees[1] === employeeEntity2)
@@ -98,7 +98,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity2.sync() { company in
             do {
-                let employees = try company.employeesSync()
+                let employees = try company.employeesSync(context: nil)
                 XCTAssertEqual (2, employees.count)
             } catch {
                 XCTFail("testCompanyEmployees.2: Expected success but got \(error)")
@@ -106,7 +106,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity3.sync() { company in
             do {
-                let employees = try company.employeesSync()
+                let employees = try company.employeesSync(context: nil)
                 XCTAssertEqual (0, employees.count)
             } catch {
                 XCTFail("testCompanyEmployees.3: Expected success but got \(error)")
@@ -117,7 +117,7 @@ class SampleUsageTests: XCTestCase {
     func testCompanyEmployeesAsync() {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let companyEntity3 = caches.companies.new(batch: batch)
@@ -132,7 +132,7 @@ class SampleUsageTests: XCTestCase {
         let promise1 =
             firstly {
                 companyEntity1.promiseFromItem() { company in
-                    return company.employees()
+                    return company.employees(context: nil)
                 }
             }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (2, employees.count)
@@ -143,7 +143,7 @@ class SampleUsageTests: XCTestCase {
         let promise2 =
             firstly {
                 companyEntity2.promiseFromItem() { company in
-                    return company.employees()
+                    return company.employees(context: nil)
                 }
             }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (2, employees.count)
@@ -152,7 +152,7 @@ class SampleUsageTests: XCTestCase {
         let promise3 =
             firstly {
                 companyEntity3.promiseFromItem() { company in
-                    return company.employees()
+                    return company.employees(context: nil)
                 }
             }.done { (employees: [Entity<SampleEmployee>]) in
                 XCTAssertEqual (0, employees.count)
@@ -169,7 +169,7 @@ class SampleUsageTests: XCTestCase {
     
     func testCompanyCacheNew() {
         let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         XCTAssertNotNil (caches.companies.new(batch: batch))
     }
     
@@ -183,7 +183,7 @@ class SampleUsageTests: XCTestCase {
     
     func testAddressFromCache() {
         let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         addressEntity.sync() { address in
@@ -197,27 +197,27 @@ class SampleUsageTests: XCTestCase {
     func testEmployeeCreation() throws {
         let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let company = SampleCompany(employeeCache: caches.employees, id: UUID())
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity = caches.companies.new(batch: batch, item: company)
         let selfReference = EntityReferenceData<SampleEmployee> (cache: caches.employees, id: UUID(), version: 0)
         // Without address
         var employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: nil)
-        var referencedCompanyEntity = try employee.company.getSync()!
+        var referencedCompanyEntity = try employee.company.getSync(context: nil)!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
         }
         XCTAssertEqual ("Bob Carol", employee.name)
-        try XCTAssertNil (employee.address.getSync())
+        try XCTAssertNil (employee.address.getSync(context: nil))
         // With address
         let address = SampleAddress (street: "Street", city: "City", state: "CA", zipCode: "95010")
         let addressEntity = caches.addresses.new(batch: batch, item: address)
         employee = SampleEmployee(selfReference: selfReference, company: companyEntity, name: "Bob Carol", address: addressEntity)
-        referencedCompanyEntity = try employee.company.getSync()!
+        referencedCompanyEntity = try employee.company.getSync(context: nil)!
         referencedCompanyEntity.sync() { referencedCompany in
             XCTAssertTrue (referencedCompany === company)
         }
         XCTAssertEqual ("Bob Carol", employee.name)
-        try XCTAssertTrue (employee.address.getSync() === addressEntity)
+        try XCTAssertTrue (employee.address.getSync(context: nil) === addressEntity)
         // resetName()
         employee.resetName()
         XCTAssertEqual ("", employee.name)
@@ -226,17 +226,17 @@ class SampleUsageTests: XCTestCase {
     func testEmployeeFromCache() {
         let caches = SampleCaches (accessor: SampleInMemoryAccessor(), schemaVersion: 1, logger: nil)
         let company = SampleCompany(employeeCache: caches.employees, id: UUID())
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity = caches.companies.new(batch: batch, item: company)
         // Without address
         var employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: nil)
         employeeEntity.sync() { employee in
             do {
                 // XCode apparently can't figure out that the try can trigger the catch block if it is within an assertion
-                let retrievedCompany = try employee.company.getSync()!
+                let retrievedCompany = try employee.company.getSync(context: nil)!
                 XCTAssertTrue (retrievedCompany === companyEntity)
                 XCTAssertEqual ("Bob Carol", employee.name)
-                let retrievedAddress = try employee.address.getSync()
+                let retrievedAddress = try employee.address.getSync(context: nil)
                 XCTAssertNil (retrievedAddress)
             } catch {
                 XCTFail ("Expected success but got \(error)")
@@ -247,10 +247,10 @@ class SampleUsageTests: XCTestCase {
         employeeEntity = caches.employees.new(batch: batch, company: companyEntity, name: "Bob Carol", address: addressEntity)
         employeeEntity.sync() { employee in
             do {
-                let retrievedCompany = try employee.company.getSync()!
+                let retrievedCompany = try employee.company.getSync(context: nil)!
                 XCTAssertTrue (retrievedCompany === companyEntity)
                 XCTAssertEqual ("Bob Carol", employee.name)
-                let retrievedAddress = try employee.address.getSync()!
+                let retrievedAddress = try employee.address.getSync(context: nil)!
                 XCTAssertTrue (retrievedAddress === addressEntity)
             } catch {
                 XCTFail ("Expected success but got \(error)")
@@ -261,7 +261,7 @@ class SampleUsageTests: XCTestCase {
     func testInMemoryAccessorEmployeesForCompany() {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let companyEntity3 = caches.companies.new(batch: batch)
@@ -272,7 +272,7 @@ class SampleUsageTests: XCTestCase {
         batch.commitSync()
         companyEntity1.sync() { company in
             do {
-                let company1Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
+                let company1Employees = try accessor.employeesForCompany(context: nil, cache: caches.employees, company: company)
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
                 XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
@@ -282,7 +282,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity2.sync() { company in
             do {
-                let company2Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
+                let company2Employees = try accessor.employeesForCompany(context: nil, cache: caches.employees, company: company)
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
@@ -292,7 +292,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity3.sync() { company in
             do {
-                let company3Employees = try accessor.employeesForCompany(cache: caches.employees, company: company)
+                let company3Employees = try accessor.employeesForCompany(context: nil, cache: caches.employees, company: company)
                 XCTAssertEqual (0, company3Employees.count)
             } catch {
                 XCTFail("Expected success but got \(error)")
@@ -303,7 +303,7 @@ class SampleUsageTests: XCTestCase {
     func testEmployeeCacheForCompany() {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
@@ -313,7 +313,7 @@ class SampleUsageTests: XCTestCase {
         batch.commitSync()
         companyEntity1.sync() { company in
             do {
-                let company1Employees = try caches.employees.forCompanySync(company)
+                let company1Employees = try caches.employees.forCompanySync(context: nil, company)
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
                 XCTAssertTrue (company1Employees[1] === employeeEntity1 || company1Employees[1] === employeeEntity2)
@@ -323,7 +323,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity2.sync() { company in
             do {
-                let company2Employees = try caches.employees.forCompanySync(company)
+                let company2Employees = try caches.employees.forCompanySync(context: nil, company)
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
                 XCTAssertTrue (company2Employees[1] === employeeEntity3 || company2Employees[1] === employeeEntity4)
@@ -336,7 +336,7 @@ class SampleUsageTests: XCTestCase {
     func testEmployeeCacheForCompanyAsync() {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
@@ -349,7 +349,7 @@ class SampleUsageTests: XCTestCase {
         group.enter()
         companyEntity1.sync() { company in
             firstly {
-                caches.employees.forCompany(company)
+                caches.employees.forCompany(context: nil, company)
             }.done { company1Employees in
                 XCTAssertEqual (2, company1Employees.count)
                 XCTAssertTrue (company1Employees[0] === employeeEntity1 || company1Employees[0] === employeeEntity2)
@@ -362,7 +362,7 @@ class SampleUsageTests: XCTestCase {
         }
         companyEntity2.sync() { company in
             firstly {
-                caches.employees.forCompany(company)
+                caches.employees.forCompany(context: nil, company)
             }.done { company2Employees in
                 XCTAssertEqual (2, company2Employees.count)
                 XCTAssertTrue (company2Employees[0] === employeeEntity3 || company2Employees[0] === employeeEntity4)
@@ -384,7 +384,7 @@ class SampleUsageTests: XCTestCase {
     func testRemoveAll() throws {
         let accessor = SampleInMemoryAccessor()
         let caches = SampleCaches (accessor: accessor, schemaVersion: 1, logger: nil)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let companyEntity1 = caches.companies.new(batch: batch)
         let companyEntity2 = caches.companies.new(batch: batch)
         let employeeEntity1 = caches.employees.new(batch: batch, company: companyEntity1, name: "Emp A", address: nil)
@@ -408,13 +408,13 @@ class SampleUsageTests: XCTestCase {
             employee.address.set(entity: address4, batch: batch)
         }
         batch.commitSync()
-        try XCTAssertEqual (2, caches.companies.scanSync(criteria: nil).count)
-        try XCTAssertEqual (4, caches.employees.scanSync(criteria: nil).count)
-        try XCTAssertEqual (4, caches.addresses.scanSync(criteria: nil).count)
+        try XCTAssertEqual (2, caches.companies.scanSync(context: nil).count)
+        try XCTAssertEqual (4, caches.employees.scanSync(context: nil).count)
+        try XCTAssertEqual (4, caches.addresses.scanSync(context: nil).count)
         try SampleUsage .removeAll(caches: caches)
-        try XCTAssertEqual (0, caches.companies.scanSync(criteria: nil).count)
-        try XCTAssertEqual (0, caches.employees.scanSync(criteria: nil).count)
-        try XCTAssertEqual (0, caches.addresses.scanSync(criteria: nil).count)
+        try XCTAssertEqual (0, caches.companies.scanSync(context: nil).count)
+        try XCTAssertEqual (0, caches.employees.scanSync(context: nil).count)
+        try XCTAssertEqual (0, caches.addresses.scanSync(context: nil).count)
     }
 
 }

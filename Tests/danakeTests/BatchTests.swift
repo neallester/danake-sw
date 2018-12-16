@@ -12,7 +12,7 @@ class BatchTests: XCTestCase {
 
     func testInsertAsyncNoClosure() {
         // No Closure
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let entity = newTestEntity(myInt: 10, myString: "Test Completed")
         batch.insertAsync(entity: entity, closure: nil)
         batch.syncEntities() { (entities: Dictionary<UUID, EntityManagement>) in
@@ -54,7 +54,7 @@ class BatchTests: XCTestCase {
     }
 
     func testInsertAsyncWithClosure() {
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let entity = newTestClassEntity(myInt: 10, myString: "Test Started")
         var myClass: MyClass? = nil
         entity.sync () { item in
@@ -122,7 +122,7 @@ class BatchTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         let waitFor = expectation (description: "waitFor")
@@ -156,7 +156,7 @@ class BatchTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
-        let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        let batch = EventuallyConsistentBatch(context: "myContext", retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
         let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity1Id = entity1.id.uuidString
@@ -189,7 +189,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: cacheName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString),context=myContext", entries[0].asTestString())
         }
     }
 
@@ -199,7 +199,7 @@ class BatchTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
-        let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        let batch = EventuallyConsistentBatch(context: "myContext", retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let delegateId = batch.delegateId()
         let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
@@ -237,7 +237,7 @@ class BatchTests: XCTestCase {
         XCTAssertTrue (accessor.has(name: cacheName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString)", entries[0].asTestString())
+            XCTAssertEqual ("EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<MyStruct>;entityId=\(entity1.id.uuidString);batchId=\(delegateId.uuidString),context=myContext", entries[0].asTestString())
         }
     }
     
@@ -282,7 +282,7 @@ class BatchTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
         let slowCacheName: CacheName = "slowCollection"
         let slowCollection = EntityCache<SlowCodable>(database: database, name: slowCacheName)
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(400000), timeout: .microseconds (100000), logger: logger)
+        let batch = EventuallyConsistentBatch(context: "myContext", retryInterval: .microseconds(400000), timeout: .microseconds (100000), logger: logger)
         let batchDelegateId = batch.delegateId().uuidString
         let entity1 = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let slowCodable = SlowCodable()
@@ -312,7 +312,7 @@ class BatchTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: entity2.id))
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
-            XCTAssertEqual ("ERROR|BatchDelegate.commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.id.uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization", entries[0].asTestString())
+            XCTAssertEqual ("ERROR|BatchDelegate.commit|batchTimeout|batchId=\(batchDelegateId);entityType=Entity<SlowCodable>;entityId=\(entity2.id.uuidString);diagnosticHint=Entity.queue is blocked or endless loop in Entity serialization,context=myContext", entries[0].asTestString())
         }
     }
     
@@ -357,7 +357,7 @@ class BatchTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
-        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(context: "myContext", retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let entity1 = cache.new (batch: batch!, item: MyStruct(myInt: 10, myString: "10"))
         let entity2 = cache.new (batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
         batch!.syncEntities() { entities in
@@ -371,8 +371,8 @@ class BatchTests: XCTestCase {
             XCTAssertEqual (2, entries.count)
             var entryStrings = entries[0].asTestString()
             entryStrings.append(entries[1].asTestString())
-            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity1IdString);entityPersistenceState=new"))
-            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity2IdString);entityPersistenceState=new"))
+            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity1IdString);entityPersistenceState=new,context=myContext"))
+            XCTAssertTrue (entryStrings.contains("ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<MyStruct>;entityId=\(entity2IdString);entityPersistenceState=new,context=myContext"))
         }
     }
     
@@ -382,7 +382,7 @@ class BatchTests: XCTestCase {
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
         let cacheName: CacheName = "myCollection"
         let cache = EntityCache<MyStruct>(database: database, name: cacheName)
-        let batch = EventuallyConsistentBatch(retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
+        let batch = EventuallyConsistentBatch(context: nil, retryInterval: .milliseconds(1), timeout: .seconds (20), logger: logger)
         let _ = cache.new (batch: batch, item: MyStruct(myInt: 10, myString: "10"))
         let _ = cache.new (batch: batch, item: MyStruct(myInt: 20, myString: "20"))
         batch.commitSync()
@@ -416,10 +416,10 @@ class BatchTests: XCTestCase {
                     }
                 }
             }
-            let persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
+            let persistenceObjects = ParallelTestPersistence (testCount: 0, accessor: accessor, logger: logger)
             startTime = Date()
-            let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
-            let structs = ParallelTest.newStructs (persistenceObjects: persistenceObjects, batch: batch)
+            let batch = EventuallyConsistentBatch(context: "myContext", retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
+            let structs = ParallelTest.newStructs (testCount: 0, persistenceObjects: persistenceObjects, batch: batch)
             let result = structs.ids
             batch.commitSync()
             let endTime = Date()
@@ -448,7 +448,7 @@ class BatchTests: XCTestCase {
             var unexpectedStateFound = false
             for uuid in result {
                 do {
-                    let entity = try persistenceObjects.myStructCollection.getSync(id: uuid)
+                    let entity = try persistenceObjects.myStructCollection.getSync(context: "myContext", id: uuid)
                     entity.sync { myStruct in
                         let expectedInt = counter * 10
                         XCTAssertEqual (expectedInt, myStruct.myInt)

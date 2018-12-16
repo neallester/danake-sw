@@ -10,7 +10,7 @@ import XCTest
 
 class EntityCommitNewTests: XCTestCase {
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state
     func testCommitNew() {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -43,7 +43,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setThrowError()
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("addActionError", errorMessage)
@@ -119,7 +119,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -281,7 +281,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -342,7 +342,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -372,7 +372,7 @@ class EntityCommitNewTests: XCTestCase {
         }
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending update
     func testCommitNewPendingUpdate() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -417,7 +417,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -472,7 +472,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending update and errors
     func testCommitNewPendingUpdateWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -522,7 +522,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -612,7 +612,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("addActionError", errorMessage)
@@ -678,7 +678,7 @@ class EntityCommitNewTests: XCTestCase {
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -733,7 +733,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -798,7 +798,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending update and timeouts
     func testCommitNewPendingUpdateWithTimeouts() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -857,7 +857,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -920,7 +920,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with 2 pending updates
     func testCommitNew2PendingUpdates() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -965,7 +965,7 @@ class EntityCommitNewTests: XCTestCase {
             XCTFail ("Expected Success")
         }
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -1030,7 +1030,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with 2 pending updates and errors
     func testCommitNew2PendingUpdatesWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -1080,7 +1080,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -1180,7 +1180,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("addActionError", errorMessage)
@@ -1256,7 +1256,7 @@ class EntityCommitNewTests: XCTestCase {
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -1311,7 +1311,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -1386,7 +1386,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with 2 pending updates and timeouts
     func testCommitNew2PendingUpdatesWithTimeouts() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -1445,7 +1445,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1507,7 +1507,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with pending remove followed by pending update
     func testCommitNewPendingRemoveUpdate() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -1552,7 +1552,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -1614,7 +1614,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with pending remove followed by pending update and errors
     func testCommitNewPendingRemoveUpdateWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -1664,7 +1664,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -1761,7 +1761,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("addActionError", errorMessage)
@@ -1834,7 +1834,7 @@ class EntityCommitNewTests: XCTestCase {
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -1889,7 +1889,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -1961,7 +1961,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with pending remove followed by pending update and timeouts
     func testCommitNewPendingRemoveUpdateWithTimeouts() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2020,7 +2020,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2079,7 +2079,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: id))
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending remove
     func testCommitNewPendingRemove() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2124,7 +2124,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -2176,7 +2176,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending remove and errors
     func testCommitNewPendingRemoveWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2226,7 +2226,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -2316,7 +2316,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("removeActionError", errorMessage)
@@ -2379,7 +2379,7 @@ class EntityCommitNewTests: XCTestCase {
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -2434,7 +2434,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("removeError", errorMessage)
@@ -2496,7 +2496,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending remove and timeouts
     func testCommitNewPendingRemoveWithTimeout() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2555,7 +2555,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2605,7 +2605,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending removes
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with 2 pending removes
     func testCommitNew2PendingRemoves() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2649,7 +2649,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -2708,7 +2708,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with two pending removes and errors
     func testCommitNew2PendingRemovesWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2758,7 +2758,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -2855,7 +2855,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("removeActionError", errorMessage)
@@ -2924,7 +2924,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with two pending removes and timeouts
     func testCommitNew2PendingRemovesWithTimeouts() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -2983,7 +2983,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3039,7 +3039,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with pending update followed by a pending remove
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with pending update followed by a pending remove
     func testCommitNewPendingUpdateRemove() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -3084,7 +3084,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -3146,7 +3146,7 @@ class EntityCommitNewTests: XCTestCase {
         XCTAssertFalse (accessor.has(name: cacheName, id: entity.id))
     }
     
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update followed by a pending remove and errors
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending update followed by a pending remove and errors
     func testCommitNewPendingUpdateRemoveWithErrors() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -3196,7 +3196,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("addError", errorMessage)
@@ -3296,7 +3296,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .unrecoverableError(let errorMessage):
                 XCTAssertEqual ("removeActionError", errorMessage)
@@ -3369,7 +3369,7 @@ class EntityCommitNewTests: XCTestCase {
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .ok:
                 break
@@ -3424,7 +3424,7 @@ class EntityCommitNewTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: "myContext") { result in
             switch result {
             case .error(let errorMessage):
                 XCTAssertEqual ("removeError", errorMessage)
@@ -3496,7 +3496,7 @@ class EntityCommitNewTests: XCTestCase {
         #endif
     }
 
-    // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update followed by a pending remove and timeouts
+    // Test implementation of Entity.commit(context: "myContext") from the PersistenceState.new state with a pending update followed by a pending remove and timeouts
     func testCommitNewPendingUpdateRemoveWithTimeouts() throws {
         let accessor = InMemoryAccessor()
         let logger = InMemoryLogger()
@@ -3555,7 +3555,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("Entity.commit(context: "myContext"):timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }

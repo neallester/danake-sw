@@ -45,14 +45,14 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         self.workQueue = database.workQueue
         super.init()
         if !database.cacheRegistrar.register(key: name, value: self) {
-            database.logger?.log(level: .error, source: self, featureName: "init", message: "cacheAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
+            database.logger?.log(level: .error, context: nil, source: self, featureName: "init", message: "cacheAlreadyRegistered", data: [(name: "database", value: "\(type (of: database))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
         }
         if !Database.cacheRegistrar.register(key: qualifiedName, value: self) {
-            database.logger?.log(level: .error, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCacheName", value: self.qualifiedName)])
+            database.logger?.log(level: .error, context: nil, source: self, featureName: "init", message: "qualifiedCollectionAlreadyRegistered", data: [(name: "qualifiedCacheName", value: self.qualifiedName)])
         }
         let nameValidationResult = database.accessor.isValidCacheName(name)
         if !nameValidationResult.isOk() {
-            database.logger?.log (level: .error, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.accessor))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
+            database.logger?.log (level: .error, context: nil, source: self, featureName: "init", message: nameValidationResult.description(), data: [(name: "database", value: "\(type (of: database))"), (name: "accessor", value: "\(type (of: database.accessor))"), (name: "databaseHashValue", value: database.accessor.hashValue), (name: "cacheName", value: name)])
         }
 
     }
@@ -78,7 +78,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      - throws:  AccessorError.unknownUUID: ID not associated with any entities.
                 Also throws all errors originating in the underlying persistent media.
 */
-    public func getSync (id: UUID) throws -> Entity<T> {
+    public func getSync (context: String?, id: UUID) throws -> Entity<T> {
         var result: Entity<T>? = nil
         cacheQueue.sync {
             result = cache[id]?.codable
@@ -87,16 +87,16 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
             return result
         } else {
             do {
-                if let result = try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id) {
+                if let result = try self.database.accessor.get(context: context, type: Entity<T>.self, cache: self, id: id) {
                     return result
                 } else {
                     throw AccessorError.unknownUUID (id)
                 }
             } catch AccessorError.unknownUUID {
-                self.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
+                self.database.logger?.log (level: .warning, context: context, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
                 throw AccessorError.unknownUUID (id)
             } catch {
-                self.database.logger?.log (level: .emergency, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
+                self.database.logger?.log (level: .emergency, context: context, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
                 throw error
             }
         }
@@ -107,11 +107,11 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      
      - parameter id: UUID of the Entity to be retrieved.
 */
-    public func get (id: UUID) -> Promise<Entity<T>> {
+    public func get (context: String?, id: UUID) -> Promise<Entity<T>> {
         return Promise { seal in
             workQueue.async {
                 do {
-                    try seal.fulfill(self.getSync(id: id))
+                    try seal.fulfill(self.getSync(context: context, id: id))
                 } catch {
                     seal.reject(error)
                 }
@@ -128,9 +128,9 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      
      - throws:  Any errors originating in underlying persistent media
 */
-    public func scanSync (criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
+    public func scanSync (context: String?, criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
         do {
-            let result = try database.accessor.scan(type: Entity<T>.self, cache: self)
+            let result = try database.accessor.scan(context: context, type: Entity<T>.self, cache: self)
             if let criteria = criteria  {
                 let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
                     var result = true
@@ -144,7 +144,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
                 return result
             }
         } catch {
-            database.logger?.log(level: .emergency, source: self, featureName: "scanSync", message: "Database Error", data: [(name: "databaseHashValue", value: database.accessor.hashValue), (name: "cache", value: name), (name: "errorMessage", value: "\(error)")])
+            database.logger?.log(level: .emergency, context: context, source: self, featureName: "scanSync", message: "Database Error", data: [(name: "databaseHashValue", value: database.accessor.hashValue), (name: "cache", value: name), (name: "errorMessage", value: "\(error)")])
             throw error
         }
     }
@@ -157,11 +157,11 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         - parameter criteria: If provided, only those Entities whose item match the criteria
                               will be included in the results
  */
-    public func scan (criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
+    public func scan (context: String?, criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
         return Promise { seal in
             workQueue.async {
                 do {
-                    try seal.fulfill(self.scanSync(criteria: criteria))
+                    try seal.fulfill(self.scanSync(context: context, criteria: criteria))
                 } catch {
                     seal.reject(error)
                 }

@@ -126,7 +126,7 @@ class EntityTests: XCTestCase {
 
     func testWriteAccess() {
         let entity = newTestEntity(myInt: 0, myString: "0")
-        var batch = EventuallyConsistentBatch()
+        var batch = EventuallyConsistentBatch(context: "myContext")
         var itemInt = 0
         var itemString = ""
         switch entity.persistenceState {
@@ -161,7 +161,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .dirty
         entity.persistenceState = .dirty
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
@@ -186,7 +186,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .persistent
         entity.persistenceState = .dirty
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
@@ -212,7 +212,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .abandoned
         entity.persistenceState = .abandoned
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
@@ -238,7 +238,7 @@ class EntityTests: XCTestCase {
         }
         // sync: persistentState = .pendingRemoval
         entity.persistenceState = .pendingRemoval
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
@@ -293,7 +293,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .dirty
         waitFor = expectation(description: ".dirty")
         entity.persistenceState = .dirty
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 20
             item.myString = "20"
@@ -321,7 +321,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .persistent
         waitFor = expectation(description: ".persistetnt")
         entity.persistenceState = .dirty
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 30
             item.myString = "30"
@@ -350,7 +350,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .abandoned
         waitFor = expectation(description: ".abandoned")
         entity.persistenceState = .abandoned
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 40
             item.myString = "40"
@@ -379,7 +379,7 @@ class EntityTests: XCTestCase {
         // async: persistentState = .pendingRemoval
         waitFor = expectation(description: ".pendingRemoval")
         entity.persistenceState = .pendingRemoval
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.update(batch: batch) { (item: inout MyStruct) in
             item.myInt = 50
             item.myString = "50"
@@ -414,7 +414,7 @@ class EntityTests: XCTestCase {
         myStruct.myString = "Test String 1"
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
-        var batch = EventuallyConsistentBatch()
+        var batch = EventuallyConsistentBatch(context: "myContext")
         let waitFor = expectation(description: "wait1")
         let entity = cache.new(batch: batch, item: myStruct)
         batch.commit() {
@@ -449,7 +449,7 @@ class EntityTests: XCTestCase {
             XCTAssertTrue (entities[entity.id] as! Entity<MyStruct> === entity)
         }
         XCTAssertNil (entity.getPendingAction())
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.persistenceState = .saving
         entity.setDirty(batch: batch)
         switch entity.persistenceState {
@@ -745,7 +745,7 @@ class EntityTests: XCTestCase {
         let _ = accessor.add(name: parentCollection.name, id: parentId, data: json.data(using: .utf8)!)
         let _ = accessor.add(name: parentCollection.name, id: parentId2, data: json2.data(using: .utf8)!)
         do {
-            let parent = try parentCollection.getSync(id: parentId)
+            let parent = try parentCollection.getSync (context: "myContext", id: parentId)
             let parentVersion = parent.version
             parent.sync() { item in
                 XCTAssertNotNil(item.entityReference)
@@ -770,7 +770,7 @@ class EntityTests: XCTestCase {
             XCTFail("Expected success but got \(error)")
         }
         do {
-            let parent2 = try parentCollection.getSync(id: parentId2)
+            let parent2 = try parentCollection.getSync (context: "myContext", id: parentId2)
             let parentVersion = parent2.version
             parent2.sync() { item in
                 XCTAssertNotNil(item.entityReference)
@@ -817,7 +817,7 @@ class EntityTests: XCTestCase {
             item.myString = "20"
         }
         // persistenceState = .new
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .new:
@@ -835,7 +835,7 @@ class EntityTests: XCTestCase {
             item.myInt = 30
             item.myString = "30"
         }
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .dirty:
@@ -853,7 +853,7 @@ class EntityTests: XCTestCase {
             item.myInt = 40
             item.myString = "40"
         }
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .dirty:
@@ -871,7 +871,7 @@ class EntityTests: XCTestCase {
             item.myInt = 50
             item.myString = "50"
         }
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .new:
@@ -889,7 +889,7 @@ class EntityTests: XCTestCase {
             item.myInt = 60
             item.myString = "60"
         }
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         switch entity.getPendingAction()! {
         case .update:
             break
@@ -918,7 +918,7 @@ class EntityTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "10")
         var action = PersistenceAction<MyStruct>.setDirty
         // persistenceState = .new
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .new:
@@ -933,7 +933,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .dirty
         entity.persistenceState = .dirty
         action = PersistenceAction<MyStruct>.setDirty
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .dirty:
@@ -948,7 +948,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .pendingRemoval
         entity.persistenceState = .pendingRemoval
         action = PersistenceAction<MyStruct>.setDirty
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .dirty:
@@ -963,7 +963,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .abandoned
         entity.persistenceState = .abandoned
         action = PersistenceAction<MyStruct>.setDirty
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .new:
@@ -978,7 +978,7 @@ class EntityTests: XCTestCase {
         // persistenceState = .saving
         entity.persistenceState = .saving
         action = PersistenceAction<MyStruct>.setDirty
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         switch entity.getPendingAction()! {
         case .update:
             break
@@ -1009,7 +1009,7 @@ class EntityTests: XCTestCase {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let action = PersistenceAction<MyStruct>.remove
         // persistenceState = .new
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .abandoned:
@@ -1023,7 +1023,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .dirty
         entity.persistenceState = .dirty
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -1037,7 +1037,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .pendingRemoval
         entity.persistenceState = .pendingRemoval
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .pendingRemoval:
@@ -1051,7 +1051,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .abandoned
         entity.persistenceState = .abandoned
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
         case .abandoned:
@@ -1065,7 +1065,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .saving
         entity.persistenceState = .saving
-        entity.handleAction(action)
+        entity.handleAction(context: "myContext", action)
         switch entity.getPendingAction()! {
         case .remove:
             break
@@ -1086,7 +1086,7 @@ class EntityTests: XCTestCase {
 
     func testRemove () {
         let entity = newTestEntity(myInt: 10, myString: "10")
-        var batch = EventuallyConsistentBatch()
+        var batch = EventuallyConsistentBatch(context: "myContext")
         // persistenceState = .new
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
@@ -1105,7 +1105,7 @@ class EntityTests: XCTestCase {
             XCTAssertEqual ("10", item.myString)
         }
         // persistenceState = .dirty
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.persistenceState = .dirty
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
@@ -1125,7 +1125,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .pendingRemoval
         entity.persistenceState = .pendingRemoval
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
@@ -1144,7 +1144,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .abandoned
         entity.persistenceState = .abandoned
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.remove(batch: batch)
         XCTAssertNil (entity.getPendingAction())
         switch entity.persistenceState {
@@ -1163,7 +1163,7 @@ class EntityTests: XCTestCase {
         }
         // persistenceState = .saving
         entity.persistenceState = .saving
-        batch = EventuallyConsistentBatch()
+        batch = EventuallyConsistentBatch(context: "myContext")
         entity.remove(batch: batch)
         switch entity.getPendingAction()! {
         case .remove:
@@ -1272,7 +1272,7 @@ class EntityTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
         let cache = EntityCache<Node>(database: database, name: "node")
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         var parent: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
@@ -1304,7 +1304,7 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        parent = try cache.getSync (id: UUID (uuidString: parentId)!)
+        parent = try cache.getSync (context: "myContext", id: UUID (uuidString: parentId)!)
         var child: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
@@ -1333,10 +1333,10 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = try cache.getSync(id: UUID (uuidString: childId)!)
+        child = try cache.getSync (context: "myContext", id: UUID (uuidString: childId)!)
         child!.sync() { node in
             do {
-                parent = try node.parent.getSync()
+                parent = try node.parent.getSync (context: "myContext")
             } catch {}
         }
         // Set up a reference cycle;
@@ -1351,15 +1351,15 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (2, entities.count)
         }
-        child = try cache.getSync(id: UUID (uuidString: childId)!)
+        child = try cache.getSync (context: "myContext", id: UUID (uuidString: childId)!)
         child!.sync() { node in
             do {
-                try parent = node.parent.getSync()
+                try parent = node.parent.getSync (context: "myContext")
             } catch {}
         }
         parent!.sync() { node in
             do {
-                child = try node.parent.getSync()
+                child = try node.parent.getSync (context: "myContext")
             } catch {}
         }
         child!.breakReferences()
@@ -1378,16 +1378,16 @@ class EntityTests: XCTestCase {
         cache.sync() { entities in
             XCTAssertEqual (0, entities.count)
         }
-        child = try cache.getSync(id: UUID (uuidString: childId)!)
+        child = try cache.getSync (context: "myContext", id: UUID (uuidString: childId)!)
         child!.sync() { node in
             do {
-                parent = try node.parent.getSync()
+                parent = try node.parent.getSync (context: "myContext")
                 
             } catch {}
         }
         parent!.sync() { node in
             do {
-                child = try node.parent.getSync()
+                child = try node.parent.getSync (context: "myContext")
             } catch {}
         }
         cache.sync() { entities in
@@ -1486,7 +1486,7 @@ class EntityTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 1, logger: nil)
         let cache = EntityCache<Node>(database: database, name: "node")
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         var parent: Entity<Node>? = cache.new(batch: batch) { parentData in
             return Node (parentData: parentData)
         }
@@ -1600,7 +1600,7 @@ class EntityTests: XCTestCase {
         let logger = InMemoryLogger (level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
         let cache = EntityCache<SneakyUpdater>(database: database, name: "sneak")
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         var updaterEntity: Entity<SneakyUpdater>? = cache.new(batch: batch, item: SneakyUpdater())
         let updaterId = updaterEntity!.id.uuidString
         updaterEntity!.update(batch: batch) { updater in
@@ -1634,7 +1634,7 @@ class EntityTests: XCTestCase {
         let logger = InMemoryLogger (level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
         let cache = EntityCache<MyStruct>(database: database, name: "myStruct")
-        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch()
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(context: "myContext")
         var entity: Entity<MyStruct>? = cache.new(batch: batch!, item: MyStruct (myInt: 10, myString: "10"))
         batch!.commitSync()
         entity!.update(batch: batch!) { myStruct in
@@ -1661,7 +1661,7 @@ class EntityTests: XCTestCase {
         let logger = InMemoryLogger (level: .warning)
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger)
         let cache = EntityCache<MyStruct>(database: database, name: "myStruct")
-        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch()
+        var batch: EventuallyConsistentBatch? = EventuallyConsistentBatch(context: "myContext")
         var entity: Entity<MyStruct>? = cache.new(batch: batch!, item: MyStruct (myInt: 10, myString: "10"))
         batch!.commitSync()
         entity!.remove(batch: batch!)

@@ -79,13 +79,13 @@ public class SampleCompany : Codable {
     // created sampleEmployee objects which have not yet been saved to the persistent media
     
     // Syncrhonous implementation
-    public func employeesSync() throws -> [Entity<SampleEmployee>] {
-        return try employeeCache.forCompanySync(self)
+    public func employeesSync(context: String?) throws -> [Entity<SampleEmployee>] {
+        return try employeeCache.forCompanySync(context: context, self)
     }
     
     // Asyncrhonous implementation
-    public func employees() -> Promise<[Entity<SampleEmployee>]> {
-        return employeeCache.forCompany(self)
+    public func employees(context: String?) -> Promise<[Entity<SampleEmployee>]> {
+        return employeeCache.forCompany(context: context, self)
     }
     
     // In actual use within the application; id will match the id of the surrounding Entity wrapper
@@ -196,14 +196,14 @@ class SampleDatabase : Database {
 
 public protocol SampleAccessor : DatabaseAccessor {
 
-    func employeesForCompany (cache: EntityCache<SampleEmployee>, company: SampleCompany) throws -> [Entity<SampleEmployee>]
+    func employeesForCompany (context: String?, cache: EntityCache<SampleEmployee>, company: SampleCompany) throws -> [Entity<SampleEmployee>]
 
 }
 
 class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
-    func employeesForCompany (cache: EntityCache<SampleEmployee>, company: SampleCompany) throws -> [Entity<SampleEmployee>] {
-        let retrievalResult = try scan (type: Entity<SampleEmployee>.self, cache: cache)
+    func employeesForCompany (context: String?, cache: EntityCache<SampleEmployee>, company: SampleCompany) throws -> [Entity<SampleEmployee>] {
+        let retrievalResult = try scan (context: context, type: Entity<SampleEmployee>.self, cache: cache)
         return retrievalResult.filter() { employeeEntity in
             var shouldInclude = false
             employeeEntity.sync() { sampleEmployee in
@@ -241,8 +241,8 @@ public class SampleCompanyCache : EntityCache<SampleCompany> {
 public class SampleEmployeeCache : EntityCache<SampleEmployee> {
 
     init(database: SampleDatabase) {
-        forCompanyClosure = { cache, sampleCompany in
-            return try database.sampleAccessor.employeesForCompany (cache: cache, company: sampleCompany)
+        forCompanyClosure = { context, cache, sampleCompany in
+            return try database.sampleAccessor.employeesForCompany (context: context, cache: cache, company: sampleCompany)
         }
         super.init (database: database, name: "sampleEmployee", userInfoClosure: nil)
     }
@@ -253,15 +253,15 @@ public class SampleEmployeeCache : EntityCache<SampleEmployee> {
         }
     }
     
-    func forCompanySync (_ company: SampleCompany) throws -> [Entity<SampleEmployee>] {
-        return try forCompanyClosure (self, company)
+    func forCompanySync (context: String?, _ company: SampleCompany) throws -> [Entity<SampleEmployee>] {
+        return try forCompanyClosure (context, self, company)
     }
     
-    func forCompany (_ company: SampleCompany) -> Promise<[Entity<SampleEmployee>]> {
+    func forCompany (context: String?, _ company: SampleCompany) -> Promise<[Entity<SampleEmployee>]> {
         return Promise { seal in
             database.workQueue.async {
                 do {
-                    try seal.fulfill(self.forCompanySync(company))
+                    try seal.fulfill(self.forCompanySync(context: context, company))
                 } catch {
                     seal.reject(error)
                 }
@@ -269,7 +269,7 @@ public class SampleEmployeeCache : EntityCache<SampleEmployee> {
         }
     }
     
-    private let forCompanyClosure: ((SampleEmployeeCache, SampleCompany) throws -> [Entity<SampleEmployee>])
+    private let forCompanyClosure: ((String?, SampleEmployeeCache, SampleCompany) throws -> [Entity<SampleEmployee>])
     
 }
 
@@ -344,7 +344,7 @@ public class SampleUsage  {
             // batch retry and timeout intervals are also settable; see
             // EventuallyConsistentBatch class header comment for these and other details
             // In application code always create batches with a logger
-            let batch = EventuallyConsistentBatch(logger: caches.logger)
+            let batch = EventuallyConsistentBatch(context: "SessionID.RequestID", logger: caches.logger)
             
             let company1 = caches.companies.new(batch: batch)
             company1id = company1.id
@@ -353,7 +353,7 @@ public class SampleUsage  {
             // new objects are not available in persistent media until batch is committed
             // Performing the query in synchronous style
             do {
-                let companies = try caches.companies.scanSync()
+                let companies = try caches.companies.scanSync(context: "SessionID.RequestID")
                 ParallelTest.AssertEqual (label: "runSample.3", testResult: &overallTestResult, 0, companies.count)
             } catch {
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.4: Expected valid item")
@@ -364,7 +364,7 @@ public class SampleUsage  {
             let group = DispatchGroup()
             group.enter()
             firstly {
-                caches.companies.scan()
+                caches.companies.scan(context: "SessionID.RequestID")
             }.done { (companies: [Entity<SampleCompany>]) in
                 ParallelTest.AssertEqual (label: "runSample.3async", testResult: &overallTestResult, 0, companies.count)
             }.catch { error in
@@ -384,7 +384,7 @@ public class SampleUsage  {
             
             // After commit our companies are in the persistent media
             do {
-                let companies = try caches.companies.scanSync()
+                let companies = try caches.companies.scanSync(context: "SessionID.RequestID")
                 ParallelTest.AssertEqual (label: "runSample.5", testResult: &overallTestResult, 2, companies.count)
             } catch {
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.6: Expected valid item")
@@ -396,7 +396,7 @@ public class SampleUsage  {
             // still expensive as they still go persistent media (cache normalization for scans does
             // not occur until after the persistent objects are retrieved and partially deserialized)
             do {
-                let entity = try caches.companies.getSync(id: company1.id)
+                let entity = try caches.companies.getSync(context: "SessionID.RequestID", id: company1.id)
                 ParallelTest.AssertTrue (label: "runSample.7", testResult: &overallTestResult, company1 === entity)
             } catch {
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.8: Expected valid item")
@@ -406,7 +406,7 @@ public class SampleUsage  {
             // use asynchronous version when possible
             group.enter()
             firstly {
-                caches.companies.get(id: company2.id)
+                caches.companies.get(context: "SessionID.RequestID", id: company2.id)
             }.done { sampleCompanyEntity in
                 ParallelTest.AssertTrue (label: "runSample.9", testResult: &overallTestResult, sampleCompanyEntity === company2)
             }.catch { error in
@@ -419,7 +419,7 @@ public class SampleUsage  {
             // Asynchronous version is also preferred for EntityCache.scan()
             group.enter()
             firstly {
-                caches.companies.scan()
+                caches.companies.scan(context: "SessionID.RequestID")
             }.done { companies in
                 ParallelTest.AssertEqual (label: "runSample.11", testResult: &overallTestResult, 2, companies.count)
             }.catch { error in
@@ -433,7 +433,7 @@ public class SampleUsage  {
             group.enter()
             let badId = UUID()
             firstly {
-                caches.companies.get(id: badId)
+                caches.companies.get(context: "SessionID.RequestID", id: badId)
             }.done { retrievalResult in
                 ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.13: Expected Error")
             }.catch { error in
@@ -446,7 +446,7 @@ public class SampleUsage  {
             // And the unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "runSample.15", testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|SampleCompanyCache.getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|SampleCompanyCache.getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString),context=\"SessionID.RequestID\"", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -454,7 +454,7 @@ public class SampleUsage  {
             // before filtering the results.
             group.enter()
             firstly {
-                caches.companies.scan() { sampleCompany in
+                caches.companies.scan(context: "SessionID.RequestID") { sampleCompany in
                     sampleCompany.id.uuidString == company2.id.uuidString
                 }
             }.done { companies in
@@ -467,7 +467,7 @@ public class SampleUsage  {
             }
             group.wait()
             
-            // after commit() the batch is left as a fresh empty batch and may be reused
+            // after commit() the batch is left as a fresh empty batch and may be reused within the same context
             let _ = caches.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
             var employee2: Entity<SampleEmployee>? = caches.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
             batch.commitSync()
@@ -505,9 +505,9 @@ public class SampleUsage  {
             // Using Promise.refereneFromitem to access a ReferenceManager in an entity's item
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity (by id)
-            }.referenceFromItem { employee in
-                return employee.company                         // The promise of the company entity referenced by employee.company
+                caches.employees.get(context: "SessionID.RequestID", id: employee2!.id)    // The promise of a specific employee entity (by id)
+            }.referenceFromItem (context: "SessionID.RequestID") { employee in
+                return employee.company                                          // The promise of the company entity referenced by employee.company
             }.done { companyEntity in
                 ParallelTest.AssertTrue(label: "runSample.20", testResult: &overallTestResult, companyEntity! === company2)
             }.catch { error in
@@ -520,9 +520,9 @@ public class SampleUsage  {
             // Using Promise.promiseFromItem to obtain another promise from an item
             group.enter()
             firstly {
-                caches.companies.get(id: company2.id)           // The promise of a specific company entity by id
+                caches.companies.get(context: "SessionID.RequestID", id: company2.id)           // The promise of a specific company entity by id
             }.promiseFromItem { company in
-                return company.employees()                      // The promise of the employee list for that company
+                return company.employees(context: "SessionID.RequestID")                      // The promise of the employee list for that company
             }.done { employees in
                 ParallelTest.AssertEqual (label: "runSample.22a", testResult: &overallTestResult, 1, employees.count)
                 ParallelTest.AssertTrue(label: "runSample.22b", testResult: &overallTestResult, employees[0] === employee2)
@@ -536,7 +536,7 @@ public class SampleUsage  {
             // Using Promise.sync for thread safe access to an item
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity by id
+                caches.employees.get(context: "SessionID.RequestID", id: employee2!.id)         // The promise of a specific employee entity by id
             }.sync{ employee in
                 ParallelTest.AssertEqual (label: "runSample22d", testResult: &overallTestResult, "Name Updated2", employee.name)
             }.catch { error in
@@ -549,7 +549,7 @@ public class SampleUsage  {
             // Using Promise.update
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity by id
+                caches.employees.get(context: "SessionID.RequestID", id: employee2!.id)         // The promise of a specific employee entity by id
             }.update(batch: batch) { employee in
                 employee.name = "Updated3"                      // Update the employee's name
             }.catch { error in
@@ -622,7 +622,7 @@ public class SampleUsage  {
             //    reference cycle (indirect cycles are also possible).
             employee2!.sync() { sampleEmployee in
                 do {
-                    let _ = try sampleEmployee.company.getSync()
+                    let _ = try sampleEmployee.company.getSync(context: "SessionID.RequestID")
                 } catch {
                     ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.24b")
                 }
@@ -648,12 +648,12 @@ public class SampleUsage  {
         // scope before the batch is committed
         var lostChangesEmployeeUuidString = ""
         do {
-            let batch = EventuallyConsistentBatch (logger: logger)
+            let batch = EventuallyConsistentBatch (context: "SessionID.RequestID", logger: logger)
             do {
-                let companyEntity = try caches.companies.getSync (id: company1id!)
+                let companyEntity = try caches.companies.getSync (context: "SessionID.RequestID", id: company1id!)
                 companyEntity.sync() { sampleCompany in
                     do {
-                        let employees = try sampleCompany.employeesSync()
+                        let employees = try sampleCompany.employeesSync(context: "SessionID.RequestID")
                         let employeeEntity = employees[0]
                         lostChangesEmployeeUuidString = employeeEntity.id.uuidString
                         employeeEntity.update(batch: batch) { sampleEmployee in
@@ -689,14 +689,14 @@ public class SampleUsage  {
         // An error has indeed been logged and the update has indeed been lost
         logger.sync() { entries in
             ParallelTest.AssertEqual (label: "runSample.28", testResult: &overallTestResult, 4, entries.count)
-            ParallelTest.AssertEqual (label: "runSample.29", testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<SampleEmployee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
-            ParallelTest.AssertEqual (label: "runSample.30", testResult: &overallTestResult, "ERROR|Entity<SampleEmployee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).sampleEmployee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
+            ParallelTest.AssertEqual (label: "runSample.29", testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<SampleEmployee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty,context=\"SessionID.RequestID", entries[2].asTestString())
+            ParallelTest.AssertEqual (label: "runSample.30", testResult: &overallTestResult, "ERROR|Entity<SampleEmployee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).sampleEmployee;entityId=\(lostChangesEmployeeUuidString),context=\"SessionID.RequestID", entries[3].asTestString())
         }
         do {
-            let companyEntity = try caches.companies.getSync (id: company1id!)
+            let companyEntity = try caches.companies.getSync (context: "SessionID.RequestID", id: company1id!)
             companyEntity.sync() { sampleCompany in
                 do {
-                    let employees = try sampleCompany.employeesSync()
+                    let employees = try sampleCompany.employeesSync(context: "SessionID.RequestID")
                     employees[0].sync() { sampleEmployee in
                         ParallelTest.AssertEqual (label: "runSample.31", testResult: &overallTestResult, "Name One", sampleEmployee.name)
                     }
@@ -742,14 +742,14 @@ public class SampleUsage  {
         group.enter()
         inMemoryAccessor.setThrowError()
         firstly {
-            caches.companies.get(id: companyId)
+            caches.companies.get(context: "SessionID.RequestID", id: companyId)
         }.done { companyEntity in
             ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowerror.4: Expected error")
         }.catch { error in
             ParallelTest.AssertEqual (label: "demonstrateThrowError.1", testResult: &overallTestResult, "getError", "\(error)")
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "demonstrateThrowError.2", testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleCompanyCache.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleCompanyCache.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError,context=\"SessionID.RequestID", entries[0].asTestString())
             }
         }.finally {
             group.leave()
@@ -759,7 +759,7 @@ public class SampleUsage  {
         
         // Only one error will be thrown; subsequent operations will succeed
         firstly {
-            caches.companies.get(id: companyId)
+            caches.companies.get(context: "SessionID.RequestID", id: companyId)
         }.done { sampleCompany in
             ParallelTest.AssertEqual (label: "demonstrateThrowError.5", testResult: &overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
             logger.sync() { entries in
@@ -806,7 +806,7 @@ public class SampleUsage  {
         let group = DispatchGroup()
         group.enter()
         firstly {
-            caches.companies.get(id: companyId)
+            caches.companies.get(context: "SessionID.RequestID", id: companyId)
         }.done { sampleCompany in
             ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.2", testResult: &overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
             retrievedCompany = sampleCompany
@@ -858,11 +858,11 @@ public class SampleUsage  {
         default:
             ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
         }
-        let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
+        let batch = EventuallyConsistentBatch (context: "SessionID.RequestID", retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
         var batchIdString = batch.delegateId().uuidString
         let group = DispatchGroup()
         group.enter()
-        let employeeEntity = try caches.employees.getSync(id: employeeId)
+        let employeeEntity = try caches.employees.getSync(context: "SessionID.RequestID", id: employeeId)
         employeeEntity.update(batch: batch) { sampleEmployee in
             sampleEmployee.name = "Name Updated1"
             ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1", testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
@@ -872,7 +872,7 @@ public class SampleUsage  {
         batch.commitSync()
         logger.sync() { entries in
             ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.2", testResult: &overallTestResult, 1, entries.count)
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString),context=\"SessionID.RequestID", entries[0].asTestString())
         }
         
         // Demonstrate that the previous changes were lost due to the reported unrecoverable error
@@ -920,7 +920,7 @@ public class SampleUsage  {
         batch.commitSync()
         logger.sync() { entries in
             ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.7", testResult: &overallTestResult, 2, entries.count)
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.8", testResult: &overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.8", testResult: &overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString),context=\"SessionID.RequestID", entries[1].asTestString())
         }
         // Demonstrate that the data was updated in persistent media
         // The order of attributes on serialized JSON is not always consistent on Linux
@@ -948,14 +948,14 @@ public class SampleUsage  {
     }
 
     static func removeAll (caches: SampleCaches) throws {
-        let batch = EventuallyConsistentBatch()
-        for entity in try caches.companies.scanSync() {
+        let batch = EventuallyConsistentBatch(context: nil)
+        for entity in try caches.companies.scanSync(context: nil) {
             entity.remove(batch: batch)
         }
-        for entity in try caches.employees.scanSync() {
+        for entity in try caches.employees.scanSync(context: nil) {
             entity.remove(batch: batch)
         }
-        for entity in try caches.addresses.scanSync() {
+        for entity in try caches.addresses.scanSync(context: nil) {
             entity.remove(batch: batch)
         }
         batch.commitSync()

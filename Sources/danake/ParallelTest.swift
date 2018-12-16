@@ -37,23 +37,23 @@ public class ParallelTest {
             var containerRemoveExistingContainertIds: [UUID] = []
             let resultQueue = DispatchQueue (label: "results")
             let testDispatcher = DispatchQueue (label: "testDispatcher", attributes: .concurrent)
-            var persistenceObjects: ParallelTestPersistence? = ParallelTestPersistence (accessor: accessor, logger: logger)
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testStart", data: [(name: "testCount", value: testCount), (name: "separator", value:"<<<<<<<<<<<<<<<<<<<<<<<")])
-            let setupBatch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects!.logger)
+            var persistenceObjects: ParallelTestPersistence? = ParallelTestPersistence (testCount: testCount, accessor: accessor, logger: logger)
+            persistenceObjects!.logger?.log(level: .debug, context: nil, source: self, featureName: "performTest", message: "testStart", data: [(name: "testCount", value: testCount), (name: "separator", value:"<<<<<<<<<<<<<<<<<<<<<<<")])
+            let setupBatch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects!.logger)
             let setupGroup = DispatchGroup()
-            let removeExisting = ParallelTest.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
+            let removeExisting = ParallelTest.newStructs (testCount: testCount, persistenceObjects: persistenceObjects!, batch: setupBatch).ids
             test2Results.append (removeExisting)
-            let editExisting = ParallelTest.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
+            let editExisting = ParallelTest.newStructs (testCount: testCount, persistenceObjects: persistenceObjects!, batch: setupBatch).ids
             test3Results.append (editExisting)
             do {
-                let containerRemoveExisting = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let containerRemoveExisting = ParallelTest.newContainers(testCount: testCount, persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
                 test2Results.append (containerRemoveExisting.ids)
                 var structIds: [UUID] = []
                 for entity in containerRemoveExisting.containers {
                     containerRemoveExistingContainertIds.append(entity.id)
                     entity.sync() { container in
                         do {
-                            try structIds.append(container.myStruct.getSync()!.id)
+                            try structIds.append(container.myStruct.getSync(context: "textCount.\(testCount)")!.id)
                         } catch {
                             ParallelTest.Fail(testResult: &overallTestResult, message: "\(error)")
                         }
@@ -63,32 +63,32 @@ public class ParallelTest {
             }
             var test300prInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
-                let containers = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
-                let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
+                let containers = ParallelTest.newContainers(testCount: testCount, persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let newStructs = ParallelTest.newStructs(testCount: testCount, persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
+                    persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
                 }
                 test300prInput = (containers: containers.ids, newRefs)
                 test300uResults.append((containers: containers.ids, myStructs: newStructs.ids))
                 for id in newStructs.ids {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
+                    persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
                 }
             }
             var test300prplInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
             do {
-                let containers = ParallelTest.newContainers(persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
-                let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
+                let containers = ParallelTest.newContainers(testCount: testCount, persistenceObjects: persistenceObjects!, structs: nil, batch: setupBatch)
+                let newStructs = ParallelTest.newStructs(testCount: testCount, persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
+                    persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
                 }
                 test300prplInput = (containers: containers.ids, newRefs)
                 test300uResults.append((containers: containers.ids, myStructs: newStructs.ids))
                 for id in newStructs.ids {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300prpl", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
+                    persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "300u:build300prpl", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
                 }
             }
             setupGroup.enter()
@@ -99,148 +99,148 @@ public class ParallelTest {
             persistenceObjects = nil
             Database.registrar.clear()
             Database.cacheRegistrar.clear()
-            persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
+            persistenceObjects = ParallelTestPersistence (testCount: testCount, accessor: accessor, logger: logger)
             let test1 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
-                let result = ParallelTest.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test1.start", data: nil)
+                let result = ParallelTest.myStructTest1(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test1.end", data: nil)
                 resultQueue.async {
                     test1Results.append (result)
                 }
             }
             let test2 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.start", data: nil)
-                let result = ParallelTest.myStructTest2(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2.start", data: nil)
+                let result = ParallelTest.myStructTest2(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
                 }
                 
             }
             let test2p = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.start", data: nil)
-                let result = ParallelTest.myStructTest2p(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2p.start", data: nil)
+                let result = ParallelTest.myStructTest2p(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2p.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
                 }
                 
             }
             let test2r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.start", data: nil)
-                ParallelTest.myStructTest2r(testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: removeExisting)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2r.start", data: nil)
+                ParallelTest.myStructTest2r(testCount: testCount, testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: removeExisting)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test2r.end", data: nil)
             }
             let test3 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.start", data: nil)
-                let result = ParallelTest.myStructTest3(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3.start", data: nil)
+                let result = ParallelTest.myStructTest3(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
                 }
             }
             let test3p = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.start", data: nil)
-                let result = ParallelTest.myStructTest3p(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3p.start", data: nil)
+                let result = ParallelTest.myStructTest3p(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3p.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
                 }
             }
             let test3r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.start", data: nil)
-                ParallelTest.myStructTest3r(testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: editExisting)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3r.start", data: nil)
+                ParallelTest.myStructTest3r(testCount: testCount, testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: editExisting)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test3r.end", data: nil)
             }
             let test4 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.start", data: nil)
-                let result = ParallelTest.myStructTest4(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test4.start", data: nil)
+                let result = ParallelTest.myStructTest4(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test4.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
                 }
             }
             let test4b = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.start", data: nil)
-                let result = ParallelTest.myStructTest4b(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test4b.start", data: nil)
+                let result = ParallelTest.myStructTest4b(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test4b.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
                 }
             }
             let test100 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.start", data: nil)
-                let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100.start", data: nil)
+                let result = ParallelTest.containerTest100(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100.end", data: nil)
                 resultQueue.async {
                     test100Results.append (result)
                 }
             }
             let test100a = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.start", data: nil)
-                let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100a.start", data: nil)
+                let result = ParallelTest.containerTest100(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100a.end", data: nil)
                 resultQueue.async {
                     test100aResults.append (result)
                 }
             }
             let test100n = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.start", data: nil)
-                let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100n.start", data: nil)
+                let result = ParallelTest.containerTest100n(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100n.end", data: nil)
                 resultQueue.async {
                     test100nResults.append (result)
                 }
             }
             let test100na = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.start", data: nil)
-                let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100na.start", data: nil)
+                let result = ParallelTest.containerTest100n(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test100na.end", data: nil)
                 resultQueue.async {
                     test100naResults.append (result)
                 }
             }
             let test200r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.start", data: nil)
-                ParallelTest.containerTest200r(persistenceObjects: persistenceObjects!, group: testGroup, ids: containerRemoveExistingContainertIds)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test200r.start", data: nil)
+                ParallelTest.containerTest200r(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup, ids: containerRemoveExistingContainertIds)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test200r.end", data: nil)
             }
             let test300 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.start", data: nil)
-                let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300.start", data: nil)
+                let result = ParallelTest.containerTest300(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
                     test100nResults.append (result.containers)
                 }
             }
             let test300a = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.start", data: nil)
-                let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300a.start", data: nil)
+                let result = ParallelTest.containerTest300(testCount: testCount, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300a.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
                     test100naResults.append (result.containers)
                 }
             }
             let test300u = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.start", data: nil)
-                let result = ParallelTest.containerTest300u(testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300u.start", data: nil)
+                let result = ParallelTest.containerTest300u(testCount: testCount, testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300u.end", data: nil)
                 resultQueue.async {
                     test300uResults.append(result)
                 }
             }
             let test300pr = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.start", data: nil)
-                ParallelTest.containerTest300pr(testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.end", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300pr.start", data: nil)
+                ParallelTest.containerTest300pr(testCount: testCount, testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300pr.end", data: nil)
             }
             let test300prpl = {
                 let localLogger = persistenceObjects!.logger
-                localLogger?.log(level: .debug, source: self, featureName: "performTest", message: "test300prpl.start", data: nil)
-                ParallelTest.containerTest300prpl(testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prplInput.containers, structRefs: test300prplInput.newRefs)
-                localLogger?.log(level: .debug, source: self, featureName: "performTest", message: "test300prpl.end", data: nil)
+                localLogger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300prpl.start", data: nil)
+                ParallelTest.containerTest300prpl(testCount: testCount, testResult: &overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prplInput.containers, structRefs: test300prplInput.newRefs)
+                localLogger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "test300prpl.end", data: nil)
             }
             var tests = [test1, test2, test2p, test2r, test3, test3p, test3r, test4, test4b, test100, test100a, test100n, test100na, test200r, test300, test300a, test300u, test300pr, test300prpl]
             var randomTests: [() -> ()] = []
@@ -257,11 +257,11 @@ public class ParallelTest {
                     let newTest = {
                         let maxSleepTime = totalExecutionTime / (Double (testCount) + 1.0)
                         let sleepTime = UInt32 (ParallelTest.randomInteger(maxValue:Int ((1000000 * maxSleepTime))))
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
+                        persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
                         usleep (sleepTime)
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: nil)
+                        persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "setThrowError", data: nil)
                         inMemoryAccessor.setThrowError()
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError.group.leave()", data: nil)
+                        persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "setThrowError.group.leave()", data: nil)
                         testGroup.leave()
                     }
                     finalTests.append (newTest)
@@ -270,31 +270,31 @@ public class ParallelTest {
             }
             finalTests.append (contentsOf: randomTests)
             for test in finalTests {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testGroup.enter()", data: nil)
+                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testGroup.enter()", data: nil)
                 testGroup.enter()
                 testDispatcher.async(execute: test)
             }
             let executionStart = Date()
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting", data: [(name: "testCount", value: testCount), (name:"separator", value: "--------------------------------")])
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "waiting", data: [(name: "testCount", value: testCount), (name:"separator", value: "--------------------------------")])
             testGroup.wait()
             resultQueue.sync {}
             totalExecutionTime = totalExecutionTime + Date().timeIntervalSince1970 - executionStart.timeIntervalSince1970
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting.finished", data: [(name: "testCount", value: testCount), (name:"separator", value: "================================")])
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "waiting.finished", data: [(name: "testCount", value: testCount), (name:"separator", value: "================================")])
             if let inMemoryAccessor = accessor as? InMemoryAccessor {
                 inMemoryAccessor.setThrowError(false)
             }
             persistenceObjects = nil
             Database.registrar.clear()
             Database.cacheRegistrar.clear()
-            persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
+            persistenceObjects = ParallelTestPersistence (testCount: testCount, accessor: accessor, logger: logger)
             // Test 1
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.1", data: nil)
             for testResult in test1Results {
                 ParallelTest.AssertEqual (label: "test1Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 10
                             ParallelTest.AssertEqual (label: "test1Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -317,7 +317,7 @@ public class ParallelTest {
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 10
                             ParallelTest.AssertEqual (label: "test1Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -336,12 +336,12 @@ public class ParallelTest {
                 }
             }
             // Test 2
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.2", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.2", data: nil)
             for testResult in test2Results {
                 ParallelTest.AssertEqual (label: "test2Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     do {
-                        let _ = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let _ = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         Fail(testResult: &overallTestResult, message: "test2Reslts1b: Expected error")
                     } catch {
                         ParallelTest.AssertTrue(label: "test2Results2", testResult: &overallTestResult, "\(error)".contains("unknownUUID"))
@@ -352,7 +352,7 @@ public class ParallelTest {
                 ParallelTest.AssertEqual (label: "test2Results.3", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 for uuid in testResult {
                     do {
-                        let _ = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let _ = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         Fail(testResult: &overallTestResult, message: "test2Results.4a: Expected Error")
                     } catch {
                         ParallelTest.AssertTrue(label: "test2Results4", testResult: &overallTestResult, "\(error)".contains("unknownUUID"))
@@ -361,13 +361,13 @@ public class ParallelTest {
                 }
             }
             // Test 3
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.3", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.3", data: nil)
             for testResult in test3Results {
                 ParallelTest.AssertEqual (label: "test3Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         ParallelTest.AssertNotNil(label: "test3Results.1a", testResult: &overallTestResult, entity)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
@@ -392,7 +392,7 @@ public class ParallelTest {
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test3Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -411,13 +411,13 @@ public class ParallelTest {
                 }
             }
             // Test 4
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.4", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.4", data: nil)
             for testResult in test4Results {
                 ParallelTest.AssertEqual (label: "test4Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync (id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test4Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -438,7 +438,7 @@ public class ParallelTest {
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.myStructCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.myStructCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync { myStruct in
                             let expectedInt = counter * 100
                             ParallelTest.AssertEqual (label: "test4Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, myStruct.myInt)
@@ -455,17 +455,17 @@ public class ParallelTest {
                 }
             }
             // Test 100
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.100", data: nil)
             for testResult in test100Results {
                 ParallelTest.AssertEqual (label: "test100Results.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         let expectedInt = counter * 10
                         entity.sync() { container in
                             do {
-                                let myStruct = try container.myStruct.getSync()!
+                                let myStruct = try container.myStruct.getSync(context: "textCount.\(testCount)")!
                                 myStruct.sync() { item in
                                     ParallelTest.AssertEqual (label: "test100Results.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
                                     ParallelTest.AssertEqual (label: "test100Results.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
@@ -491,11 +491,11 @@ public class ParallelTest {
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync (id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         let expectedInt = counter * 10
                         entity.sync() { container in
                             do {
-                                let myStruct = try container.myStruct.getSync()!
+                                let myStruct = try container.myStruct.getSync(context: "textCount.\(testCount)")!
                                 myStruct.sync() { item in
                                     ParallelTest.AssertEqual (label: "test100Results.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
                                     ParallelTest.AssertEqual (label: "test100Results.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
@@ -518,7 +518,7 @@ public class ParallelTest {
                 }
             }
             // Test 100a
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100a", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.100a", data: nil)
             for testResult in test100aResults {
                 ParallelTest.AssertEqual (label: "test100aResults.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
@@ -526,11 +526,11 @@ public class ParallelTest {
                 for uuid in testResult {
                     group.enter()
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         let expectedInt = counter * 10
                         entity.async() { container in
                             do {
-                                let myStruct = try container.myStruct.getSync()!
+                                let myStruct = try container.myStruct.getSync(context: "textCount.\(testCount)")!
                                 myStruct.async() { item in
                                     ParallelTest.AssertEqual (label: "test100aResults.2; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
                                     ParallelTest.AssertEqual (label: "test100aResults.3; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
@@ -560,11 +560,11 @@ public class ParallelTest {
                 for uuid in testResult {
                     group.enter()
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         let expectedInt = counter * 10
                         entity.async() { container in
                             do {
-                                let myStruct = try container.myStruct.getSync()!
+                                let myStruct = try container.myStruct.getSync(context: "textCount.\(testCount)")!
                                 myStruct.async() { item in
                                     ParallelTest.AssertEqual (label: "test100aResults.6; counter=\(counter)", testResult: &overallTestResult, expectedInt, item.myInt)
                                     ParallelTest.AssertEqual (label: "test100aResults.7; counter=\(counter)", testResult: &overallTestResult, "\(expectedInt)", item.myString)
@@ -588,17 +588,17 @@ public class ParallelTest {
                 group.wait()
             }
             // Test 100n
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100n", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.100n", data: nil)
             for testResult in test100nResults {
                 ParallelTest.AssertEqual (label: "test100nResults.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.count)
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync() { container in
                             for _ in testResult {
                                 do {
-                                    ParallelTest.AssertNil (label: "test100nResults.2; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync())
+                                    ParallelTest.AssertNil (label: "test100nResults.2; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync(context: "textCount.\(testCount)"))
                                 } catch {
                                     Fail(testResult: &overallTestResult, message: "\(error)")
                                 }
@@ -621,10 +621,10 @@ public class ParallelTest {
                 var counter = 1
                 for uuid in testResult {
                     do {
-                        let entity = try persistenceObjects!.containerCollection.getSync(id: uuid)
+                        let entity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         entity.sync() { container in
                             do {
-                                ParallelTest.AssertNil (label: "test100nResults.6; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync())
+                                ParallelTest.AssertNil (label: "test100nResults.6; counter=\(counter)", testResult: &overallTestResult, try container.myStruct.getSync(context: "textCount.\(testCount)"))
                             } catch {
                                 Fail(testResult: &overallTestResult, message: "\(error)")
                             }
@@ -643,7 +643,7 @@ public class ParallelTest {
                 }
             }
             // Test 300u
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.300u", data: nil)
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testResults.300u", data: nil)
             var resultCount = 0
             for testResult in test300uResults {
                 ParallelTest.AssertEqual (label: "test100uResults.1", testResult: &overallTestResult, ParallelTest.myStructCount, testResult.containers.count)
@@ -651,11 +651,11 @@ public class ParallelTest {
                 var index = 0
                 for uuid in testResult.containers {
                     do {
-                        let containerEntity = try persistenceObjects!.containerCollection.getSync (id: uuid)
+                        let containerEntity = try persistenceObjects!.containerCollection.getSync(context: "textCount.\(testCount)", id: uuid)
                         containerEntity.sync() { container in
                             do {
-                                let myStruct = try container.myStruct.getSync()
-                                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
+                                let myStruct = try container.myStruct.getSync(context: "textCount.\(testCount)")
+                                persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
                                 ParallelTest.AssertEqual (label: "test100uResults.3", testResult: &overallTestResult, testResult.myStructs[index].uuidString, myStruct!.id.uuidString)
                                 myStruct!.sync() { myStruct in
                                     let expectedInt = (index + 1) * 100
@@ -679,7 +679,7 @@ public class ParallelTest {
                     }
                 }
             }
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
+            persistenceObjects!.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
             Database.registrar.clear()
             Database.cacheRegistrar.clear()
             testCount = testCount + 1
@@ -688,34 +688,34 @@ public class ParallelTest {
     }
     
     // Create
-    private static func myStructTest1 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, timeout: DispatchTimeInterval) -> [UUID] {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch)
+    private static func myStructTest1 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, timeout: DispatchTimeInterval) -> [UUID] {
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch)
         let result = structs.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest1", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest1", message: "batch.commit()", data: nil)
         batch.commit() {
             structs = ([], [])
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest1", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest1", message: "group.leave()", data: nil)
             group.leave()
         }
         return result
     }
 
     // Create -> Remove
-    private static func myStructTest2 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest2 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             for myStruct in structs.structs {
                 myStruct.remove (batch: batch2)
             }
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2", message: "batch2.commit()", data: nil)
             batch2.commit() {
                 structs = ([], [])
-                persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2", message: "group.leave()", data: nil)
+                persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2", message: "group.leave()", data: nil)
                 group.leave()
             }
         }
@@ -723,40 +723,40 @@ public class ParallelTest {
     }
 
     // Create || Remove
-    private static func myStructTest2p (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest2p (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         for myStruct in structs.structs {
             myStruct.remove (batch: batch2)
         }
         let localGroup = DispatchGroup()
         localGroup.enter()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2p", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2p", message: "batch1.commit()", data: nil)
         batch1.commit() {
             localGroup.leave()
         }
         localGroup.enter()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2p", message: "batch2.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2p", message: "batch2.commit()", data: nil)
         batch2.commit() {
             localGroup.leave()
         }
         localGroup.wait()
         structs = ([], [])
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2p", message: "group.leave()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2p", message: "group.leave()", data: nil)
         group.leave()
         return result
     }
     
     // Remove (already existing)
-    private static func myStructTest2r (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+    private static func myStructTest2r (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let internalGroup = DispatchGroup()
         var counter = 1
         for id in ids {
             internalGroup.enter()
-            executeOnMyStruct(testResult: &testResult, persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest2r") { entity in
+            executeOnMyStruct(testCount: testCount, testResult: &testResult, persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest2r") { entity in
                 entity.remove(batch: batch)
             }
             usleep(UInt32 (ParallelTest.randomInteger(maxValue: 500)))
@@ -764,21 +764,21 @@ public class ParallelTest {
             
         }
         internalGroup.wait()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2r", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2r", message: "batch.commit()", data: nil)
         batch.commit() {
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest2r", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest2r", message: "group.leave()", data: nil)
             group.leave()
         }
     }
 
     // Create -> Update
-    private static func myStructTest3 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest3 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             var counter = 1
             for myStruct in structs.structs {
                 myStruct.update(batch: batch2) { item in
@@ -788,9 +788,9 @@ public class ParallelTest {
                 }
                 counter = counter + 1
             }
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3", message: "batch2.commit()", data: nil)
             batch2.commit() {
-                persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3", message: "group.leave()", data: nil)
+                persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3", message: "group.leave()", data: nil)
                 structs = ([], [])
                 group.leave()
             }
@@ -799,11 +799,11 @@ public class ParallelTest {
     }
 
     // Create || Update
-    private static func myStructTest3p (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest3p (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         var counter = 1
         for myStruct in structs.structs {
             myStruct.update(batch: batch2) { item in
@@ -815,31 +815,31 @@ public class ParallelTest {
         }
         let localGroup = DispatchGroup()
         localGroup.enter()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3p", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3p", message: "batch1.commit()", data: nil)
         batch1.commit() {
             localGroup.leave()
         }
         localGroup.enter()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3p", message: "batch2.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3p", message: "batch2.commit()", data: nil)
         batch2.commit() {
             localGroup.leave()
         }
         localGroup.wait()
         structs = ([], [])
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3p", message: "group.leave()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3p", message: "group.leave()", data: nil)
         group.leave()
         return result
     }
     
     // Update (already existing)
-    private static func myStructTest3r (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
+    private static func myStructTest3r (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
         var internalTestResult = testResult
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let internalGroup = DispatchGroup()
         var counter = 1
         for id in ids {
             internalGroup.enter()
-            executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest3r") { entity in
+            executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "myStructTest3r") { entity in
                 entity.update(batch: batch) { item in
                     let newInt = item.myInt * 10
                     item.myInt = newInt
@@ -852,21 +852,21 @@ public class ParallelTest {
 
         }
         internalGroup.wait()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3r", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3r", message: "batch.commit()", data: nil)
         batch.commit() {
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest3r", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest3r", message: "group.leave()", data: nil)
             group.leave()
         }
     }
     
     // Create -> Update || Remove
-    private static func myStructTest4 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest4 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             let workQueue = DispatchQueue (label: "workQueue", attributes: .concurrent)
             let internalGroup = DispatchGroup()
             internalGroup.enter()
@@ -894,10 +894,10 @@ public class ParallelTest {
                 internalGroup.leave()
             }
             internalGroup.wait()
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4", message: "batch2.commit()", data: nil)
             batch2.commit() {
                 structs = ([], [])
-                persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4", message: "group.leave()", data: nil)
+                persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4", message: "group.leave()", data: nil)
                 group.leave()
             }
         }
@@ -905,14 +905,14 @@ public class ParallelTest {
     }
 
     // Create -> Update || Remove (separate batches)
-    private static func myStructTest4b (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var structs = newStructs (persistenceObjects: persistenceObjects, batch: batch1)
+    private static func myStructTest4b (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var structs = newStructs (testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
         let result = structs.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4b", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4b", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-            let batch3 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch3 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             let workQueue = DispatchQueue (label: "workQueue", attributes: .concurrent)
             let internalGroup = DispatchGroup()
             internalGroup.enter()
@@ -941,67 +941,67 @@ public class ParallelTest {
             }
             internalGroup.wait()
             internalGroup.enter()
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4b", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4b", message: "batch2.commit()", data: nil)
             batch2.commit() {
                 internalGroup.leave()
             }
             internalGroup.enter()
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4b", message: "batch1.commit3()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4b", message: "batch1.commit3()", data: nil)
             batch3.commit() {
                 internalGroup.leave()
             }
             internalGroup.wait()
             structs = ([], [])
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "myStructTest4b", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "myStructTest4b", message: "group.leave()", data: nil)
             group.leave()
         }
         return result
     }
     
     // MyStructContainer Create
-    private static func containerTest100 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var containers = newContainers(persistenceObjects: persistenceObjects, structs: nil, batch: batch)
+    private static func containerTest100 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var containers = newContainers(testCount: testCount, persistenceObjects: persistenceObjects, structs: nil, batch: batch)
         let result = containers.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest100", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest100", message: "batch.commit()", data: nil)
         batch.commit() {
             containers = ([], [])
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest100", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest100", message: "group.leave()", data: nil)
             group.leave()
         }
         return result
     }
 
     // MyStructContainer Create (nil struct)
-    private static func containerTest100n (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+    private static func containerTest100n (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> [UUID] {
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         var myStructs: [Entity<MyStruct>?] = []
         var index = 0
         while index < myStructCount {
             myStructs.append (nil)
             index = index + 1
         }
-        var containers = newContainers(persistenceObjects: persistenceObjects, structs: myStructs, batch: batch)
+        var containers = newContainers(testCount: testCount, persistenceObjects: persistenceObjects, structs: myStructs, batch: batch)
         let result = containers.ids
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest100n", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest100n", message: "batch.commit()", data: nil)
         batch.commit() {
             containers = ([], [])
             myStructs = ([])
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest100n", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest100n", message: "group.leave()", data: nil)
             group.leave()
         }
         return result
     }
     
     // MyStructContainer Remove (already existing)
-    private static func containerTest200r (persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
-        let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+    private static func containerTest200r (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, ids: [UUID]) {
+        let batch = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let internalGroup = DispatchGroup()
         for id in ids {
             internalGroup.enter()
-            executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: internalGroup) { entity in
+            executeOnContainer(testCount: testCount, persistenceObjects: persistenceObjects, id: id, group: internalGroup) { entity in
                 entity.async() { container in
-                    executeOnReference (reference: container.myStruct, logger: persistenceObjects.logger, sourceLabel: "containerTest200r") { entity in
+                    executeOnReference (testCount: testCount, reference: container.myStruct, logger: persistenceObjects.logger, sourceLabel: "containerTest200r") { entity in
                         entity!.remove(batch: batch)
                         internalGroup.leave()
                     }
@@ -1011,41 +1011,41 @@ public class ParallelTest {
             usleep(UInt32 (ParallelTest.randomInteger(maxValue: 500)))
         }
         internalGroup.wait()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "batch.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest200r", message: "batch.commit()", data: nil)
         batch.commit() {
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest200r", message: "group.leave()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest200r", message: "group.leave()", data: nil)
             group.leave()
         }
     }
     
-    private static func executeOnReference (reference: ReferenceManager<MyStructContainer, MyStruct>, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>?) -> ()) {
+    private static func executeOnReference (testCount: Int, reference: ReferenceManager<MyStructContainer, MyStruct>, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>?) -> ()) {
         firstly {
-            reference.get()
+            reference.get(context: "textCount.\(testCount)")
         }.done { entity in
             closure (entity)
         }.catch { error in
-            logger?.log (level: .debug, source: self, featureName: "executeOnReference", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
-            executeOnReference(reference: reference, logger: logger, sourceLabel: sourceLabel, closure: closure)
+            logger?.log (level: .debug, context: "textCount.\(testCount)", source: self, featureName: "executeOnReference", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
+            executeOnReference(testCount: testCount, reference: reference, logger: logger, sourceLabel: sourceLabel, closure: closure)
         }
     }
     
     // MyStructContainer Create -> Update (set nil)
-    private static func containerTest300 (persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> (containers: [UUID], myStructs: [UUID]) {
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var myStructs = newStructs(persistenceObjects: persistenceObjects, batch: batch1)
-        var containers = newContainers (persistenceObjects: persistenceObjects, structs: myStructs.structs, batch: batch1)
+    private static func containerTest300 (testCount: Int, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> (containers: [UUID], myStructs: [UUID]) {
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var myStructs = newStructs(testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
+        var containers = newContainers (testCount: testCount, persistenceObjects: persistenceObjects, structs: myStructs.structs, batch: batch1)
         let result = (containers.ids, myStructs.ids)
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             for container in containers.containers {
                 container.sync { item in
                     item.myStruct.set(entity: nil, batch: batch2)
                 }
             }
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300", message: "batch2.commit()", data: nil)
             batch2.commit() {
-                persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300", message: "group.leave()", data: nil)
+                persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300", message: "group.leave()", data: nil)
                 myStructs = ([], [])
                 containers = ([], [])
                 group.leave()
@@ -1056,20 +1056,20 @@ public class ParallelTest {
     }
 
     // MyStructContainer Create -> Update
-    private static func containerTest300u (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> (containers: [UUID], myStructs: [UUID]) {
+    private static func containerTest300u (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup) -> (containers: [UUID], myStructs: [UUID]) {
         var internalTestResult = testResult
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        var myStructs = newStructs(persistenceObjects: persistenceObjects, batch: batch1)
-        var containers = newContainers (persistenceObjects: persistenceObjects, structs: myStructs.structs, batch: batch1)
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        var myStructs = newStructs(testCount: testCount, persistenceObjects: persistenceObjects, batch: batch1)
+        var containers = newContainers (testCount: testCount, persistenceObjects: persistenceObjects, structs: myStructs.structs, batch: batch1)
         let result = (containers.ids, myStructs.ids)
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300u", message: "batch1.commit()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300u", message: "batch1.commit()", data: nil)
         batch1.commit() {
-            let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+            let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
             let internalGroup = DispatchGroup()
             for container in containers.containers {
                 internalGroup.enter()
                 container.async { item in
-                    executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: item, sourceLabel: "containerTest300u") { myStructEntity in
+                    executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: item, sourceLabel: "containerTest300u") { myStructEntity in
                         myStructEntity.update(batch: batch2) { item in
                             let newInt = item.myInt * 10
                             item.myInt = newInt
@@ -1080,11 +1080,11 @@ public class ParallelTest {
                 }
             }
             internalGroup.wait()
-            persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300u", message: "batch2.commit()", data: nil)
+            persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300u", message: "batch2.commit()", data: nil)
             batch2.commit() {
                 myStructs = ([], [])
                 containers = ([], [])
-                persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300u", message: "group.leave()", data: nil)
+                persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300u", message: "group.leave()", data: nil)
                 group.leave()
             }
         }
@@ -1092,10 +1092,10 @@ public class ParallelTest {
     }
     
     // MyContainer -> Update + Edit Struct independent in parallel
-    private static func containerTest300pr (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
+    private static func containerTest300pr (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
         var internalTestResult = testResult
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let workQueue = DispatchQueue (label: "300pr.work", attributes: .concurrent)
         let internalGroup = DispatchGroup()
         var containerIndex = 0
@@ -1105,14 +1105,14 @@ public class ParallelTest {
             let structRefIndex = containerIndex
             let closure = { (containerEntity: Entity<MyStructContainer>) in
                 containerEntity.update(batch: batch1) { container in
-                    persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "setRef", data: [(name: "structRefIndex", value: structRefIndex), (name: "refId", value: structRefs[structRefIndex].id.uuidString)])
+                    persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300pr", message: "setRef", data: [(name: "structRefIndex", value: structRefIndex), (name: "refId", value: structRefs[structRefIndex].id.uuidString)])
                     container.myStruct.set(referenceData: structRefs[structRefIndex], batch: batch1)
                     internalGroup.leave()
                 }
             }
             workQueue.async {
                 usleep(UInt32 (ParallelTest.randomInteger(maxValue: 1000)))
-                self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
+                self.executeOnContainer(testCount: testCount, persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
             containerIndex = containerIndex + 1
@@ -1122,10 +1122,10 @@ public class ParallelTest {
             internalGroup.enter()
             workQueue.async {
                 usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
-                executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
+                executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
-                        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "updateStruct", data: [(name: "structfId", value: entity.id.uuidString)])
+                        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300pr", message: "updateStruct", data: [(name: "structfId", value: entity.id.uuidString)])
                         let newInt = item.myInt * 10
                         item.myInt = newInt
                         item.myString = "\(newInt)"
@@ -1145,23 +1145,23 @@ public class ParallelTest {
             internalGroup.leave()
         }
         internalGroup.wait()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300pr", message: "group.leave()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300pr", message: "group.leave()", data: nil)
         group.leave()
     }
     
     // MyContainer -> Update + Edit Struct independent in parallel with preloading
-    private static func containerTest300prpl (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
+    private static func containerTest300prpl (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, group: DispatchGroup, containers: [UUID], structRefs: [ReferenceManagerData]) {
         var internalTestResult = testResult
-        let containerPreload = preLoad(cache: persistenceObjects.containerCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: containers)
+        let containerPreload = preLoad(testCount: testCount, cache: persistenceObjects.containerCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: containers)
         let _ = containerPreload.count
         var structIds: [UUID] = []
         for ref in structRefs {
             structIds.append(ref.id)
         }
-        let myStructPreload = preLoad(cache: persistenceObjects.myStructCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: structIds)
+        let myStructPreload = preLoad(testCount: testCount, cache: persistenceObjects.myStructCollection, logger: persistenceObjects.logger, label: "containerTest300prpl", ids: structIds)
         let _ = myStructPreload.count
-        let batch1 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
-        let batch2 = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch1 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
+        let batch2 = EventuallyConsistentBatch(context: "textCount.\(testCount)", retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects.logger)
         let workQueue = DispatchQueue (label: "300prpl.work", attributes: .concurrent)
         let internalGroup = DispatchGroup()
         var containerIndex = 0
@@ -1171,14 +1171,14 @@ public class ParallelTest {
             let structRefIndex = containerIndex
             let closure = { (containerEntity: Entity<MyStructContainer>) in
                 containerEntity.update(batch: batch1) { container in
-                    persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300prpl", message: "setRef", data: [(name: "structRefIndex", value: structRefIndex), (name: "refId", value: structRefs[structRefIndex].id.uuidString)])
+                    persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300prpl", message: "setRef", data: [(name: "structRefIndex", value: structRefIndex), (name: "refId", value: structRefs[structRefIndex].id.uuidString)])
                     container.myStruct.set(referenceData: structRefs[structRefIndex], batch: batch1)
                     internalGroup.leave()
                 }
             }
             workQueue.async {
                 usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
-                self.executeOnContainer(persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
+                self.executeOnContainer(testCount: testCount, persistenceObjects: persistenceObjects, id: containerId, group: internalGroup, closure: closure)
             }
             
             containerIndex = containerIndex + 1
@@ -1187,10 +1187,10 @@ public class ParallelTest {
             internalGroup.enter()
             workQueue.async {
                 usleep(UInt32(ParallelTest.randomInteger(maxValue: 1000)))
-                executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
+                executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: structRef.id, group: internalGroup, logger: persistenceObjects.logger, sourceLabel: "containerTest300pr") { entity in
                     internalGroup.enter()
                     entity.update (batch: batch2) { item in
-                        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300prpl", message: "updateStruct", data: [(name: "structfId", value: entity.id.uuidString)])
+                        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300prpl", message: "updateStruct", data: [(name: "structfId", value: entity.id.uuidString)])
                         let newInt = item.myInt * 10
                         item.myInt = newInt
                         item.myString = "\(newInt)"
@@ -1210,34 +1210,34 @@ public class ParallelTest {
             internalGroup.leave()
         }
         internalGroup.wait()
-        persistenceObjects.logger?.log(level: .debug, source: self, featureName: "containerTest300prpl", message: "group.leave()", data: nil)
+        persistenceObjects.logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "containerTest300prpl", message: "group.leave()", data: nil)
         group.leave()
     }
 
-    private static func preLoad<T> (cache: EntityCache<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
-        logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "start." + label, data: nil)
+    private static func preLoad<T> (testCount: Int, cache: EntityCache<T>, logger: Logger?, label: String, ids: [UUID]) -> [Entity<T>] {
+        logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "preLoad<T>", message: "start." + label, data: nil)
         var result: [Entity<T>] = []
         var badIds: [UUID] = []
         for id in ids {
             do {
-                let retrievedEntity = try cache.getSync(id: id)
+                let retrievedEntity = try cache.getSync(context: "textCount.\(testCount)", id: id)
                 result.append (retrievedEntity)
             } catch {
-                logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "from." + label, data: [(name:"error", value: "\(error)")])
+                logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "preLoad<T>", message: "from." + label, data: [(name:"error", value: "\(error)")])
                 badIds.append (id)
             }
         }
         if badIds.isEmpty {
-            logger?.log(level: .debug, source: self, featureName: "preLoad<T>", message: "end." + label, data: [(name: "resultCount", value: result.count)])
+            logger?.log(level: .debug, context: "textCount.\(testCount)", source: self, featureName: "preLoad<T>", message: "end." + label, data: [(name: "resultCount", value: result.count)])
             return result
         } else {
-            let interimResult: [Entity<T>] = preLoad(cache: cache, logger: logger, label: label, ids: badIds)
+            let interimResult: [Entity<T>] = preLoad(testCount: testCount, cache: cache, logger: logger, label: label, ids: badIds)
             return result + interimResult
         }
     }
 
 
-    internal static func newStructs(persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
+    internal static func newStructs(testCount: Int, persistenceObjects: ParallelTestPersistence, batch: EventuallyConsistentBatch) -> (structs: [Entity<MyStruct>], ids: [UUID]) {
         var counter = 1
         var structs: [Entity<MyStruct>] = []
         structs.reserveCapacity(myStructCount)
@@ -1254,33 +1254,33 @@ public class ParallelTest {
         return (structs: structs, ids: ids)
     }
     
-    private static func executeOnMyStruct (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
+    private static func executeOnMyStruct (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, logger: Logger?, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
         var internalTestResult = testResult
         firstly {
-            persistenceObjects.myStructCollection.get(id: id)
+            persistenceObjects.myStructCollection.get(context: "textCount.\(testCount)", id: id)
         }.done { entity in
             closure (entity)
             group.leave()
         }.catch { error in
-            logger?.log (level: .debug, source: self, featureName: "executeOnMyStruct", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
-            executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: group, logger: logger, sourceLabel: sourceLabel, closure: closure)
+            logger?.log (level: .debug, context: "textCount.\(testCount)", source: self, featureName: "executeOnMyStruct", message: "error", data: [(name: "source", value: sourceLabel), (name: "message", value: "\(error)")])
+            executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, id: id, group: group, logger: logger, sourceLabel: sourceLabel, closure: closure)
         }
     }
     
-    private static func executeOnContainer (persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStructContainer>) -> ()) {
+    private static func executeOnContainer (testCount: Int, persistenceObjects: ParallelTestPersistence, id: UUID, group: DispatchGroup, closure: @escaping (Entity<MyStructContainer>) -> ()) {
         firstly {
-            persistenceObjects.containerCollection.get(id: id)
+            persistenceObjects.containerCollection.get(context: "textCount.\(testCount)", id: id)
         }.done { retrievedEntity in
             closure (retrievedEntity)
         }.catch { error in
-            executeOnContainer(persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
+            executeOnContainer(testCount: testCount, persistenceObjects: persistenceObjects, id: id, group: group, closure: closure)
         }
     }
     
-    private static func executeOnMyStruct (testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, container: MyStructContainer, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
+    private static func executeOnMyStruct (testCount: Int, testResult: inout TestResult, persistenceObjects: ParallelTestPersistence, container: MyStructContainer, sourceLabel: String, closure: @escaping (Entity<MyStruct>) -> ()) {
         var internalTestResult = testResult
         firstly {
-            container.myStruct.get()
+            container.myStruct.get(context: "textCount.\(testCount)")
         }.done { entity in
             if let entity = entity {
                 closure (entity)
@@ -1288,11 +1288,11 @@ public class ParallelTest {
                 ParallelTest.Fail (testResult: &internalTestResult, message: "executeOnMyStruct.\(sourceLabel) Expected entity")
             }
         }.catch { error in
-            executeOnMyStruct(testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: container, sourceLabel: sourceLabel, closure: closure)
+            executeOnMyStruct(testCount: testCount, testResult: &internalTestResult, persistenceObjects: persistenceObjects, container: container, sourceLabel: sourceLabel, closure: closure)
         }
     }
 
-    private static func newContainers (persistenceObjects: ParallelTestPersistence, structs: [Entity<MyStruct>?]?, batch: EventuallyConsistentBatch) -> (containers: [Entity<MyStructContainer>], ids: [UUID]) {
+    private static func newContainers (testCount: Int, persistenceObjects: ParallelTestPersistence, structs: [Entity<MyStruct>?]?, batch: EventuallyConsistentBatch) -> (containers: [Entity<MyStructContainer>], ids: [UUID]) {
         var index = 0
         var containers: [Entity<MyStructContainer>] = []
         containers.reserveCapacity(myStructCount)
@@ -1302,7 +1302,7 @@ public class ParallelTest {
         if let structs = structs {
             finalStructs = structs
         } else {
-            finalStructs = newStructs(persistenceObjects: persistenceObjects, batch: batch).structs
+            finalStructs = newStructs(testCount: testCount, persistenceObjects: persistenceObjects, batch: batch).structs
         }
         while index < myStructCount {
             let newContainer = persistenceObjects.containerCollection.new(batch: batch, myStruct: finalStructs![index])
@@ -1393,7 +1393,8 @@ public class TestResult {
 
 internal class ParallelTestPersistence {
     
-    init (accessor: DatabaseAccessor, logger: Logger?) {
+    init (testCount: Int, accessor: DatabaseAccessor, logger: Logger?) {
+        self.testCount = testCount
         self.logger = logger
         let database = Database (accessor: accessor, schemaVersion: 1, logger: logger, referenceRetryInterval: 0.000001)
         myStructCollection = EntityCache<MyStruct> (database: database, name: "MyStructs")
@@ -1402,7 +1403,7 @@ internal class ParallelTestPersistence {
     
     deinit {
         if let logger = logger {
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "start", data: nil)
+            logger.log(level: .debug, context: "textCount.\(testCount)", source: "", featureName: "deinit", message: "start", data: nil)
             var myStructCount = 0
             var containerCount = 0
             myStructCollection.sync() { entities in
@@ -1411,10 +1412,12 @@ internal class ParallelTestPersistence {
             containerCollection.sync() { entities in
                 containerCount = entities.count
             }
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
-            logger.log(level: .debug, source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
+            logger.log(level: .debug, context: "textCount.\(testCount)", source: "", featureName: "deinit", message: "myStructCollection", data: [(name: "count", value: myStructCount)])
+            logger.log(level: .debug, context: "textCount.\(testCount)", source: "", featureName: "deinit", message: "containerCollection", data: [(name: "count", value: containerCount)])
         }
     }
+    
+    let testCount: Int
     
     let logger: Logger?
     

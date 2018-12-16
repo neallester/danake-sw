@@ -52,9 +52,9 @@ extension Promise {
      - Returns: Promise\<Entity\<CHILD\>\>
 
 */
-    func referenceFromItem<I, R> (closure: @escaping (I) -> ReferenceManager<I, R>) -> Promise<Entity<R>?> where T == Entity<I> {
+    func referenceFromItem<I, R> (context: String?, closure: @escaping (I) -> ReferenceManager<I, R>) -> Promise<Entity<R>?> where T == Entity<I> {
         return then() { entity in
-            return entity.referenceFromItem(closure: closure)
+            return entity.referenceFromItem(context: context, closure: closure)
         }
     }
     

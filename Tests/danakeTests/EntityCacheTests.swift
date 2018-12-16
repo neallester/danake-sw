@@ -72,7 +72,7 @@ class EntityCacheTests: XCTestCase {
         let myStruct = MyStruct(myInt: 10, myString: "A String")
         let database = Database (accessor: InMemoryAccessor(), schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
-        var batch = EventuallyConsistentBatch()
+        var batch = EventuallyConsistentBatch(context: nil)
         var entity: Entity<MyStruct>? = cache.new(batch: batch, item: myStruct)
         XCTAssertTrue (cache === entity!.cache)
         batch.syncEntities() { entities in
@@ -96,7 +96,7 @@ class EntityCacheTests: XCTestCase {
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
-        batch = EventuallyConsistentBatch() // Ensures entity is collected
+        batch = EventuallyConsistentBatch(context: nil) // Ensures entity is collected
         cache.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
@@ -127,13 +127,13 @@ class EntityCacheTests: XCTestCase {
         }
         XCTAssertEqual (5, entity?.getSchemaVersion())
         entity = nil
-        batch = EventuallyConsistentBatch() // Ensures entity is collected
+        batch = EventuallyConsistentBatch(context: nil) // Ensures entity is collected
         cache.sync() { cache in
             XCTAssertEqual(0, cache.count)
         }
     }
     
-    func testGetSync() throws {
+    func testgetSync () throws {
         // Data In Cache=No; Data in Accessor=No
         let entity = newTestEntity(myInt: 10, myString: "A String")
 
@@ -144,7 +144,7 @@ class EntityCacheTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let data = try accessor.encoder.encode(entity)
         do {
-            let _ = try cache.getSync (id: entity.id)
+            let _ = try cache.getSync (context: "myContext", id: entity.id)
             XCTFail ("Expected Errr")
         } catch {
             XCTAssertEqual ("unknownUUID(\(entity.id))", "\(error)")
@@ -152,11 +152,11 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.getSync|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id)", entry)
+            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.getSync|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id),context=myContext", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
         let _ = accessor.add(name: standardCacheName, id: entity.id, data: data)
-        let result = try cache.getSync(id: entity.id)
+        let result = try cache.getSync (context: "myContext", id: entity.id)
         let retrievedEntity = result
         XCTAssertEqual (entity.id.uuidString, retrievedEntity.id.uuidString)
         XCTAssertEqual (entity.version, retrievedEntity.version)
@@ -183,9 +183,9 @@ class EntityCacheTests: XCTestCase {
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=No
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         let entity2 = cache.new(batch: batch, item: MyStruct())
-        var cachedEntity = try cache.getSync(id: entity2.id)
+        var cachedEntity = try cache.getSync (context: "myContext", id: entity2.id)
         XCTAssertTrue (entity2 === cachedEntity)
         XCTAssertEqual (5, entity2.getSchemaVersion())
         XCTAssertTrue (entity2.cache === cache)
@@ -202,7 +202,7 @@ class EntityCacheTests: XCTestCase {
             XCTAssertEqual (1, entries.count)
         }
         // Data In Cache=Yes; Data in Accessor=Yes
-        cachedEntity = try cache.getSync(id: entity.id)
+        cachedEntity = try cache.getSync (context: "myContext", id: entity.id)
         XCTAssertTrue (retrievedEntity === cachedEntity)
         cache.sync() { cache in
             XCTAssertEqual (2, cache.count)
@@ -222,7 +222,7 @@ class EntityCacheTests: XCTestCase {
         let invalidDataUuid = UUID()
         let _ = accessor.add(name: standardCacheName, id: invalidDataUuid, data: invalidData)
         do {
-            let _ = try cache.getSync(id: invalidDataUuid)
+            let _ = try cache.getSync (context: "myContext", id: invalidDataUuid)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
@@ -230,7 +230,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\"),context=myContext", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -238,7 +238,7 @@ class EntityCacheTests: XCTestCase {
         let _ = accessor.add(name: standardCacheName, id: entity3.id, data: data3)
         accessor.setThrowError()
         do {
-            let _ = try cache.getSync(id: entity3.id)
+            let _ = try cache.getSync (context: "myContext", id: entity3.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
@@ -246,7 +246,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError", entry)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError,context=myContext", entry)
         }
     }
     
@@ -279,7 +279,7 @@ class EntityCacheTests: XCTestCase {
             dispatchGroup.enter()
             workQueue.async {
                 do {
-                    result1a = try cache.getSync(id: id1)
+                    result1a = try cache.getSync (context: "myContext", id: id1)
                 } catch {
                     XCTFail ("Expected success but got \(error)")
                 }
@@ -288,7 +288,7 @@ class EntityCacheTests: XCTestCase {
             dispatchGroup.enter()
             workQueue.async {
                 do {
-                    result1b = try cache.getSync (id: id1)
+                    result1b = try cache.getSync (context: "myContext", id: id1)
                 } catch {
                     XCTFail ("Expected success but got \(error)")
                 }
@@ -296,7 +296,7 @@ class EntityCacheTests: XCTestCase {
             }
             workQueue.async {
                 do {
-                    result2 = try cache.getSync (id: id2)
+                    result2 = try cache.getSync (context: "myContext", id: id2)
                 } catch {
                     XCTFail ("Expected success but got \(error)")
                 }
@@ -383,7 +383,7 @@ class EntityCacheTests: XCTestCase {
             var result1: Entity<MyStruct>? = nil
             var result2: Entity<MyStruct>? = nil
             firstly {
-                cache.get (id: entity1.id)
+                cache.get (context: "myContext", id: entity1.id)
             }.done { item in
                 XCTFail ("Expected error")
             }.catch { error in
@@ -392,7 +392,7 @@ class EntityCacheTests: XCTestCase {
                 waitFor1.fulfill()
             }
             firstly {
-                cache.get (id: entity2.id)
+                cache.get (context: "myContext", id: entity2.id)
             }.done { item in
                 XCTFail ("Expected error")
             }.catch { error in
@@ -412,7 +412,7 @@ class EntityCacheTests: XCTestCase {
             let _ = accessor.add(name: standardCacheName, id: entity1.id, data: data1)
             let _ = accessor.add(name: standardCacheName, id: entity2.id, data: data2)
             firstly {
-                cache.get(id: entity1.id)
+                cache.get (context: "myContext", id: entity1.id)
             }.done { item in
                 result1 = item
             }.catch { error in
@@ -422,7 +422,7 @@ class EntityCacheTests: XCTestCase {
             }
             
             firstly {
-                cache.get(id: entity2.id)
+                cache.get (context: "myContext", id: entity2.id)
             }.done { item in
                 result2 = item
             }.catch { error in
@@ -476,11 +476,11 @@ class EntityCacheTests: XCTestCase {
             // Data In Cache=Yes; Data in Accessor=No
             waitFor1 = expectation(description: "wait1.3")
             waitFor2 = expectation(description: "wait2.3")
-            let batch = EventuallyConsistentBatch()
+            let batch = EventuallyConsistentBatch(context: "myContext")
             let entity3 = cache.new(batch: batch, item: MyStruct())
             let entity4 = cache.new(batch: batch, item: MyStruct())
             firstly {
-                cache.get(id: entity3.id)
+                cache.get (context: "myContext", id: entity3.id)
             }.done { item in
                 result1 = item
             }.catch { error in
@@ -490,7 +490,7 @@ class EntityCacheTests: XCTestCase {
             }
             
             firstly {
-                cache.get(id: entity4.id)
+                cache.get (context: "myContext", id: entity4.id)
             }.done { item in
                 result2 = item
             }.catch { error in
@@ -522,7 +522,7 @@ class EntityCacheTests: XCTestCase {
             result1 = nil
             result2 = nil
             firstly {
-                cache.get (id: entity1.id)
+                cache.get (context: "myContext", id: entity1.id)
             }.done { item in
                 result1 = item
             }.catch { error in
@@ -532,7 +532,7 @@ class EntityCacheTests: XCTestCase {
             }
             
             firstly {
-                cache.get (id: entity2.id)
+                cache.get (context: "myContext", id: entity2.id)
             }.done { item in
                 result2 = item
             }.catch { error in
@@ -570,7 +570,7 @@ class EntityCacheTests: XCTestCase {
             let _ = accessor.add(name: standardCacheName, id: invalidDataUuid1, data: invalidData1)
             let _ = accessor.add(name: standardCacheName, id: invalidDataUuid2, data: invalidData2)
             firstly {
-                cache.get(id: invalidDataUuid1)
+                cache.get (context: "myContext", id: invalidDataUuid1)
             }.done { item in
                 XCTFail ("Expected error")
             }.catch { error in
@@ -583,7 +583,7 @@ class EntityCacheTests: XCTestCase {
                 waitFor1.fulfill()
             }
             firstly {
-                cache.get(id: invalidDataUuid2)
+                cache.get (context: "myContext", id: invalidDataUuid2)
             }.done { item in
                 XCTFail ("Expected error")
             }.catch { error in
@@ -608,7 +608,7 @@ class EntityCacheTests: XCTestCase {
             var errorsReported = 0
             let errorsReportedQueue = DispatchQueue(label: "errorsReported")
             firstly {
-                cache.get(id: entity5.id)
+                cache.get (context: "myContext", id: entity5.id)
             }.done { item in
                 // Do Nothing
             }.catch {error in
@@ -619,7 +619,7 @@ class EntityCacheTests: XCTestCase {
                 waitFor1.fulfill()
             }
             firstly {
-                cache.get(id: entity6.id)
+                cache.get (context: "myContext", id: entity6.id)
             }.done { item in
                 // Do Nothing
             }.catch {error in
@@ -647,11 +647,11 @@ class EntityCacheTests: XCTestCase {
             let logger = InMemoryLogger(level: .warning)
             let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
             let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
-            var retrievedEntities = try cache.scanSync(criteria: nil)
+            var retrievedEntities = try cache.scanSync (context: "myContext",criteria: nil)
             XCTAssertEqual (0, retrievedEntities.count)
-            retrievedEntities = try cache.scanSync()
+            retrievedEntities = try cache.scanSync (context: "myContext")
             XCTAssertEqual (0, retrievedEntities.count)
-            retrievedEntities = try cache.scanSync() { myStruct in
+            retrievedEntities = try cache.scanSync (context: "myContext") { myStruct in
                 return (myStruct.myInt == 20)
             }
             XCTAssertEqual (0, retrievedEntities.count)
@@ -689,7 +689,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = try cache.getSync (id: entity3.id)
+            entity3 = try cache.getSync (context: "myContext", id: entity3.id)
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.persistenceState = .persistent
             entity4.saved = Date()
@@ -700,7 +700,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = try cache.getSync (id: entity4.id)
+            entity4 = try cache.getSync (context: "myContext", id: entity4.id)
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -717,7 +717,7 @@ class EntityCacheTests: XCTestCase {
                 XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             // Retrieve Data
-            retrievedEntities = try cache.scanSync(criteria: nil)
+            retrievedEntities = try cache.scanSync (context: "myContext",criteria: nil)
             var retrievedEntity1: Entity<MyStruct>? = nil
             var retrievedEntity2: Entity<MyStruct>? = nil
             var retrievedEntity3: Entity<MyStruct>? = nil
@@ -776,7 +776,7 @@ class EntityCacheTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (0, entries.count)
             }
-            retrievedEntities = try cache.scanSync()
+            retrievedEntities = try cache.scanSync (context: "myContext")
             retrievedEntity1 = nil
             retrievedEntity2 = nil
             retrievedEntity3 = nil
@@ -837,14 +837,14 @@ class EntityCacheTests: XCTestCase {
             }
             
             // With criteria
-            var retrievalResult = try cache.scanSync() { myStruct in
+            var retrievalResult = try cache.scanSync (context: "myContext") { myStruct in
                 return (myStruct.myInt == 20)
             }
             retrievedEntities = retrievalResult
             XCTAssertEqual (1, retrievedEntities.count)
             XCTAssertTrue (retrievedEntities[0] === retrievedEntity2!)
             // With criteria matching none
-            retrievalResult = try cache.scanSync() { myStruct in
+            retrievalResult = try cache.scanSync (context: "myContext") { myStruct in
                 return (myStruct.myInt == 1000)
             }
             retrievedEntities = retrievalResult
@@ -894,7 +894,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = try cache.getSync (id: entity3.id)
+            entity3 = try cache.getSync (context: "myContext", id: entity3.id)
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.persistenceState = .persistent
             entity4.saved = Date()
@@ -905,7 +905,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = try cache.getSync (id: entity4.id)
+            entity4 = try cache.getSync (context: "myContext", id: entity4.id)
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -922,7 +922,7 @@ class EntityCacheTests: XCTestCase {
                 XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
             }
             // Retrieve Data
-            let retrievedEntities = try cache.scanSync(){ item in
+            let retrievedEntities = try cache.scanSync (context: "myContext"){ item in
                 return (item.myInt == 10)
             }
             XCTAssertEqual (1, retrievedEntities.count)
@@ -990,7 +990,7 @@ class EntityCacheTests: XCTestCase {
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity3 = try cache.getSync (id: entity3.id)
+                entity3 = try cache.getSync (context: "myContext", id: entity3.id)
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.persistenceState = .persistent
                 entity4.saved = Date()
@@ -1001,7 +1001,7 @@ class EntityCacheTests: XCTestCase {
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity4 = try cache.getSync (id: entity4.id)
+                entity4 = try cache.getSync (context: "myContext", id: entity4.id)
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
@@ -1018,7 +1018,7 @@ class EntityCacheTests: XCTestCase {
                     XCTAssertTrue (cache[entity4.id]!.codable! === entity4)
                 }
                 // Retrieve Data
-                let retrievedEntities = try cache.scanSync(){ item in
+                let retrievedEntities = try cache.scanSync (context: "myContext"){ item in
                     return (item.myInt == 30)
                 }
                 XCTAssertEqual (1, retrievedEntities.count)
@@ -1080,7 +1080,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity3 = try cache.getSync (id: entity3.id)
+            entity3 = try cache.getSync (context: "myContext", id: entity3.id)
             var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
             entity4.persistenceState = .persistent
             entity4.saved = Date()
@@ -1091,7 +1091,7 @@ class EntityCacheTests: XCTestCase {
             default:
                 XCTFail ("Expected .ok")
             }
-            entity4 = try cache.getSync (id: entity4.id)
+            entity4 = try cache.getSync (context: "myContext", id: entity4.id)
             // Invalid Data
             let json = "{}"
             let invalidData = json.data(using: .utf8)!
@@ -1110,14 +1110,14 @@ class EntityCacheTests: XCTestCase {
             // Retrieve Data
             accessor.setThrowError()
             do {
-                let _ = try cache.scanSync(criteria: nil)
+                let _ = try cache.scanSync (context: "myContext",criteria: nil)
                 XCTFail("Expected error")
             } catch {
                 XCTAssertEqual ("scanError", "\(error)")
             }
             accessor.setThrowError()
             do {
-                let _ = try cache.scanSync()
+                let _ = try cache.scanSync (context: "myContext")
                 XCTFail("Expected error")
             } catch {
                 XCTAssertEqual ("scanError", "\(error)")
@@ -1170,7 +1170,7 @@ class EntityCacheTests: XCTestCase {
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity3 = try cache.getSync (id: entity3.id)
+                entity3 = try cache.getSync (context: "myContext", id: entity3.id)
                 var entity4 = newTestEntity(myInt: 40, myString: "A String 4")
                 entity4.persistenceState = .persistent
                 entity4.saved = Date()
@@ -1181,7 +1181,7 @@ class EntityCacheTests: XCTestCase {
                 default:
                     XCTFail ("Expected .ok")
                 }
-                entity4 = try cache.getSync (id: entity4.id)
+                entity4 = try cache.getSync (context: "myContext", id: entity4.id)
                 // Invalid Data
                 let json = "{}"
                 let invalidData = json.data(using: .utf8)!
@@ -1194,7 +1194,7 @@ class EntityCacheTests: XCTestCase {
                 }
                 let test1a = {
                     firstly {
-                        cache.scan(criteria: nil)
+                        cache.scan(context: "myContext", criteria: nil)
                     }.done { retrievedEntities in
                         var retrievedEntity1: Entity<MyStruct>? = nil
                         var retrievedEntity2: Entity<MyStruct>? = nil
@@ -1249,7 +1249,7 @@ class EntityCacheTests: XCTestCase {
                 }
                 let test1b = {
                     firstly {
-                        cache.scan()
+                        cache.scan(context: "myContext")
                     }.done { retrievedEntities in
                         var retrievedEntity1: Entity<MyStruct>? = nil
                         var retrievedEntity2: Entity<MyStruct>? = nil
@@ -1303,7 +1303,7 @@ class EntityCacheTests: XCTestCase {
                 }
                 let test2 = {
                     firstly {
-                        cache.scan (criteria: { item in return (item.myInt == 10)})
+                        cache.scan (context: "myContext", criteria: { item in return (item.myInt == 10)})
                     }.done { retrievedEntities in
                         XCTAssertEqual (1, retrievedEntities.count)
                         let retrievedEntity = retrievedEntities[0]
@@ -1328,7 +1328,7 @@ class EntityCacheTests: XCTestCase {
                 }
                 let test3 = {
                     firstly {
-                        cache.scan() {
+                        cache.scan(context: "myContext") {
                             item in return (item.myInt == 30)
                         }
                     }.done { retrievedEntities in
@@ -1420,7 +1420,7 @@ class EntityCacheTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         XCTAssertFalse (cache.hasCached(id: UUID()))
         let myStruct = MyStruct(myInt: 10, myString: "10")
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         let entity = cache.new(batch: batch, item: myStruct)
         XCTAssertTrue (cache.hasCached(id: entity.id))
     }
@@ -1431,7 +1431,7 @@ class EntityCacheTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         XCTAssertFalse (cache.hasCached(id: UUID()))
         let myStruct = MyStruct(myInt: 10, myString: "10")
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: "myContext")
         var entity: Entity<MyStruct>? = cache.new(batch: batch, item: myStruct)
         batch.commitSync()
         let id = entity!.id

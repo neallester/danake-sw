@@ -27,7 +27,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
 
     
-    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>? {
+    public func get<T, E: Entity<T>> (context: String?, type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>? {
         var result: Entity<T>? = nil
         if let preFetch = preFetch {
             preFetch (id)
@@ -40,7 +40,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             } else if let cacheDictionary = storage[cache.name] {
                 let data = cacheDictionary[id]
                 if let data = data {
-                    switch entityCreator.entity(creator: {try decoder (cache: cache).decode(type, from: data)} ) {
+                    switch entityCreator.entity(creator: {try decoder (context: context, cache: cache).decode(type, from: data)} ) {
                     case .ok (let entity):
                         result = entity
                     case .error (let creationError):
@@ -52,7 +52,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {
+    public func scan<T, E: Entity<T>> (context: String?, type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {
         var result: [Entity<T>] = []
         try queue.sync {
             if self.throwError {
@@ -61,7 +61,7 @@ public class InMemoryAccessor: DatabaseAccessor {
             } else if let cacheDictionary = storage [cache.name] {
                 result.reserveCapacity (cacheDictionary.count)
                 for item in cacheDictionary.values {
-                    switch entityCreator.entity(creator: {try decoder (cache: cache).decode(type, from: item)} ) {
+                    switch entityCreator.entity(creator: {try decoder (context: context, cache: cache).decode(type, from: item)} ) {
                     case .ok (let entity):
                         result.append (entity)
                     case .error:
@@ -73,7 +73,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+    public func addAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
             if let preFetch = preFetch {
@@ -98,11 +98,11 @@ public class InMemoryAccessor: DatabaseAccessor {
         }
     }
     
-    public func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        return addAction (wrapper: wrapper)
+    public func updateAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+        return addAction (context: context, wrapper: wrapper)
     }
     
-    public func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
+    public func removeAction (context: String?, wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
         var errorResult: DatabaseActionResult? = nil
         queue.sync {
             if let preFetch = preFetch {
@@ -298,11 +298,12 @@ public class InMemoryAccessor: DatabaseAccessor {
     }()
     
     
-    public func decoder <T> (cache: EntityCache<T>) -> JSONDecoder {
+    public func decoder <T> (context: String?, cache: EntityCache<T>) -> JSONDecoder {
         let result = JSONDecoder()
         result.dateDecodingStrategy = .secondsSince1970
         result.userInfo[Database.cacheKey] = cache
         result.userInfo[Database.parentDataKey] = DataContainer()
+        result.userInfo[Database.contextKey] = context
         if let closure = cache.userInfoClosure {
             closure (&result.userInfo)
         }

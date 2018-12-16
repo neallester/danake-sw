@@ -21,7 +21,7 @@ class EntityCommitTests: XCTestCase {
         let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: nil) { result in
             switch result {
             case .ok:
                 group.leave()
@@ -49,7 +49,7 @@ class EntityCommitTests: XCTestCase {
         }
         XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: nil) { result in
             switch result {
             case .ok:
                 group.leave()
@@ -88,7 +88,7 @@ class EntityCommitTests: XCTestCase {
         let id = UUID()
         let entity = Entity<MyStruct> (cache: cache, id: id, version: 0, item: MyStruct(myInt: 10, myString: "10"))
         let group = DispatchGroup()
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         entity.remove(batch: batch)
         XCTAssertEqual (0, entity.version)
         entity.sync() { item in
@@ -104,7 +104,7 @@ class EntityCommitTests: XCTestCase {
         }
         XCTAssertFalse (accessor.has (name: cacheName, id: entity.id))
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: nil) { result in
             switch result {
             case .ok:
                 group.leave()
@@ -179,7 +179,7 @@ class EntityCommitTests: XCTestCase {
         }
         accessor.setPreFetch (prefetch)
         group.enter()
-        entity.commit() { result in
+        entity.commit(context: nil) { result in
             switch result {
             case .ok:
                 break
@@ -215,7 +215,7 @@ class EntityCommitTests: XCTestCase {
         XCTAssertNil (entity.getPendingAction())
         let group2 = DispatchGroup()
         group2.enter()
-        entity.commit() { result in
+        entity.commit(context: nil) { result in
             switch result {
             case .ok:
                 group2.leave()

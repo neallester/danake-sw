@@ -78,7 +78,7 @@ public enum LogLevel : String, Comparable {
 
 public protocol Logger {
     
-    func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?)
+    func log (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?)
     
 }
 
@@ -118,13 +118,24 @@ open class LogEntryFormatter {
 
 public struct LogEntry {
     
-    init (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+    init (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
         time = Date()
         self.level = level
         self.source = "\(type (of: source))"
         self.featureName = featureName
         self.message = message
-        self.data = data
+        if let context = context {
+            let contextEntry: (name: String, value: CustomStringConvertible?) = (name: "Context", value: context)
+            if let data = data {
+                var toModify = data
+                toModify.append(contextEntry)
+                self.data = toModify
+            } else {
+                self.data = [contextEntry]
+            }
+        } else {
+            self.data = data
+        }
     }
     
     public let time: Date
@@ -150,25 +161,25 @@ open class ThreadSafeLogger : Logger {
         self.level = level
     }
     
-    public func log (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]? = nil) {
+    public func log (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]? = nil) {
         if (level >= self.level) {
             queue.async () {
-                self.logImplementation(level: level, source: source, featureName: featureName, message: message, data: data)
+                self.logImplementation(level: level, context: context, source: source, featureName: featureName, message: message, data: data)
             }
         }
     }
     
     let level: LogLevel
 
-    fileprivate func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {}
+    fileprivate func logImplementation (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {}
     
     fileprivate let queue = DispatchQueue (label: UUID().uuidString)
 }
 
 open class InMemoryLogger : ThreadSafeLogger {
     
-    override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
-        entries.append(LogEntry (level: level, source: source, featureName: featureName, message: message, data: data))
+    override func logImplementation (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+        entries.append(LogEntry (level: level, context: context, source: source, featureName: featureName, message: message, data: data))
     }
     
     public func sync (closure: ([LogEntry]) -> Void) {
@@ -207,8 +218,8 @@ open class InMemoryLogger : ThreadSafeLogger {
 
 open class ConsoleLogger : ThreadSafeLogger {
     
-    override func logImplementation (level: LogLevel, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
-        print (LogEntry (level: level, source: source, featureName: featureName, message: message, data: data).asTestString())
+    override func logImplementation (level: LogLevel, context: String?, source: Any, featureName: String, message: String, data: [(name: String, value: CustomStringConvertible?)]?) {
+        print (LogEntry (level: level, context: context, source: source, featureName: featureName, message: message, data: data).asTestString())
     }
     
     public func sync (closure: ([LogEntry]) -> Void) {

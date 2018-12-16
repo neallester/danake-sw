@@ -47,6 +47,8 @@ internal extension DispatchTimeInterval {
 public class EventuallyConsistentBatch {
     
     /**
+     - parameter context: Execution context for the Batch (e.g. request ID).
+     
      - parameter retryInterval: How long the framework waits until retrying a batch which experienced recoverable errors
                                 during processing (see BatchDefaults for default value).
      
@@ -61,10 +63,11 @@ public class EventuallyConsistentBatch {
                           and logged if a logger has been provided. Successful database updates for other entities in the
                           batch are NOT rolled back (see BatchDefaults for default value).
  */
-    public init(retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
+    public init(context: String?, retryInterval: DispatchTimeInterval = BatchDefaults.retryInterval, timeout: DispatchTimeInterval = BatchDefaults.timeout, logger: Logger? = nil) {
+        self.context = context
         self.retryInterval = retryInterval
         self.timeout = timeout
-        delegate = BatchDelegate(logger: logger)
+        delegate = BatchDelegate(context: context, logger: logger)
         self.logger = logger
         queue = DispatchQueue (label: "EventuallyConsistentBatch \(delegate.id.uuidString)")
     }
@@ -73,7 +76,7 @@ public class EventuallyConsistentBatch {
         if let logger = logger {
             delegate.sync() { entities in
                 for entity in entities.values {
-                    logger.log(level: .error, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.id), (name: "entityPersistenceState", value: "\(entity.persistenceState)")])
+                    logger.log(level: .error, context: context, source: delegate, featureName: "deinit", message: "notCommitted:lostData", data: [(name: "entityType", value: "\(type(of: entity))"), (name: "entityId", value: entity.id), (name: "entityPersistenceState", value: "\(entity.persistenceState)")])
                 }
             }
         }
@@ -91,7 +94,7 @@ public class EventuallyConsistentBatch {
     public func commit (completionHandler: (() -> ())?) {
         queue.sync {
             let oldDelegate = delegate
-            delegate = BatchDelegate(logger: logger)
+            delegate = BatchDelegate(context: context, logger: logger)
             commit (delegate: oldDelegate, completionHandler: completionHandler)
         }
     }
@@ -142,6 +145,7 @@ public class EventuallyConsistentBatch {
         return result!
     }
     
+    internal let context: String?
     private let queue: DispatchQueue
     private var delegate: BatchDelegate
     private let logger: Logger?
@@ -152,7 +156,8 @@ public class EventuallyConsistentBatch {
 
 fileprivate class BatchDelegate {
     
-    init(logger: Logger?) {
+    init(context: String?, logger: Logger?) {
+        self.context = context
         self.logger = logger
         id = UUID()
         entities = Dictionary()
@@ -171,7 +176,7 @@ fileprivate class BatchDelegate {
                 for key in self.entities.keys {
                     group.enter()
                     if let entity = self.entities[key] {
-                        entity.commit (timeout: timeout) { result in
+                        entity.commit (context: self.context, timeout: timeout) { result in
                             var logLevel: LogLevel? = nil
                             switch result {
                             case .ok:
@@ -187,7 +192,7 @@ fileprivate class BatchDelegate {
                                 logLevel = .emergency
                             }
                             if let logLevel = logLevel {
-                                self.logger?.log(level: logLevel, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "batchId", value: self.id.uuidString)])
+                                self.logger?.log(level: logLevel, context: self.context, source: self, featureName: "commit", message: "Database.\(result)", data: [(name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "batchId", value: self.id.uuidString)])
                             }
                             
                             group.leave()
@@ -201,7 +206,7 @@ fileprivate class BatchDelegate {
             default:
                 self.queue.async {
                     for entity in self.entities.values {
-                        self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
+                        self.logger?.log(level: .error, context: self.context, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
                     }
                     self.entities.removeAll()
                 }
@@ -226,6 +231,7 @@ fileprivate class BatchDelegate {
     
     private let logger: Logger?
     private let queue: DispatchQueue
+    private let context: String?
     fileprivate let id: UUID
     fileprivate var entities: Dictionary<UUID, EntityManagement>
 }

@@ -16,13 +16,13 @@ class InMemoryAccessorTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let uuid = UUID()
         do {
-            let retrievedData = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
+            let retrievedData = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
             XCTAssertNil (retrievedData)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         do {
-            let retrievedData = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedData = try accessor.scan(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (0, retrievedData.count)
 
         } catch {
@@ -42,7 +42,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: id1)!, encoding: .utf8), json1)
         var retrievedEntity1: Entity<MyStruct>? = nil
         do {
-            if let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: id1) {
+            if let retrievedEntity = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: id1) {
                 retrievedEntity1 = retrievedEntity
                 XCTAssertTrue (retrievedEntity === cache.cachedEntity(id: id1)!)
                 XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
@@ -68,13 +68,13 @@ class InMemoryAccessorTests: XCTestCase {
         }
         // Not present
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
+            let retrievedEntity = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
             XCTAssertNil (retrievedEntity)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scan(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (1, retrievedEntities.count)
             XCTAssertTrue (retrievedEntities[0] === retrievedEntity1)
             XCTAssertTrue (retrievedEntity1 === cache.cachedEntity(id: id1)!)
@@ -82,14 +82,14 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected success but got \(error)")
         }
         // Update
-        let batch = EventuallyConsistentBatch()
+        let batch = EventuallyConsistentBatch(context: nil)
         retrievedEntity1!.update(batch: batch) { item in
             item.myInt = 11
             item.myString = "11"
         }
         retrievedEntity1!.saved = Date()
         let wrapper = EntityPersistenceWrapper (cacheName: retrievedEntity1!.cache.name, entity: retrievedEntity1!)
-        switch accessor.updateAction(wrapper: wrapper) {
+        switch accessor.updateAction(context: nil, wrapper: wrapper) {
         case .ok (let updateClosure):
             switch updateClosure() {
             case .ok:
@@ -116,7 +116,7 @@ class InMemoryAccessorTests: XCTestCase {
         var found1 = false
         var retrievedEntity2: Entity<MyStruct>? = nil
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scan(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -151,7 +151,7 @@ class InMemoryAccessorTests: XCTestCase {
         found1 = false
         var found2 = false
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scan(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -173,26 +173,26 @@ class InMemoryAccessorTests: XCTestCase {
         // Test get and scan throwError
         accessor.setThrowError()
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
         }
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let retrievedEntity = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTAssertNotNil(retrievedEntity)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         accessor.setThrowError()
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scan (context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("scanError", "\(error)")
         }
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scan (context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
@@ -200,25 +200,25 @@ class InMemoryAccessorTests: XCTestCase {
         accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowError()
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
         }
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         accessor.setThrowError()
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scan (context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("scanError", "\(error)")
         }
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scan (context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
@@ -234,7 +234,7 @@ class InMemoryAccessorTests: XCTestCase {
             }
         }
         let wrapper3 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity3)
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(context: nil, wrapper: wrapper3) {
         case .ok (let closure):
             switch closure() {
             case .ok:
@@ -251,7 +251,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (entity3 === cache.cachedEntity(id: entity3.id))
         prefetchUuid = nil
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache, id: entity3.id)
+            let retrievedEntity = try accessor.get(context: nil, type: Entity<MyStruct>.self, cache: cache, id: entity3.id)
             XCTAssertTrue (retrievedEntity === entity3)
             XCTAssertTrue (entity3 === cache.cachedEntity(id: entity3.id))
             XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
@@ -263,7 +263,7 @@ class InMemoryAccessorTests: XCTestCase {
         found2 = false
         var found3 = false
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scan(context: nil, type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (3, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -292,7 +292,7 @@ class InMemoryAccessorTests: XCTestCase {
         var entity4 = cache.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
         entity4.saved = Date()
         accessor.setThrowError()
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(context: nil, wrapper: wrapper3) {
         case .error (let errorMessage):
             XCTAssertEqual ("addActionError", errorMessage)
         default:
@@ -300,7 +300,7 @@ class InMemoryAccessorTests: XCTestCase {
         }
         XCTAssertEqual (3, accessor.count(name: cache.name))
         var wrapper4 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity4)
-        switch accessor.addAction(wrapper: wrapper4) {
+        switch accessor.addAction(context: nil, wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (3, accessor.count(name: cache.name))
             accessor.setThrowError()
@@ -328,7 +328,7 @@ class InMemoryAccessorTests: XCTestCase {
         entity4 = cache.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
         entity4.saved = Date()
         accessor.setThrowError()
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(context: nil, wrapper: wrapper3) {
         case .ok:
             break
         default:
@@ -336,7 +336,7 @@ class InMemoryAccessorTests: XCTestCase {
         }
         XCTAssertEqual (4, accessor.count(name: cache.name))
         wrapper4 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity4)
-        switch accessor.addAction(wrapper: wrapper4) {
+        switch accessor.addAction(context: nil, wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (4, accessor.count(name: cache.name))
             accessor.setThrowError()
@@ -368,7 +368,7 @@ class InMemoryAccessorTests: XCTestCase {
             }
         }
         accessor.setThrowError()
-        switch accessor.removeAction(wrapper: wrapper4) {
+        switch accessor.removeAction(context: nil, wrapper: wrapper4) {
         case .error (let errorMessage):
             XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
@@ -378,7 +378,7 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail ("Expected .error")
         }
-        switch accessor.removeAction(wrapper: wrapper4) {
+        switch accessor.removeAction(context: nil, wrapper: wrapper4) {
         case .ok (let closure):
             XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
@@ -412,14 +412,14 @@ class InMemoryAccessorTests: XCTestCase {
         // Test Remove with removeActionError and removeError when accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowError()
-        switch accessor.removeAction(wrapper: wrapper3) {
+        switch accessor.removeAction(context: nil, wrapper: wrapper3) {
         case .ok:
             XCTAssertEqual (4, accessor.count(name: cache.name))
             XCTAssertTrue (accessor.has(name: cache.name, id: wrapper3.id))
         default:
             XCTFail ("Expected .ok")
         }
-        switch accessor.removeAction(wrapper: wrapper3) {
+        switch accessor.removeAction(context: nil, wrapper: wrapper3) {
         case .ok (let closure):
             accessor.setThrowError()
             switch closure() {
@@ -448,7 +448,7 @@ class InMemoryAccessorTests: XCTestCase {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
-        let decoder = accessor.decoder(cache: cache)
+        let decoder = accessor.decoder(context: nil, cache: cache)
         XCTAssertTrue (decoder.userInfo[Database.cacheKey] as! EntityCache<MyStruct> === cache)
         switch decoder.dateDecodingStrategy {
         case .secondsSince1970:
@@ -513,7 +513,7 @@ class InMemoryAccessorTests: XCTestCase {
         var cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: cache.name, id: id, data: json.data(using: .utf8)!)
         do {
-            let _ = try accessor.get(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
+            let _ = try accessor.get(context: nil, type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("creationError(\"missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \\\"struct\\\"))\")", "\(error)")
@@ -523,7 +523,7 @@ class InMemoryAccessorTests: XCTestCase {
             userInfo[MyStructContainer.structKey] = myStruct
         }
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)!
+            let retrievedEntity = try accessor.get(context: nil, type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)!
             retrievedEntity.sync() { item in
                 XCTAssertEqual (10, item.myStruct.myInt)
                 XCTAssertEqual ("10", item.myStruct.myString)
@@ -544,7 +544,7 @@ class InMemoryAccessorTests: XCTestCase {
         var cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: cache.name, id: id, data: json.data(using: .utf8)!)
         do {
-            let result = try accessor.scan(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
+            let result = try accessor.scan(context: nil, type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
             XCTAssertEqual (0, result.count)
         } catch {
             XCTFail("Expected success but got \(error)")
@@ -554,7 +554,7 @@ class InMemoryAccessorTests: XCTestCase {
             userInfo[MyStructContainer.structKey] = myStruct
         }
         do {
-            let result = try accessor.scan(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
+            let result = try accessor.scan(context: nil, type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
             XCTAssertEqual (1, result.count)
             result[0].sync() { item in
                 XCTAssertEqual (10, item.myStruct.myInt)

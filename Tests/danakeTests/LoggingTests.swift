@@ -58,7 +58,8 @@ class LoggingTests: XCTestCase {
     }
     
     func testLogEntry() {
-        let entry = LogEntry (level: .debug, source: self, featureName: "testLogEntry", message: "Message 1", data: [(name: "name1", value:1)])
+        // context nil, with data
+        var entry = LogEntry (level: .debug, context: nil, source: self, featureName: "testLogEntry", message: "Message 1", data: [(name: "name1", value:1)])
         let now = Date();
         XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
         XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
@@ -68,17 +69,56 @@ class LoggingTests: XCTestCase {
         XCTAssertEqual ("Message 1", entry.message)
         XCTAssertEqual (1, entry.data!.count)
         XCTAssertEqual ("name1", entry.data![0].name)
-        let entryValue1 = entry.data![0].value as! Int
+        var entryValue1 = entry.data![0].value as! Int
         XCTAssertEqual (1, entryValue1)
         XCTAssertEqual ("DEBUG|LoggingTests.testLogEntry|Message 1|name1=1", entry.asTestString())
+        // with context and data
+        entry = LogEntry (level: .debug, context: "myContext", source: self, featureName: "testLogEntry", message: "Message 1", data: [(name: "name1", value:1)])
+        XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
+        XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
+        XCTAssertEqual(LogLevel.debug, entry.level)
+        XCTAssertEqual ("LoggingTests", entry.source)
+        XCTAssertEqual ("testLogEntry", entry.featureName)
+        XCTAssertEqual ("Message 1", entry.message)
+        XCTAssertEqual (1, entry.data!.count)
+        XCTAssertEqual ("name1", entry.data![0].name)
+        entryValue1 = entry.data![0].value as! Int
+        XCTAssertEqual (1, entryValue1)
+        var entryValue2 = entry.data![1].value as! String
+        XCTAssertEqual ("myContext", entryValue2)
+        XCTAssertEqual ("DEBUG|LoggingTests.testLogEntry|Message 1|name1=1,context=myContext", entry.asTestString())
+        // context nil, data nil
+        entry = LogEntry (level: .debug, context: nil, source: self, featureName: "testLogEntry", message: "Message 1", data: nil)
+        XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
+        XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
+        XCTAssertEqual(LogLevel.debug, entry.level)
+        XCTAssertEqual ("LoggingTests", entry.source)
+        XCTAssertEqual ("testLogEntry", entry.featureName)
+        XCTAssertEqual ("Message 1", entry.message)
+        XCTAssertNil (entry.data)
+        XCTAssertEqual ("DEBUG|LoggingTests.testLogEntry|Message 1", entry.asTestString())
+        // with context, data nil
+        entry = LogEntry (level: .debug, context: "myContext", source: self, featureName: "testLogEntry", message: "Message 1", data: nil)
+        XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
+        XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
+        XCTAssertEqual(LogLevel.debug, entry.level)
+        XCTAssertEqual ("LoggingTests", entry.source)
+        XCTAssertEqual ("testLogEntry", entry.featureName)
+        XCTAssertEqual ("Message 1", entry.message)
+        XCTAssertEqual (1, entry.data!.count)
+        XCTAssertEqual ("name1", entry.data![0].name)
+        entryValue2 = entry.data![0].value as! String
+        XCTAssertEqual ("myContext", entryValue2)
+        XCTAssertEqual ("DEBUG|LoggingTests.testLogEntry|Message 1|context=myContext", entry.asTestString())
     }
     
     func testInMemoryLogger() {
+        // context: nil
         var logger = InMemoryLogger()
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
-        logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 1", data: [(name: "name1", value:1)])
+        logger.log (level: .debug, context: nil, source: self, featureName: "testInMemoryLogger", message: "Message 1", data: [(name: "name1", value:1)])
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0]
@@ -96,11 +136,11 @@ class LoggingTests: XCTestCase {
             XCTAssertEqual ("DEBUG|LoggingTests.testInMemoryLogger|Message 1|name1=1", entry.asTestString())
         }
         logger = InMemoryLogger (level: .business)
-        logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 2", data: [(name: "name1", value:1)])
+        logger.log (level: .debug, context: nil, source: self, featureName: "testInMemoryLogger", message: "Message 2", data: [(name: "name1", value:1)])
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
-        logger.log (level: .business, source: self, featureName: "testInMemoryLogger", message: "Message 3", data: [(name: "name1", value:1)])
+        logger.log (level: .business, context: nil, source: self, featureName: "testInMemoryLogger", message: "Message 3", data: [(name: "name1", value:1)])
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0]
@@ -117,14 +157,38 @@ class LoggingTests: XCTestCase {
             XCTAssertEqual (1, entryValue1)
             XCTAssertEqual ("BUSINESS|LoggingTests.testInMemoryLogger|Message 3|name1=1", entry.asTestString())
         }
+        // context: "myContext"
+        logger = InMemoryLogger()
+        logger.sync() { entries in
+            XCTAssertEqual (0, entries.count)
+        }
+        logger.log (level: .debug, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 1", data: [(name: "name1", value:1)])
+        logger.sync() { entries in
+            XCTAssertEqual (1, entries.count)
+            let entry = entries[0]
+            let now = Date();
+            XCTAssertTrue (now.timeIntervalSince1970 + 1 > entry.time.timeIntervalSince1970)
+            XCTAssertTrue (now.timeIntervalSince1970 - 1 < entry.time.timeIntervalSince1970)
+            XCTAssertEqual(LogLevel.debug, entry.level)
+            XCTAssertEqual ("LoggingTests", entry.source)
+            XCTAssertEqual ("testInMemoryLogger", entry.featureName)
+            XCTAssertEqual ("Message 1", entry.message)
+            XCTAssertEqual (2, entry.data!.count)
+            XCTAssertEqual ("name1", entry.data![0].name)
+            let entryValue1 = entry.data![0].value as! Int
+            XCTAssertEqual (1, entryValue1)
+            let entryValue2 = entry.data![1].value as! String
+            XCTAssertEqual ("myContext", entryValue2)
+            XCTAssertEqual ("DEBUG|LoggingTests.testInMemoryLogger|Message 1|name1=1,context=myContext", entry.asTestString())
+        }
         logger = InMemoryLogger (level: .none)
-        logger.log (level: .debug, source: self, featureName: "testInMemoryLogger", message: "Message 4", data: [(name: "name1", value:1)])
-        logger.log (level: .fine, source: self, featureName: "testInMemoryLogger", message: "Message 5", data: [(name: "name1", value:1)])
-        logger.log (level: .info, source: self, featureName: "testInMemoryLogger", message: "Message 6", data: [(name: "name1", value:1)])
-        logger.log (level: .warning, source: self, featureName: "testInMemoryLogger", message: "Message 7", data: [(name: "name1", value:1)])
-        logger.log (level: .error, source: self, featureName: "testInMemoryLogger", message: "Message 8", data: [(name: "name1", value:1)])
-        logger.log (level: .business, source: self, featureName: "testInMemoryLogger", message: "Message 9", data: [(name: "name1", value:1)])
-        logger.log (level: .emergency, source: self, featureName: "testInMemoryLogger", message: "Message 10", data: [(name: "name1", value:1)])
+        logger.log (level: .debug, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 4", data: [(name: "name1", value:1)])
+        logger.log (level: .fine, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 5", data: [(name: "name1", value:1)])
+        logger.log (level: .info, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 6", data: [(name: "name1", value:1)])
+        logger.log (level: .warning, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 7", data: [(name: "name1", value:1)])
+        logger.log (level: .error, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 8", data: [(name: "name1", value:1)])
+        logger.log (level: .business, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 9", data: [(name: "name1", value:1)])
+        logger.log (level: .emergency, context: "myContext", source: self, featureName: "testInMemoryLogger", message: "Message 10", data: [(name: "name1", value:1)])
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
         }
@@ -136,7 +200,7 @@ class LoggingTests: XCTestCase {
             return entries.count > 0
         }
         XCTAssertFalse(foundEntry)
-        logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "FIRST", data: nil)
+        logger.logImplementation(level: .business, context: nil, source: self, featureName: "testWaitForEntry", message: "FIRST", data: nil)
         foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
             return entries.last!.asTestString().contains("FIRST")
         }
@@ -144,7 +208,7 @@ class LoggingTests: XCTestCase {
         foundEntry = false
         let queue = DispatchQueue (label: "Test", attributes: .concurrent)
         queue.asyncAfter(deadline: DispatchTime.now() + 0.2) {
-            logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
+            logger.logImplementation(level: .business, context: nil, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
         }
         foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
             return entries.last!.asTestString().contains("SECOND")

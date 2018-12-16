@@ -19,8 +19,8 @@ public protocol EntityProtocol : class {
 
 internal protocol EntityManagement : EntityProtocol, Encodable {
     
-    func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ())
-    func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
+    func commit (context: String?, completionHandler: @escaping (DatabaseUpdateResult) -> ())
+    func commit (context: String?, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ())
     func referenceData() -> ReferenceManagerData
     func setDirty (batch: EventuallyConsistentBatch)
     
@@ -233,19 +233,19 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
-                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+                            localCollection.database.logger?.log(level: .error, context: "Database.\(self.cache.database.accessor.hashValue)", source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
                         }
                     } catch {
-                        localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
+                        localCollection.database.logger?.log(level: .error, context: "Database.\(self.cache.database.accessor.hashValue)", source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
                     }
                 }
             } else {
-                cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
+                cache.database.logger?.log(level: .error, context: "Database.\(self.cache.database.accessor.hashValue)", source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
             }
         case .dirty:
-            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+            localCollection.database.logger?.log(level: .error, context: "Database.\(self.cache.database.accessor.hashValue)", source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
         case .pendingRemoval:
-            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemRemovedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+            localCollection.database.logger?.log(level: .error, context: "Database.\(self.cache.database.accessor.hashValue)", source: Entity.self, featureName: "deinit", message: "lostData:itemRemovedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
         default:
             break
         }
@@ -302,13 +302,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     
     /// Mark - EntityManagement
     
-    internal func commit (completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
-        commit (timeout: DispatchTimeInterval.seconds(60), completionHandler: completionHandler)
+    internal func commit (context: String?, completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
+        commit (context: context, timeout: DispatchTimeInterval.seconds(60), completionHandler: completionHandler)
     }
     
-    internal func commit (timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
+    internal func commit (context: String?, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> ()) {
         queue.async {
-            self.handleAction (PersistenceAction.commit (timeout, completionHandler))
+            self.handleAction (context: context, PersistenceAction.commit (timeout, completionHandler))
         }
     }
 
@@ -356,7 +356,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         queue.sync {
             isInsertingToBatch = true
             batch.insertSync (entity: self) {
-                self.handleAction(.updateItem (closure))
+                self.handleAction(context: batch.context, .updateItem (closure))
             }
             isInsertingToBatch = false
         }
@@ -365,10 +365,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     // Not Thread Safe
     internal func setDirty (batch: EventuallyConsistentBatch) {
         if isInsertingToBatch {
-            self.handleAction(.setDirty)
+            self.handleAction(context: batch.context, .setDirty)
         } else {
             batch.insertSync(entity: self) {
-                self.handleAction(.setDirty)
+                self.handleAction(context: batch.context, .setDirty)
             }
         }
     }
@@ -392,7 +392,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         queue.sync {
             self.isInsertingToBatch = true
             batch.insertSync(entity: self) {
-                self.handleAction(.remove)
+                self.handleAction(context: batch.context, .remove)
             }
             self.isInsertingToBatch = false
         }
@@ -402,10 +402,10 @@ public class Entity<T: Codable> : EntityManagement, Codable {
      Obtain the promise from a referenced entity contained in the item
 */
 
-    public func referenceFromItem<R> (closure: (T) -> ReferenceManager<T, R>) -> Promise<Entity<R>?> {
+    public func referenceFromItem<R> (context: String?, closure: (T) -> ReferenceManager<T, R>) -> Promise<Entity<R>?> {
         var result: Promise<Entity<R>?>? = nil
         queue.sync {
-            result = closure (self.item).get()
+            result = closure (self.item).get(context: context)
         }
         return result!
     }
@@ -484,7 +484,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
 // Persistence Action Handling
     
     // Not Thread Safe, caller must be within ** queue ***
-    internal func handleAction (_ action: PersistenceAction<T>) {
+    internal func handleAction (context: String?, _ action: PersistenceAction<T>) {
         switch action {
         case .updateItem(let closure):
             switch self._persistenceState {
@@ -527,15 +527,15 @@ public class Entity<T: Codable> : EntityManagement, Codable {
             case .persistent, .abandoned, .saving:
                 callCommitCompletionHandler (completionHandler: completionHandler, result: .ok)
             case .new:
-                commit (successState: .persistent, failureState: .new, timeout: timeout, completionHandler: completionHandler) { accessor in
+                commit (context: context, successState: .persistent, failureState: .new, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.addAction
                 }
             case .dirty:
-                commit (successState: .persistent, failureState: .dirty, timeout: timeout, completionHandler: completionHandler) { accessor in
+                commit (context: context, successState: .persistent, failureState: .dirty, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.updateAction
                 }
             case .pendingRemoval:
-                commit (successState: .abandoned, failureState: .pendingRemoval, timeout: timeout, completionHandler: completionHandler) { accessor in
+                commit (context: context, successState: .abandoned, failureState: .pendingRemoval, timeout: timeout, completionHandler: completionHandler) { accessor in
                     accessor.removeAction
                 }
             }
@@ -543,12 +543,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
     
     // Not thread safe: to be called on self.queue
-    private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
+    private func commit (context: String?, successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (String?, EntityPersistenceWrapper) -> DatabaseActionResult) {
         _persistenceState = successState
         _version = _version + 1
         let wrapper = EntityPersistenceWrapper (cacheName: cache.name, entity: self)
         let actionSource = databaseActionSource (cache.database.accessor)
-        let actionResult = actionSource (wrapper)
+        let actionResult = actionSource (context, wrapper)
         var newItemData: Data? = nil
         do {
             newItemData = try Database.encoder.encode(item)
@@ -587,13 +587,13 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                                 self.pendingAction = nil
                                 switch pendingAction {
                                 case .update:
-                                    self.handleAction(PersistenceAction.updateItem() { item in })
+                                    self.handleAction(context: context, PersistenceAction.updateItem() { item in })
                                 case .remove:
-                                    self.handleAction(PersistenceAction.remove)
+                                    self.handleAction(context: context, PersistenceAction.remove)
                                 }
                                 switch result {
                                 case .ok:
-                                    self.handleAction(.commit (timeout, completionHandler))
+                                    self.handleAction(context: context, .commit (timeout, completionHandler))
                                 // see https://github.com/neallester/danake-sw/issues/3
                                 case .error, .unrecoverableError:
                                     self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
@@ -680,7 +680,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                 do {
                     self.itemData = try Database.encoder.encode(self.item)
                 } catch {
-                    cache.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (cache.database.accessor.hashValue)), (name: "cacheName", value: cache.name), (name: "entityId", value: self.id.uuidString)])
+                    cache.database.logger?.log(level: .error, "Database.\(cache.database.accessor.hashValue)", source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (cache.database.accessor.hashValue)), (name: "cacheName", value: cache.name), (name: "entityId", value: self.id.uuidString)])
                 }
                 cache.cacheEntity(self)
             } else {
