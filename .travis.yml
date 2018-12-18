@@ -2,10 +2,22 @@ branches:
   only:
     - master
 language: swift
-osx_image: xcode10.1
-script:
-- swift package update
-- swift package generate-xcodeproj
-- xcodebuild -scheme danake-Package -enableCodeCoverage YES SWIFT_VERSION=4 clean build test | xcpretty
-after_success:
-  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+jobs:
+  include:
+    -os: osx
+       osx_image: xcode10.1
+       script:
+       - swift package update
+       - swift package generate-xcodeproj
+       - xcodebuild -scheme danake-Package -enableCodeCoverage YES SWIFT_VERSION=4 clean build test | xcpretty
+       after_success:
+       - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+    -os: linux
+      dist: xenial
+      sudo: required
+      env: SWIFT_BUILD_VERSION=4 SWIFT_VERSION=4.2.1
+      before_install: eval "$(curl -sL https://swiftenv.fuller.li/install.sh)"
+      script:
+      - swift package update
+      - swift package test
+    
