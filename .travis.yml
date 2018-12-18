@@ -1,0 +1,9 @@
+branches:
+  only:
+    - master
+language: swift
+osx_image: xcode10.1
+script:
+- swift package update
+- swift package generate-xcodeproj
+- xcodebuild -scheme danake-Package clean build test
