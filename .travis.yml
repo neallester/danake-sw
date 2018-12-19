@@ -3,15 +3,18 @@ branches:
     - master
 language: swift
 jobs:
-    -os: osx
+  include:
+    - &osx
+       os: osx
        osx_image: xcode10.1
        script:
-       - swift package update
-       - swift package generate-xcodeproj
-       - xcodebuild -scheme danake-Package -enableCodeCoverage YES SWIFT_VERSION=4 clean build test | xcpretty
+         - swift package update
+         - swift package generate-xcodeproj
+         - xcodebuild -scheme danake-Package -enableCodeCoverage YES SWIFT_VERSION=4 clean build test | xcpretty
        after_success:
        - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
-    -os: linux
+    -&linux
+      os: linux
       dist: xenial
       sudo: required
       env: SWIFT_BUILD_VERSION=4 SWIFT_VERSION=4.2.1
