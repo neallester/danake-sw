@@ -1,0 +1,14 @@
+branches:
+  only:
+    - master
+language: swift
+osx_image: xcode10.1
+script:
+- swift package update
+- swift package generate-xcodeproj
+- xcodebuild -scheme danake-Package -enableCodeCoverage YES SWIFT_VERSION=4 clean build test | xcpretty
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+  
+    
+    
