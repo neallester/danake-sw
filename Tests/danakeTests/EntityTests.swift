@@ -552,8 +552,8 @@ class EntityTests: XCTestCase {
         do {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
-        } catch EntityDeserializationError<MyStruct>.illegalId(let idString){
-            XCTAssertEqual ("AAA", idString)
+        } catch {
+            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"id\", intValue: nil)], debugDescription: \"Attempted to decode UUID from invalid UUID string.\", underlyingError: nil))", "\(error)")
         }
         // No schemaVersion
         let id2 = UUID()

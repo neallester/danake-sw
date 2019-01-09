@@ -652,40 +652,35 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         let cache = decoder.userInfo[Database.cacheKey] as? EntityCache<T>
         if let cache = cache {
-            let idString = try values.decode(String.self, forKey: .id)
-            let id = UUID (uuidString: idString)
-            if let id = id {
-                if let cachedVersion = cache.cachedEntity(id: id) {
-                    throw EntityDeserializationError<T>.alreadyCached(cachedVersion)
-                }
-                self.id = id
-                self.cache = cache
-                schemaVersion = cache.database.schemaVersion
-                let version = try values.decode(Int.self, forKey: .version)
-                self._version = version
-                if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer {
-                    container.data = EntityReferenceData (cache: cache, id: id, version: version)
-                    item = try values.decode (T.self, forKey: .item)
-                    container.data = nil
-                } else {
-                    item = try values.decode (T.self, forKey: .item)
-                }
-                created = try values.decode (Date.self, forKey: .created)
-                if values.contains(.saved) {
-                    _saved = try values.decode (Date.self, forKey: .saved)
-                }
-                _persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
-                self.queue = DispatchQueue (label: id.uuidString)
-                self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
-                do {
-                    self.itemData = try Database.encoder.encode(self.item)
-                } catch {
-                    cache.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (cache.database.accessor.hashValue)), (name: "cacheName", value: cache.name), (name: "entityId", value: self.id.uuidString)])
-                }
-                cache.cacheEntity(self)
-            } else {
-                throw EntityDeserializationError<T>.illegalId(idString)
+            let id = try values.decode(UUID.self, forKey: .id)
+            if let cachedVersion = cache.cachedEntity(id: id) {
+                throw EntityDeserializationError<T>.alreadyCached(cachedVersion)
             }
+            self.id = id
+            self.cache = cache
+            schemaVersion = cache.database.schemaVersion
+            let version = try values.decode(Int.self, forKey: .version)
+            self._version = version
+            if let container = decoder.userInfo[Database.parentDataKey] as? DataContainer {
+                container.data = EntityReferenceData (cache: cache, id: id, version: version)
+                item = try values.decode (T.self, forKey: .item)
+                container.data = nil
+            } else {
+                item = try values.decode (T.self, forKey: .item)
+            }
+            created = try values.decode (Date.self, forKey: .created)
+            if values.contains(.saved) {
+                _saved = try values.decode (Date.self, forKey: .saved)
+            }
+            _persistenceState = try values.decode (PersistenceState.self, forKey: .persistenceState)
+            self.queue = DispatchQueue (label: id.uuidString)
+            self.referencesQueue = DispatchQueue (label: "childEntities: \(id.uuidString)")
+            do {
+                self.itemData = try Database.encoder.encode(self.item)
+            } catch {
+                cache.database.logger?.log(level: .error, source: self, featureName: "init(from decoder:)", message: "itemDecodingFailed", data: [(name: "databaseId", value: (cache.database.accessor.hashValue)), (name: "cacheName", value: cache.name), (name: "entityId", value: self.id.uuidString)])
+            }
+            cache.cacheEntity(self)
         } else {
             throw EntityDeserializationError<T>.NoCollectionInDecoderUserInfo
         }
