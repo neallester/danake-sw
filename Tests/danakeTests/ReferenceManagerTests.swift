@@ -865,7 +865,7 @@ class ReferenceManagerTests: XCTestCase {
             reference = try decoder.decode(ReferenceManager<MyStruct, MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail ("Expected Exception")
         } catch {
-            XCTAssertEqual ("illegalId(\"AAA\")", "\(error)")
+            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [CodingKeys(stringValue: \"id\", intValue: nil)], debugDescription: \"Attempted to decode UUID from invalid UUID string.\", underlyingError: nil))", "\(error)")
         }
         // isEager missing
         json = "{\"databaseId\":\"\(database.accessor.hashValue)\",\"id\":\"\(child.id.uuidString)\",\"cacheName\":\"myCollection\",\"version\":10,\"isNil\":false}"
