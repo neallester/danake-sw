@@ -196,6 +196,8 @@ extension ReferenceManagerTests {
     ("testSetEntity", testSetEntity),
     ("testSetReferenceData", testSetReferenceData),
     ("testSetReferenceDataIsEager", testSetReferenceDataIsEager),
+    ("testGetSync", testGetSync),
+    ("testGetSyncWithError", testGetSyncWithError),
     ("testAsync", testAsync),
     ("testGet", testGet),
     ("testSetWithinEntity", testSetWithinEntity),

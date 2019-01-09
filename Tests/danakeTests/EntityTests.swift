@@ -8,8 +8,13 @@
 
 import XCTest
 @testable import danake
+import PromiseKit
 
 class EntityTests: XCTestCase {
+    
+    override class func setUp() {
+        PromiseKit.conf.logHandler = { event in }
+    }
     
     func testCreation() {
         // Creation with item

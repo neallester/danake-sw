@@ -25,6 +25,7 @@ class DatabaseTests: XCTestCase {
         // This could be cause by the deallocation occuring on another thread (in which case one would expect to see it occasionally
         // on OSX, or because Linux occasionally has problem with deterministic deallocation of constructs (which I have seen some other
         // evience for.
+        Database.registrar.clear()
         let now = Date().timeIntervalSince1970
         while (Database.registrar.count() > 0 && (now + 30.0 > Date().timeIntervalSince1970)) {
             usleep(100)

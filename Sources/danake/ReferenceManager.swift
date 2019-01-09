@@ -223,9 +223,25 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
      
      **Note**: Retrieval result is cached so subsequent accesses will be fast.
      */
-    public func getSync() throws -> Entity<T>? {
-        let promisedEntity = get()
-        return try promisedEntity.wait()
+    public func getSync(timeoutSeconds: Double = 20.0) throws -> Entity<T>? {
+        let group = DispatchGroup()
+        group.enter()
+        var result: Entity<T>? = nil
+        firstly {
+            get()
+        }.done { entity in
+            result = entity
+        }.catch() { error in
+            var entityId: UUID? = self.entity?.id
+            if entityId == nil {
+                entityId = self.referenceData?.id
+            }
+            self.cache?.database.logger?.log (level: .error, source: self, featureName: "getSync", message: "error", data: [(name: "parentId", self.parentData.id.uuidString), (name: "entityCollection", value: self.cache?.qualifiedName), (name: "entityId", value: entityId), (name: "message", value: "\(error)")])
+        }.finally {
+            group.leave()
+        }
+        group.wait()
+        return result;
     }
     
     /// - returns: id of the referenced entity, if any

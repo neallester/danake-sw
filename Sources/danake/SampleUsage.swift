@@ -15,7 +15,7 @@ import PromiseKit
  
         1. The Sample Application Model
         2. The Sample Persistence System
-        3. Test demonstrating usage within application code
+        3. Test demonstrating usage within application code and gotchas
         4. Tests demonstrating deliberate generation of errors by InMemoryAccessor to test error handling in
            application code
 
@@ -467,7 +467,6 @@ public class SampleUsage  {
             }
             group.wait()
             
-            
             // after commit() the batch is left as a fresh empty batch and may be reused
             let _ = caches.employees.new(batch: batch, company: company1, name: "Name One", address: nil)
             var employee2: Entity<SampleEmployee>? = caches.employees.new(batch: batch, company: company2, name: "Name Two", address: nil)
@@ -503,14 +502,13 @@ public class SampleUsage  {
             group.wait()
             batch.commitSync()
             
-            // Using Extensions to Promise
-            
+            // Using Promise.refereneFromitem to access a ReferenceManager in an entity's item
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id) // Retrieve the promise of an employee
-            }.referenceFromItem() { employee in         // Obtain the promise of the company referenced by employee.company
-                return employee.company                 // by providing referenceFromItem a closure pointing to that ReferenceManager
-            }.done { companyEntity in                         // Use done to obtain the Entity from the promise (could use sync to directly access the item)
+                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity (by id)
+            }.referenceFromItem { employee in
+                return employee.company                         // The promise of the company entity referenced by employee.company
+            }.done { companyEntity in
                 ParallelTest.AssertTrue(label: "runSample.20", testResult: &overallTestResult, companyEntity! === company2)
             }.catch { error in
                 ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.21: Expected success but got \(error)")
@@ -518,12 +516,13 @@ public class SampleUsage  {
                 group.leave()
             }
             group.wait()
-            // Retrieving Employees of a Company using a promise chain with promiseFromItem
+            
+            // Using Promise.promiseFromItem to obtain another promise from an item
             group.enter()
             firstly {
-                caches.companies.get(id: company2.id)
-            }.promiseFromItem() { company in
-                return company.employees()
+                caches.companies.get(id: company2.id)           // The promise of a specific company entity by id
+            }.promiseFromItem { company in
+                return company.employees()                      // The promise of the employee list for that company
             }.done { employees in
                 ParallelTest.AssertEqual (label: "runSample.22a", testResult: &overallTestResult, 1, employees.count)
                 ParallelTest.AssertTrue(label: "runSample.22b", testResult: &overallTestResult, employees[0] === employee2)
@@ -534,11 +533,11 @@ public class SampleUsage  {
             }
             group.wait()
 
-            // Accessing an employee retrieved in a promise chain
+            // Using Promise.sync for thread safe access to an item
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id)
-            }.sync() { employee in
+                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity by id
+            }.sync{ employee in
                 ParallelTest.AssertEqual (label: "runSample22d", testResult: &overallTestResult, "Name Updated2", employee.name)
             }.catch { error in
                 ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22e: Expected success but got \(error)")
@@ -546,12 +545,13 @@ public class SampleUsage  {
                 group.leave()
             }
             group.wait()
-            // Updating an employee retrieved in a promise chain
+            
+            // Using Promise.update
             group.enter()
             firstly {
-                caches.employees.get(id: employee2!.id)
+                caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity by id
             }.update(batch: batch) { employee in
-                employee.name = "Updated3"
+                employee.name = "Updated3"                      // Update the employee's name
             }.catch { error in
                 ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22f: Expected success but got \(error)")
             }.finally {
@@ -563,23 +563,36 @@ public class SampleUsage  {
                 ParallelTest.AssertEqual (label: "runSample.22g", testResult: &overallTestResult, "Updated3", employee.name)
         
             }
-            
-            // Gotchas
-            
+
+            // ===================
+            // ***** GOTCHAS *****
+            // ===================
+            //
+            // ====================================
+            // Pass around Entity's not their items
+            // Thread unsafe access IS NOT logged
+            // ====================================
+            //
+            // Capturing a reference to an entity's item outside of the
+            // Entity.sync(), Entity.async(), or Entity.update() closures
+            // bypasses the multi-threading protection offered by the Entity wrapper.
             var employeeItem: SampleEmployee?
             employeeItem = nil
             employee2!.sync() { sampleEmployee in
-                // Capturing a reference to an entity's item outside of the
-                // Entity.sync(), Entity.async(), or Entity.update() closures
-                // bypasses the multi-threading protection offered by the Entity wrapper.
                 // i.e. avoid doing the following:
                 // employeeItem = sampleEmployee
             }
             ParallelTest.AssertNil (label: "runSample.23", testResult: &overallTestResult, employeeItem)
 
+            // ================================================
+            // Beware of item functions which modify item state
+            // Items modified outside of a batch ARE logged
+            // ================================================
+            //
             // Closures which modify an item's state via functions must always be called within an
-            // Entity.update() call. Failure to do so will cause lost data (which will be logged when
-            // the entity is deallocated; this error is not demonstrated here)
+            // Entity.update() call but this is not enforced by the compiler. Failure to do so will
+            // cause lost data (which will be logged when the entity is deallocated; this error is
+            // not demonstrated here)
             employee2!.update(batch: batch) { sampleEmployee in
                 sampleEmployee.resetName()
             }
@@ -588,6 +601,12 @@ public class SampleUsage  {
                 ParallelTest.AssertEqual (label: "runSample.24", testResult: &overallTestResult, 2, entries.count)
             }
             
+            // ============================================================
+            // Use entity.breakReferences() when finished with an entity
+            // if needed to break strong reference cycles
+            // Memory leaks from retained strong references ARE NOT logged.
+            // ============================================================
+            //
             // EntityReference objects contain strong references to their referenced Entity
             // once loaded. Use Entity.breakReferences() to unload those entities if
             // they may create strong reference cycles (i.e. refer back to self).
@@ -619,6 +638,11 @@ public class SampleUsage  {
         // been used, then those entity objects could live on beyond the end of the scope until
         // the batch (processing asynchronously) was finished with them
         
+        // ===============================
+        // Always Commit Batches.
+        // Uncommitted batches ARE logged.
+        // ===============================
+        //
         // Application developers must always commit batches
         // Updates to an Entity will be lost (and ERROR logged) if both the batch and entity go out of
         // scope before the batch is committed
@@ -645,7 +669,10 @@ public class SampleUsage  {
             }
         }
         
-        // Batch cleanup occurs asynchronously
+        // ======================================
+        // Batch processing occurs asynchronously
+        // ======================================
+        //
         // For demonstration purposes only wait for it to complete using the internal
         // function EntityCache.sync()
         // In application code waiting like this should never be necessary because

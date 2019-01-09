@@ -1990,6 +1990,58 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertTrue (references[0] as? ReferenceManager<MyStruct, MyStruct> === reference)
         }
     }
+
+    public func testGetSync() throws {
+        let logger = InMemoryLogger(level: .warning)
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
+        let childId = UUID()
+        let childData = "{\"id\":\"\(childId.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":100,\"myString\":\"100\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        let childReferenceData = ReferenceManagerData (qualifiedCacheName: database.qualifiedCacheName(cache.name), id: childId, version: 10)
+        switch accessor.add(name: cache.name, id: childId, data: childData) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        let reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: childReferenceData)
+        try XCTAssertEqual (childId.uuidString, reference.getSync()?.id.uuidString)
+        logger.sync() { entities in
+            XCTAssertEqual (0, entities.count)
+        }
+    }
+
+    
+    public func testGetSyncWithError() throws {
+        let logger = InMemoryLogger(level: .warning)
+        let accessor = InMemoryAccessor()
+        let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
+        let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
+        let parentId = UUID()
+        let parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
+        let parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
+        let childId = UUID()
+        let childData = "{\"id\":\"\(childId.uuidString)\",\"schemaVersion\":5,\"created\":1524347199.410666,\"item\":{\"myInt\":100,\"myString\":\"100\"},\"persistenceState\":\"new\",\"version\":10}".data(using: .utf8)!
+        let childReferenceData = ReferenceManagerData (qualifiedCacheName: database.qualifiedCacheName(cache.name), id: childId, version: 10)
+        switch accessor.add(name: cache.name, id: childId, data: childData) {
+        case .ok:
+            break
+        default:
+            XCTFail("Expected .ok")
+        }
+        let reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, referenceData: childReferenceData)
+        accessor.setThrowError()
+        try XCTAssertNil (reference.getSync())
+        logger.sync() { entities in
+            XCTAssertEqual (2, entities.count)
+            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(accessor.hashValue);cache=myCollection;id=\(childId.uuidString);errorMessage=getError", entities[0].asTestString())
+            XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.getSync|error|parentId=\(parentId.uuidString);entityCollection=\(cache.qualifiedName);entityId=\(childId.uuidString);message=getError", entities[1].asTestString())
+        }
+    }
     
     public func testAsync() {
         let accessor = InMemoryAccessor()

@@ -471,7 +471,7 @@ class BatchTests: XCTestCase {
             }
             if unexpectedStateFound {
                 print ("Batch Start Time:     \(startTime.timeIntervalSince1970)")
-                print ("Batch End Time:       \(startTime.timeIntervalSince1970)")
+                print ("Batch End Time:       \(endTime.timeIntervalSince1970)")
                 print ("Now:                  \(Date().timeIntervalSince1970)")
                 print ("Total Execution Time: \(totalExecutionTime)")
                 switch timeout {
