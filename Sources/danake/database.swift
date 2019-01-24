@@ -202,6 +202,8 @@ open class Database {
                     logger.log(level: .error, source: self, featureName: "init", message: "promiseKit.waitOnMainThread", data: nil)
                 case .pendingPromiseDeallocated:
                     logger.log(level: .warning, source: self, featureName: "init", message: "promiseKit.pendingPromiseDeallocated", data: nil)
+                case .pendingGuaranteeDeallocated:
+                    logger.log(level: .warning, source: self, featureName: "init", message: "promiseKit.pendingGuaranteeDeallocated", data: nil)
                 case .cauterized(let error):
                     logger.log(level: .debug, source: self, featureName: "init", message: "promiseKit.cauterized", data: [(name: "error", value: "\(error)")])
                 }
