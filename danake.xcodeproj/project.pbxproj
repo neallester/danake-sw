@@ -526,15 +526,15 @@
             "OBJ_52",
             "OBJ_53"
          );
-         name = "PromiseKit 6.7.0";
-         path = ".build/checkouts/PromiseKit--3088416346413242325/Sources";
+         name = "PromiseKit 6.7.1";
+         path = ".build/checkouts/PromiseKit--3916240556924587876/Sources";
          sourceTree = "SOURCE_ROOT";
       };
       "OBJ_38" = {
          isa = "PBXFileReference";
          explicitFileType = "sourcecode.swift";
          name = "Package.swift";
-         path = "/Users/neal/xcode/danake/.build/checkouts/PromiseKit--3088416346413242325/Package.swift";
+         path = "/Users/neal/xcode/danake-sw/.build/checkouts/PromiseKit--3916240556924587876/Package.swift";
          sourceTree = "<group>";
       };
       "OBJ_39" = {

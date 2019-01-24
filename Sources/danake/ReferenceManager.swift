@@ -122,13 +122,8 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
             } else {
                 let qualifiedCacheName = try values.decode (String.self, forKey: .qualifiedCacheName)
                 let version = 0
-                let idString = try values.decode (String.self, forKey: .id)
-                let id = UUID (uuidString: idString)
-                if let id = id {
-                    self.referenceData = ReferenceManagerData (qualifiedCacheName: qualifiedCacheName, id: id, version: version)
-                } else {
-                    throw ReferenceManagerSerializationError.illegalId(idString)
-                }
+                let id = try values.decode (UUID.self, forKey: .id)
+                self.referenceData = ReferenceManagerData (qualifiedCacheName: qualifiedCacheName, id: id, version: version)
                 state = .decoded
             }
             parentData.cache.registerOnEntityCached(id: parentData.id, closure: setParent)

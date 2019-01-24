@@ -199,7 +199,7 @@ fileprivate class BatchDelegate {
             case .success:
                 break
             default:
-                self.queue.async {
+                self.queue.sync {
                     for entity in self.entities.values {
                         self.logger?.log(level: .error, source: self, featureName: "commit", message: "batchTimeout", data: [(name: "batchId", value: self.id.uuidString), (name: "entityType", value: "\(type (of: entity))"), (name: "entityId", value: entity.id.uuidString), (name: "diagnosticHint", value: "Entity.queue is blocked or endless loop in Entity serialization")])
                     }
