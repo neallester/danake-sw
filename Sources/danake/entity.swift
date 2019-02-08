@@ -317,7 +317,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
      
      **Do not** assign a reference to item outside of the closure. Doing so negates thread safety for item.
      
-     **Do not** call any functions which modify the item's state in closure. Use **update** to modify item's state.
+     **Do not** modify the item's state in closure. Use **update** to modify item's state.
 
      - parameter closure: The closure to call.
  */
@@ -333,7 +333,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
      
      **Do not** assign a reference to item outside of the closure. Doing so negates thread safety for item.
      
-     **Do not** call any functions which modify the item's state in closure. Use **update** to modify item's state.
+     **Do not** modify the item's state in closure. Use **update** to modify item's state.
      
      - parameter closure: The closure to call.
 */

@@ -589,9 +589,9 @@ public class SampleUsage  {
             // Items modified outside of a batch ARE logged
             // ================================================
             //
-            // Closures which modify an item's state via functions must always be called within an
-            // Entity.update() call but this is not enforced by the compiler. Failure to do so will
-            // cause lost data (which will be logged when the entity is deallocated; this error is
+            // Closures which modify an item's state directly or via functions must always be called
+            // within an Entity.update() call but this is not enforced by the compiler. Failure to do
+            // so will cause lost data (which will be logged when the entity is deallocated; this error is
             // not demonstrated here)
             employee2!.update(batch: batch) { sampleEmployee in
                 sampleEmployee.resetName()

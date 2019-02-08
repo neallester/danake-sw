@@ -27,7 +27,7 @@ Install the [danake-mongo](https://github.com/neallester/danake-mongo) Accessor 
 * Removing Entities (Entity.remove(batch:)) which are referenced by other Entities from persistent storage will generate errors when the remaining references are used. 
 * Application developers are responsible for removing Entities ((Entity.remove(batch:)) which are not needed as persistent media entry points and which are not referenced by any other Entities from persistent media.
 * Unless EntityReference is used, attributes which reference objects (that is, attributes which are implemented as classes rather than structs) will be stored and retrieved with struct (value) semantics rather than class (reference) semantics.
-* Changes to Entity items must be done via Entity.update(), not Entity.sync(), but the compiler will only enforce this restriction for closures which directly assign to item attributes. Ensure that any changes which occur as side effects to function calls occur within an Entity.update() closure.
+* Changes to Entity items must be done via Entity.update(), not Entity.sync(), but the compiler will only enforce this restriction for closures which directly assign to Struct attributes. Ensure that any changes to classes or which occur as side effects to function calls occur within an Entity.update() closure.
 * Assigning a reference to an Entity item outside the closure used to access it defeats thread safety and is not detected by any compile or run type checks.
 
 ## Setup Development Environment on OSX
