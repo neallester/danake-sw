@@ -446,7 +446,7 @@ public class SampleUsage  {
             // And the unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "runSample.15", testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|SampleInMemoryAccessor.getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|\(type (of: accessor)).getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
