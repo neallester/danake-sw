@@ -10,7 +10,7 @@ import Foundation
 /**
     Use for testing
 */
-public class InMemoryAccessor: DatabaseAccessor {
+public class InMemoryAccessor: SynchronousAccessor {
     
     /**
      Errors which Accessors may throw
@@ -27,7 +27,7 @@ public class InMemoryAccessor: DatabaseAccessor {
     }
 
     
-    public func get<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>? {
+    public func getImplementation<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>? {
         var result: Entity<T>? = nil
         if let preFetch = preFetch {
             preFetch (id)
@@ -52,7 +52,7 @@ public class InMemoryAccessor: DatabaseAccessor {
         return result
     }
     
-    public func scan<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {
+    public func scanImplementation<T, E: Entity<T>> (type: E.Type, cache: EntityCache<T>) throws -> [Entity<T>] {
         var result: [Entity<T>] = []
         try queue.sync {
             if self.throwError {

@@ -86,19 +86,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         if let result = result {
             return result
         } else {
-            do {
-                if let result = try self.database.accessor.get(type: Entity<T>.self, cache: self, id: id) {
-                    return result
-                } else {
-                    throw AccessorError.unknownUUID (id)
-                }
-            } catch AccessorError.unknownUUID {
-                self.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString)])
-                throw AccessorError.unknownUUID (id)
-            } catch {
-                self.database.logger?.log (level: .emergency, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", self.database.accessor.hashValue), (name:"cache", value: self.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
-                throw error
-            }
+            return try database.accessor.getSync(type: Entity<T>.self, cache: self, id: id)
         }
     }
 
@@ -108,14 +96,17 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      - parameter id: UUID of the Entity to be retrieved.
 */
     public func get (id: UUID) -> Promise<Entity<T>> {
-        return Promise { seal in
-            workQueue.async {
-                do {
-                    try seal.fulfill(self.getSync(id: id))
-                } catch {
-                    seal.reject(error)
-                }
-            }
+        var entity: Entity<T>? = nil
+        cacheQueue.sync {
+            entity = cache[id]?.codable
+        }
+        if let entity = entity {
+            let result: (promise: Promise<Entity<T>>, resolver: Resolver<Entity<T>>) = Promise.pending()
+            result.resolver.resolve(.fulfilled (entity))
+            return result.promise
+        }
+        else {
+            return self.database.accessor.get(type: Entity<T>.self, cache: self, id: id)
         }
     }
     
@@ -129,24 +120,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
      - throws:  Any errors originating in underlying persistent media
 */
     public func scanSync (criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
-        do {
-            let result = try database.accessor.scan(type: Entity<T>.self, cache: self)
-            if let criteria = criteria  {
-                let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
-                    var result = true
-                    entity.sync() { item in
-                        result = criteria (item)
-                    }
-                    return result
-                }
-                return result.filter (criteriaWrapper)
-            } else {
-                return result
-            }
-        } catch {
-            database.logger?.log(level: .emergency, source: self, featureName: "scanSync", message: "Database Error", data: [(name: "databaseHashValue", value: database.accessor.hashValue), (name: "cache", value: name), (name: "errorMessage", value: "\(error)")])
-            throw error
-        }
+        return try database.accessor.scanSync(type: Entity<T>.self, cache: self, criteria: criteria)
     }
     
 /**
@@ -158,15 +132,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
                               will be included in the results
  */
     public func scan (criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
-        return Promise { seal in
-            workQueue.async {
-                do {
-                    try seal.fulfill(self.scanSync(criteria: criteria))
-                } catch {
-                    seal.reject(error)
-                }
-            }
-        }
+        return database.accessor.scan(type: Entity<T>.self, cache: self, criteria: criteria)
     }
     
 /**

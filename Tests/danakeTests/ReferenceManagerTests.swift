@@ -2038,7 +2038,7 @@ class ReferenceManagerTests: XCTestCase {
         try XCTAssertNil (reference.getSync())
         logger.sync() { entities in
             XCTAssertEqual (2, entities.count)
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(accessor.hashValue);cache=myCollection;id=\(childId.uuidString);errorMessage=getError", entities[0].asTestString())
+            XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(accessor.hashValue);cache=myCollection;id=\(childId.uuidString);errorMessage=getError", entities[0].asTestString())
             XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.getSync|error|parentId=\(parentId.uuidString);entityCollection=\(cache.qualifiedName);entityId=\(childId.uuidString);message=getError", entities[1].asTestString())
         }
     }

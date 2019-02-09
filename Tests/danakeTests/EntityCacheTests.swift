@@ -152,7 +152,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (1, entries.count)
             let entry = entries[0].asTestString()
-            XCTAssertEqual ("WARNING|EntityCache<MyStruct>.getSync|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id)", entry)
+            XCTAssertEqual ("WARNING|InMemoryAccessor.getSync|Unknown id|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity.id)", entry)
         }
         // Data In Cache=No; Data in Accessor=Yes
         let _ = accessor.add(name: standardCacheName, id: entity.id, data: data)
@@ -230,7 +230,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
+            XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -246,7 +246,7 @@ class EntityCacheTests: XCTestCase {
         logger.sync() { entries in
             XCTAssertEqual (3, entries.count)
             let entry = entries[2].asTestString()
-            XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError", entry)
+            XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(entity3.id);errorMessage=getError", entry)
         }
     }
     
@@ -1125,9 +1125,9 @@ class EntityCacheTests: XCTestCase {
             logger.sync() { entries in
                 XCTAssertEqual (2, entries.count)
                 var entry = entries[0].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|InMemoryAccessor.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
                 entry = entries[1].asTestString()
-                XCTAssertEqual ("EMERGENCY|EntityCache<MyStruct>.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
+                XCTAssertEqual ("EMERGENCY|InMemoryAccessor.scanSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;errorMessage=scanError", entry)
             }
         }
     }

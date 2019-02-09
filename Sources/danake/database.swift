@@ -270,8 +270,10 @@ public enum AccessorError: Error {
 */
 public protocol DatabaseAccessor {
     
-    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>?
-    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
+    func getSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>
+    func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) -> Promise<Entity<T>>
+    func scanSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)?) throws -> [Entity<T>]
+    func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)?) -> Promise<[Entity<T>]>
     
 /**
      - returns: Is the format of **name** a valid CacheName in this storage medium and,
@@ -314,6 +316,78 @@ public protocol DatabaseAccessor {
      - returns: A DatabaseActionResult with the closure (or error message).
 */
     func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+}
+
+public protocol SynchronousAccessor : DatabaseAccessor {
+    
+    func getImplementation<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T>?
+    func scanImplementation<T> (type: Entity<T>.Type, cache: EntityCache<T>) throws -> [Entity<T>]
+    
+}
+
+extension SynchronousAccessor {
+    
+    public func getSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T> {
+        do {
+            if let result = try getImplementation(type: type, cache: cache, id: id) {
+                return result
+            } else {
+                throw AccessorError.unknownUUID (id)
+            }
+        } catch AccessorError.unknownUUID {
+            cache.database.logger?.log (level: .warning, source: self, featureName: "getSync",message: "Unknown id", data: [("databaseHashValue", cache.database.accessor.hashValue), (name:"cache", value: cache.name), (name:"id",value: id.uuidString)])
+            throw AccessorError.unknownUUID (id)
+        } catch {
+            cache.database.logger?.log (level: .emergency, source: self, featureName: "getSync",message: "Database Error", data: [("databaseHashValue", cache.database.accessor.hashValue), (name:"cache", value: cache.name), (name:"id",value: id.uuidString), (name: "errorMessage", "\(error)")])
+            throw error
+        }
+    }
+    
+    public func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) -> Promise<Entity<T>> {
+        return Promise { seal in
+            cache.database.workQueue.async {
+                do {
+                    try seal.fulfill(self.getSync(type: type, cache: cache, id: id))
+                } catch {
+                    seal.reject(error)
+                }
+            }
+        }
+    }
+    
+    public func scanSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
+        do {
+            let result = try scanImplementation (type: type, cache: cache)
+            if let criteria = criteria  {
+                let criteriaWrapper: ((Entity<T>) -> Bool) = { entity in
+                    var result = true
+                    entity.sync() { item in
+                        result = criteria (item)
+                    }
+                    return result
+                }
+                return result.filter (criteriaWrapper)
+            } else {
+                return result
+            }
+        } catch {
+            cache.database.logger?.log(level: .emergency, source: self, featureName: "scanSync", message: "Database Error", data: [(name: "databaseHashValue", value: cache.database.accessor.hashValue), (name: "cache", value: cache.name), (name: "errorMessage", value: "\(error)")])
+            throw error
+        }
+    }
+    
+    public func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)? = nil) -> Promise<[Entity<T>]> {
+        return Promise { seal in
+            cache.database.workQueue.async {
+                do {
+                    try seal.fulfill(self.scanSync(type: type, cache: cache, criteria: criteria))
+                } catch {
+                    seal.reject(error)
+                }
+            }
+        }
+    }
     
 }
 

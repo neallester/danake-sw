@@ -16,13 +16,13 @@ class InMemoryAccessorTests: XCTestCase {
         let cache = EntityCache<MyStruct>(database: database, name: standardCacheName)
         let uuid = UUID()
         do {
-            let retrievedData = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
-            XCTAssertNil (retrievedData)
+            let _ = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
+            XCTFail("Expected failure")
         } catch {
-            XCTFail("Expected success but got \(error)")
+            XCTAssertEqual("unknownUUID(\(uuid.uuidString))", "\(error)")
         }
         do {
-            let retrievedData = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedData = try accessor.scanSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (0, retrievedData.count)
 
         } catch {
@@ -42,39 +42,37 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: id1)!, encoding: .utf8), json1)
         var retrievedEntity1: Entity<MyStruct>? = nil
         do {
-            if let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: id1) {
-                retrievedEntity1 = retrievedEntity
-                XCTAssertTrue (retrievedEntity === cache.cachedEntity(id: id1)!)
-                XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
-                XCTAssertEqual (5, retrievedEntity.getSchemaVersion()) // Schema version is taken from the cache, not the json
-                XCTAssertEqual (10, retrievedEntity.version )
-                switch retrievedEntity.persistenceState {
-                case .new:
-                    break
-                default:
-                    XCTFail ("Expected .new")
-                }
-                retrievedEntity.sync() { item in
-                    XCTAssertEqual (100, item.myInt)
-                    XCTAssertEqual("A \"Quoted\" String", item.myString)
-                }
-                try XCTAssertEqual (jsonEncodedDate (date: retrievedEntity.created)!, creationDateString1)
-                XCTAssertNil (retrievedEntity.saved)
-            } else {
-                XCTFail ("Expected retrievedEntity")
+            let retrievedEntity = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: id1)
+            retrievedEntity1 = retrievedEntity
+            XCTAssertTrue (retrievedEntity === cache.cachedEntity(id: id1)!)
+            XCTAssertEqual (id1.uuidString, retrievedEntity.id.uuidString)
+            XCTAssertEqual (5, retrievedEntity.getSchemaVersion()) // Schema version is taken from the cache, not the json
+            XCTAssertEqual (10, retrievedEntity.version )
+            switch retrievedEntity.persistenceState {
+            case .new:
+                break
+            default:
+                XCTFail ("Expected .new")
             }
+            retrievedEntity.sync() { item in
+                XCTAssertEqual (100, item.myInt)
+                XCTAssertEqual("A \"Quoted\" String", item.myString)
+            }
+            try XCTAssertEqual (jsonEncodedDate (date: retrievedEntity.created)!, creationDateString1)
+            XCTAssertNil (retrievedEntity.saved)
+
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         // Not present
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
-            XCTAssertNil (retrievedEntity)
+            let _ = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: uuid)
+            XCTFail("Expected Failure")
         } catch {
-            XCTFail("Expected success but got \(error)")
+            XCTAssertEqual("unknownUUID(\(uuid.uuidString))", "\(error)")
         }
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scanSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (1, retrievedEntities.count)
             XCTAssertTrue (retrievedEntities[0] === retrievedEntity1)
             XCTAssertTrue (retrievedEntity1 === cache.cachedEntity(id: id1)!)
@@ -116,7 +114,7 @@ class InMemoryAccessorTests: XCTestCase {
         var found1 = false
         var retrievedEntity2: Entity<MyStruct>? = nil
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scanSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -151,7 +149,7 @@ class InMemoryAccessorTests: XCTestCase {
         found1 = false
         var found2 = false
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scanSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (2, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -173,26 +171,26 @@ class InMemoryAccessorTests: XCTestCase {
         // Test get and scan throwError
         accessor.setThrowError()
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
         }
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let retrievedEntity = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTAssertNotNil(retrievedEntity)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         accessor.setThrowError()
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scanSync (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("scanError", "\(error)")
         }
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scanSync (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
@@ -200,25 +198,25 @@ class InMemoryAccessorTests: XCTestCase {
         accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowError()
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
             XCTFail("Expected error")
         } catch {
             XCTAssertEqual ("getError", "\(error)")
         }
         do {
-            let _ = try accessor.get(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
+            let _ = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>, id: retrievedEntity1!.id)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
         accessor.setThrowError()
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scanSync (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("scanError", "\(error)")
         }
         do {
-            let _ = try accessor.scan (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let _ = try accessor.scanSync (type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
         } catch {
             XCTFail("Expected success but got \(error)")
         }
@@ -251,7 +249,7 @@ class InMemoryAccessorTests: XCTestCase {
         XCTAssertTrue (entity3 === cache.cachedEntity(id: entity3.id))
         prefetchUuid = nil
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStruct>.self, cache: cache, id: entity3.id)
+            let retrievedEntity = try accessor.getSync(type: Entity<MyStruct>.self, cache: cache, id: entity3.id)
             XCTAssertTrue (retrievedEntity === entity3)
             XCTAssertTrue (entity3 === cache.cachedEntity(id: entity3.id))
             XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
@@ -263,7 +261,7 @@ class InMemoryAccessorTests: XCTestCase {
         found2 = false
         var found3 = false
         do {
-            let retrievedEntities = try accessor.scan(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
+            let retrievedEntities = try accessor.scanSync(type: Entity<MyStruct>.self, cache: cache as EntityCache<MyStruct>)
             XCTAssertEqual (3, retrievedEntities.count)
             for entity in retrievedEntities {
                 if entity === retrievedEntity1 {
@@ -513,7 +511,7 @@ class InMemoryAccessorTests: XCTestCase {
         var cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: cache.name, id: id, data: json.data(using: .utf8)!)
         do {
-            let _ = try accessor.get(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
+            let _ = try accessor.getSync(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
             XCTFail ("Expected error")
         } catch {
             XCTAssertEqual ("creationError(\"missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \\\"struct\\\"))\")", "\(error)")
@@ -523,7 +521,7 @@ class InMemoryAccessorTests: XCTestCase {
             userInfo[MyStructContainer.structKey] = myStruct
         }
         do {
-            let retrievedEntity = try accessor.get(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)!
+            let retrievedEntity = try accessor.getSync(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
             retrievedEntity.sync() { item in
                 XCTAssertEqual (10, item.myStruct.myInt)
                 XCTAssertEqual ("10", item.myStruct.myString)
@@ -544,7 +542,7 @@ class InMemoryAccessorTests: XCTestCase {
         var cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName)
         let _ = accessor.add(name: cache.name, id: id, data: json.data(using: .utf8)!)
         do {
-            let result = try accessor.scan(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
+            let result = try accessor.scanSync(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
             XCTAssertEqual (0, result.count)
         } catch {
             XCTFail("Expected success but got \(error)")
@@ -554,7 +552,7 @@ class InMemoryAccessorTests: XCTestCase {
             userInfo[MyStructContainer.structKey] = myStruct
         }
         do {
-            let result = try accessor.scan(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
+            let result = try accessor.scanSync(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>)
             XCTAssertEqual (1, result.count)
             result[0].sync() { item in
                 XCTAssertEqual (10, item.myStruct.myInt)

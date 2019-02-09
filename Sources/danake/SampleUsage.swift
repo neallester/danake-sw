@@ -203,7 +203,7 @@ public protocol SampleAccessor : DatabaseAccessor {
 class SampleInMemoryAccessor : InMemoryAccessor, SampleAccessor {
     
     func employeesForCompany (cache: EntityCache<SampleEmployee>, company: SampleCompany) throws -> [Entity<SampleEmployee>] {
-        let retrievalResult = try scan (type: Entity<SampleEmployee>.self, cache: cache)
+        let retrievalResult = try scanSync (type: Entity<SampleEmployee>.self, cache: cache)
         return retrievalResult.filter() { employeeEntity in
             var shouldInclude = false
             employeeEntity.sync() { sampleEmployee in
@@ -446,7 +446,7 @@ public class SampleUsage  {
             // And the unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "runSample.15", testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|SampleCompanyCache.getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|SampleInMemoryAccessor.getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -749,7 +749,7 @@ public class SampleUsage  {
             ParallelTest.AssertEqual (label: "demonstrateThrowError.1", testResult: &overallTestResult, "getError", "\(error)")
             logger.sync() { entries in
                 ParallelTest.AssertEqual (label: "demonstrateThrowError.2", testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleCompanyCache.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleInMemoryAccessor.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         }.finally {
             group.leave()

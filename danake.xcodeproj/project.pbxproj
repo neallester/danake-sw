@@ -526,7 +526,7 @@
             "OBJ_52",
             "OBJ_53"
          );
-         name = "PromiseKit 6.7.1";
+         name = "PromiseKit 6.8.3";
          path = ".build/checkouts/PromiseKit--3916240556924587876/Sources";
          sourceTree = "SOURCE_ROOT";
       };
@@ -661,8 +661,8 @@
          isa = "PBXGroup";
          children = (
             "danake::danakeTests::Product",
-            "PromiseKit::PromiseKit::Product",
-            "danake::danake::Product"
+            "danake::danake::Product",
+            "PromiseKit::PromiseKit::Product"
          );
          name = "Products";
          path = "";
