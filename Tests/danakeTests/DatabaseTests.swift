@@ -6,6 +6,8 @@
 //
 
 import XCTest
+import Foundation
+import PromiseKit
 @testable import danake
 
 class RegistrarTestItem {

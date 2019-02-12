@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import JSONEquality
 @testable import danake
 
 class EntityCommitNewTests: XCTestCase {
@@ -202,7 +203,7 @@ class EntityCommitNewTests: XCTestCase {
             // FIXME
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -615,7 +616,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("addActionError", errorMessage)
+                XCTAssertEqual ("updateActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -662,19 +663,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            var json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains ("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains ("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains ("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains ("\"item\":{"))
-            XCTAssertTrue (json.contains ("\"myInt\":20"))
-            XCTAssertTrue (json.contains ("\"myString\":\"20\""))
-            XCTAssertTrue (json.contains ("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains ("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        XCTAssertTrue (try JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -857,7 +846,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1183,7 +1172,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("addActionError", errorMessage)
+                XCTAssertEqual ("updateActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -1445,7 +1434,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1764,7 +1753,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit() { result in
             switch result {
             case .unrecoverableError(let errorMessage):
-                XCTAssertEqual ("addActionError", errorMessage)
+                XCTAssertEqual ("updateActionError", errorMessage)
             default:
                 XCTFail ("Expected .unrecoverableError")
             }
@@ -2020,7 +2009,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2555,7 +2544,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2983,7 +2972,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3555,7 +3544,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("Entity.commit():timedOut:\(DispatchTimeInterval.nanoseconds(1))", errorMessage)
+                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }

@@ -429,7 +429,7 @@ class BatchTests: XCTestCase {
             logger.sync() { entries in
                 for entry in entries {
                     batchTimedOut = batchTimedOut || entry.message.contains ("batchTimeout")
-                    entityTimedOut = entityTimedOut || entry.message.contains ("Entity.commit():timedOut")
+                    entityTimedOut = entityTimedOut || entry.message.contains ("timeout")
                 }
             }
             if batchTimedOut {

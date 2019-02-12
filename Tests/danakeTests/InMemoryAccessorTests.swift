@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import PromiseKit
 @testable import danake
 
 class InMemoryAccessorTests: XCTestCase {
@@ -87,17 +88,28 @@ class InMemoryAccessorTests: XCTestCase {
         }
         retrievedEntity1!.saved = Date()
         let wrapper = EntityPersistenceWrapper (cacheName: retrievedEntity1!.cache.name, entity: retrievedEntity1!)
-        switch accessor.updateAction(wrapper: wrapper) {
+        let group = DispatchGroup()
+        switch accessor.updateAction(queue: database.workQueue, wrapper: wrapper, timeout: .seconds(1000)) {
         case .ok (let updateClosure):
-            switch updateClosure() {
-            case .ok:
-                break
-            default:
-                XCTFail ("Expected .ok")
+            group.enter()
+            firstly {
+                updateClosure()
+            }.done { updateResult in
+                switch updateResult {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
+            }.catch { error in
+                XCTFail ("Expected .ok but got \(error)")
+            }.finally {
+                group.leave()
             }
         default:
             XCTFail("Expected .ok")
         }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
         XCTAssertEqual (String (data: accessor.getData (name: cache.name, id: retrievedEntity1!.id)!, encoding: .utf8), String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8))
         let id2 = UUID()
         let creationDateString2 = try jsonEncodedDate(date: Date())!
@@ -232,17 +244,27 @@ class InMemoryAccessorTests: XCTestCase {
             }
         }
         let wrapper3 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity3)
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
         case .ok (let closure):
-            switch closure() {
-            case .ok:
-                break
-            default:
-                XCTFail ("Expected .ok")
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
+            }.catch { error in
+                XCTFail ("Expected success but got \(error)")
+            }.finally {
+                group.leave()
             }
         default:
             XCTFail("Expected .ok")
         }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
         XCTAssertEqual (3, accessor.count(name: cache.name))
         XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
         XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: entity3.id)!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
@@ -290,7 +312,7 @@ class InMemoryAccessorTests: XCTestCase {
         var entity4 = cache.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
         entity4.saved = Date()
         accessor.setThrowError()
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
         case .error (let errorMessage):
             XCTAssertEqual ("addActionError", errorMessage)
         default:
@@ -298,35 +320,69 @@ class InMemoryAccessorTests: XCTestCase {
         }
         XCTAssertEqual (3, accessor.count(name: cache.name))
         var wrapper4 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity4)
-        switch accessor.addAction(wrapper: wrapper4) {
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
         case .ok (let closure):
             XCTAssertEqual (3, accessor.count(name: cache.name))
             accessor.setThrowError()
-            switch closure() {
-            case .error (let errorMessage):
-                XCTAssertEqual ("addError", errorMessage)
-            default:
-                XCTFail ("Expected .error")
-            }
-            switch closure() {
-            case .ok:
-                XCTAssertEqual (4, accessor.count (name: cache.name))
-                XCTAssertTrue (accessor.has(name: cache.name, id: entity4.id))
-                
-            default:
-                XCTFail ("Expected .ok")
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .error (let errorMessage):
+                    XCTAssertEqual (3, accessor.count(name: cache.name))
+                    XCTAssertEqual ("addError", errorMessage)
+                default:
+                    XCTFail ("Expected .error")
+                }
+            }.catch {error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
             }
         default:
             XCTFail("Expected .ok")
         }
-
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
+        case .ok (let closure):
+            XCTAssertEqual (3, accessor.count(name: cache.name))
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .ok:
+                    XCTAssertEqual (4, accessor.count (name: cache.name))
+                    XCTAssertTrue (accessor.has(name: cache.name, id: entity4.id))
+                    
+                default:
+                    XCTFail ("Expected .ok")
+                }
+            }.catch {error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
+            }
+        default:
+            XCTFail("Expected .ok")
+        }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
+        accessor.setThrowError()
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
+        case .error (let error):
+            XCTAssertEqual ("addActionError", error)
+            XCTAssertEqual (4, accessor.count(name: cache.name))
+        default:
+            XCTFail ("Expected .error")
+        }
 
         // Public addAction with errors with setThrowOnlyRecoverableErrors(true)
         accessor.setThrowOnlyRecoverableErrors(true)
         entity4 = cache.new(batch: batch, item: MyStruct (myInt: 40, myString: "A String 4"))
         entity4.saved = Date()
         accessor.setThrowError()
-        switch accessor.addAction(wrapper: wrapper3) {
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
         case .ok:
             break
         default:
@@ -334,27 +390,52 @@ class InMemoryAccessorTests: XCTestCase {
         }
         XCTAssertEqual (4, accessor.count(name: cache.name))
         wrapper4 = EntityPersistenceWrapper (cacheName: cache.name, entity: entity4)
-        switch accessor.addAction(wrapper: wrapper4) {
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds (1000)) {
         case .ok (let closure):
+            group.enter()
             XCTAssertEqual (4, accessor.count(name: cache.name))
             accessor.setThrowError()
-            switch closure() {
-            case .error (let errorMessage):
-                XCTAssertEqual ("addError", errorMessage)
-            default:
-                XCTFail ("Expected .error")
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .error (let errorMessage):
+                    XCTAssertEqual ("addError", errorMessage)
+                default:
+                    XCTFail ("Expected .error")
+                }
+            }.catch { error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
             }
-            switch closure() {
-            case .ok:
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
+        switch accessor.addAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds (1000)) {
+        case .ok (let closure):
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .ok:
+                    break
+                default:
+                    XCTFail ("Expected .ok")
+                }
                 XCTAssertEqual (5, accessor.count (name: cache.name))
                 XCTAssertTrue (accessor.has(name: cache.name, id: entity4.id))
-                
-            default:
-                XCTFail ("Expected .ok")
+            }.catch { error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
             }
         default:
             XCTFail("Expected .ok")
         }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
         accessor.setThrowOnlyRecoverableErrors(false)
 
 
@@ -366,7 +447,7 @@ class InMemoryAccessorTests: XCTestCase {
             }
         }
         accessor.setThrowError()
-        switch accessor.removeAction(wrapper: wrapper4) {
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
         case .error (let errorMessage):
             XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
@@ -376,32 +457,58 @@ class InMemoryAccessorTests: XCTestCase {
         default:
             XCTFail ("Expected .error")
         }
-        switch accessor.removeAction(wrapper: wrapper4) {
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
         case .ok (let closure):
             XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
             prefetchUuid = nil
             accessor.setThrowError()
-            switch closure() {
-            case .error(let errorMessage):
-                XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
-                prefetchUuid = nil
-                XCTAssertEqual ("removeError", errorMessage)
-                XCTAssertEqual(5, accessor.count(name: cache.name))
-            default:
-                XCTFail ("Expected .error")
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .error(let errorMessage):
+                    XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
+                    XCTAssertTrue (accessor.has(name: cache.name, id: entity4.id))
+                    prefetchUuid = nil
+                    XCTAssertEqual ("removeError", errorMessage)
+                    XCTAssertEqual(5, accessor.count(name: cache.name))
+                default:
+                    XCTFail ("Expected .error")
+                }
+            }.catch { error in
+                XCTFail ("Expected Success")
+            }.finally {
+                group.leave()
             }
-            switch closure() {
-            case .ok:
-                XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
-                prefetchUuid = nil
-                XCTAssertEqual(4, accessor.count(name: cache.name))
-                XCTAssertFalse (accessor.has (name: cache.name, id: entity4.id))
-                XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity1!.id))
-                XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity2!.id))
-                XCTAssertTrue (accessor.has (name: cache.name, id: entity3.id))
-            default:
-                XCTFail ("Expected .ok")
+        default:
+            XCTFail ("Expected .ok")
+        }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper4, timeout: .seconds(1000)) {
+        case .ok (let closure):
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .ok:
+                    XCTAssertEqual (prefetchUuid!, entity4.id.uuidString)
+                    prefetchUuid = nil
+                    XCTAssertEqual(4, accessor.count(name: cache.name))
+                    XCTAssertFalse (accessor.has (name: cache.name, id: entity4.id))
+                    XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity1!.id))
+                    XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity2!.id))
+                    XCTAssertTrue (accessor.has (name: cache.name, id: entity3.id))
+                default:
+                    XCTFail ("Expected .ok")
+                }
+            }.catch { error in
+                XCTFail ("Expected Success")
+            }.finally {
+                group.leave()
             }
+            let _ = group.wait(timeout: DispatchTime.now() + 10)
         default:
             XCTFail ("Expected .ok")
         }
@@ -410,33 +517,58 @@ class InMemoryAccessorTests: XCTestCase {
         // Test Remove with removeActionError and removeError when accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowOnlyRecoverableErrors(true)
         accessor.setThrowError()
-        switch accessor.removeAction(wrapper: wrapper3) {
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
         case .ok:
             XCTAssertEqual (4, accessor.count(name: cache.name))
             XCTAssertTrue (accessor.has(name: cache.name, id: wrapper3.id))
         default:
             XCTFail ("Expected .ok")
         }
-        switch accessor.removeAction(wrapper: wrapper3) {
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
         case .ok (let closure):
             accessor.setThrowError()
-            switch closure() {
-            case .error(let errorMessage):
-                XCTAssertEqual ("removeError", errorMessage)
-                XCTAssertEqual(4, accessor.count(name: cache.name))
-            default:
-                XCTFail ("Expected .error")
-            }
-            switch closure() {
-            case .ok:
-                XCTAssertEqual(3, accessor.count(name: cache.name))
-                XCTAssertFalse (accessor.has (name: cache.name, id: entity3.id))
-                XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity1!.id))
-                XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity2!.id))
-            default:
-                XCTFail ("Expected .ok")
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .error(let errorMessage):
+                    XCTAssertEqual ("removeError", errorMessage)
+                    XCTAssertEqual(4, accessor.count(name: cache.name))
+                default:
+                    XCTFail ("Expected .error")
+                }
+            }.catch { error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
             }
         default:
+            XCTFail ("Expected .ok")
+        }
+        let _ = group.wait(timeout: DispatchTime.now() + 10)
+        switch accessor.removeAction(queue: database.workQueue, wrapper: wrapper3, timeout: .seconds(1000)) {
+        case .ok (let closure):
+            group.enter()
+            firstly {
+                closure()
+            }.done { result in
+                switch result {
+                case .ok:
+                    XCTAssertEqual(3, accessor.count(name: cache.name))
+                    XCTAssertFalse (accessor.has (name: cache.name, id: entity3.id))
+                    XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity1!.id))
+                    XCTAssertTrue (accessor.has (name: cache.name, id: retrievedEntity2!.id))
+                default:
+                    XCTFail ("Expected .ok")
+                }
+            }.catch { error in
+                XCTFail ("Expected success")
+            }.finally {
+                group.leave()
+            }
+            let _ = group.wait(timeout: DispatchTime.now() + 10)
+       default:
             XCTFail ("Expected .ok")
         }
         accessor.setThrowOnlyRecoverableErrors(false)
@@ -514,7 +646,7 @@ class InMemoryAccessorTests: XCTestCase {
             let _ = try accessor.getSync(type: Entity<MyStructContainer>.self, cache: cache as EntityCache<MyStructContainer>, id: id)
             XCTFail ("Expected error")
         } catch {
-            XCTAssertEqual ("creationError(\"missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \\\"struct\\\"))\")", "\(error)")
+            XCTAssertEqual ("creation(\"missingUserInfoValue(Swift.CodingUserInfoKey(rawValue: \\\"struct\\\"))\")", "\(error)")
         }
         let myStruct = MyStruct (myInt: 10, myString: "10")
         cache = EntityCache<MyStructContainer>(database: database, name: standardCacheName) { userInfo in

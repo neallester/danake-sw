@@ -126,6 +126,15 @@ class Registrar<K: Hashable, V: AnyObject> {
 }
 
 /**
+    The types of database actions supported; used for error reporting
+ */
+public enum DatabaseAction {
+    case add
+    case update
+    case remove
+}
+
+/**
     The results of an attempt to update the persistent storage.
 */
 public enum DatabaseUpdateResult {
@@ -150,7 +159,7 @@ public enum DatabaseUpdateResult {
 public enum DatabaseActionResult {
     
     /// Building the closure succeeded. The associated value is the closure which will actually perform the action
-    case ok (() -> DatabaseUpdateResult)
+    case ok (() -> Promise<DatabaseUpdateResult>)
     
     /// An error occurred; the associated value is the error message.
     case error (String)
@@ -262,7 +271,11 @@ open class Database {
 
 public enum AccessorError: Error {
     case unknownUUID (UUID)
-    case creationError (String)
+    case creation (String)
+    case timeout (DispatchTimeInterval, String)
+    case updateAction (UUID)
+    case addAction (UUID)
+    case removeAction (UUID)
 }
 
 /**
@@ -274,6 +287,7 @@ public protocol DatabaseAccessor {
     func get<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) -> Promise<Entity<T>>
     func scanSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)?) throws -> [Entity<T>]
     func scan<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)?) -> Promise<[Entity<T>]>
+    func isSynchronous() -> Bool
     
 /**
      - returns: Is the format of **name** a valid CacheName in this storage medium and,
@@ -288,36 +302,164 @@ public protocol DatabaseAccessor {
     var hashValue: String { get }
     
 /**
+     Database updates are performed in 2 stages. In the first (fast) stage all required information is
+     extracted from the Entity to be updated and "serialized" with the update instructions in a closure.
+     
+     In the second stage the closure is fired and the update is performed.
+*/
+    
+/**
     Attempt to create a closure which **adds** an Entity to the persistent medium. This function should
-    return fast; the actual database access should occur when the returned closure is fired.
+    return fast; the necessary database update instructions should be fully serialized, but
+    the actual database access and callback occur when the returned closure is fired.
      
      - parameter wrapper: A type erased wrapper "containing" the Entity to be added
      
-     - returns: A DatabaseActionResult with the closure (or error message).
+     - parameter callback: The closure to call to report the results of the attempted **add** action
+     
+     - returns: A closure which will perform the **add** when called
 */
-    func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    func addActionImplementation (wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> ()
 
 /**
-     Attempt to create a closure which **updatess** an existing Entity in the persistent medium. This function
-    should return fast; the actual database access should occur when the returned closure is fired.
+     Attempt to create a closure which **updates** an Entity to the persistent medium. This function should
+     return fast; the necessary database update instructions should be fully serialized, but
+     the actual database access and callback occur when the returned closure is fired.
      
      - parameter wrapper: A type erased wrapper "containing" the Entity to be added
      
-     - returns: A DatabaseActionResult with the closure (or error message).
+     - parameter callback: The closure to call to report the results of the attempted **update** action
+     
+     - returns: A closure which will perform the **update** when called
 */
-    func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+    func updateActionImplementation (wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> ()
     
 /**
-     Attempt to create a closure which **removes** an existing Entity in the persistent medium. This function
-     should return fast; the actual database access should occur when the returned closure is fired.
+     Attempt to create a closure which **removes** an Entity to the persistent medium. This function should
+     return fast; the necessary database update instructions should be fully serialized, but
+     the actual database access and callback occur when the returned closure is fired.
      
      - parameter wrapper: A type erased wrapper "containing" the Entity to be added
      
-     - returns: A DatabaseActionResult with the closure (or error message).
+     - parameter callback: The closure to call to report the results of the attempted **remove** action
+     
+     - returns: A closure which will perform the **remove** when called
 */
-    func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult
+    
+    func removeActionImplementation (wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> ()
     
 }
+
+extension DatabaseAccessor {
+    
+/**
+     Create a DatabaseActionResult necessary to **add** an Entity to the storage
+     
+     - parameter queue: The **concurrent** dispatch queue used to execute the timeout (if required).
+     
+     - parameter wrapper: A type erased wrapper "containing" the Entity to be added
+     
+     - parameter timeout: The interval to wait before timing out the **action**
+     
+     - returns: A DatabaseActionResult with a closure which when fired will return the promise of a DatabaseUpdateResult
+                reporting the outcome of the attempted database update
+     
+*/
+    func addAction (queue: DispatchQueue, wrapper: EntityPersistenceWrapper, timeout: DispatchTimeInterval) -> DatabaseActionResult {
+        return wrapAction(queue: queue, wrapper: wrapper, action: addActionImplementation, actionType: .add, error: AccessorError.addAction(wrapper.id), timeout: timeout)
+    }
+
+/**
+     Create a DatabaseActionResult necessary to **update** an Entity to the storage
+     
+     - parameter queue: The **concurrent** dispatch queue used to execute the timeout (if required).
+     
+     - parameter wrapper: A type erased wrapper "containing" the Entity to be added
+     
+     - parameter timeout: The interval to wait before timing out the **action**
+     
+     - returns: A DatabaseActionResult with a closure which when fired will return the promise of a DatabaseUpdateResult
+     reporting the outcome of the attempted database update
+     
+*/
+
+    func updateAction (queue: DispatchQueue, wrapper: EntityPersistenceWrapper, timeout: DispatchTimeInterval) -> DatabaseActionResult {
+        return wrapAction(queue: queue, wrapper: wrapper, action: updateActionImplementation, actionType: .update, error: AccessorError.updateAction(wrapper.id), timeout: timeout)
+    }
+    
+/**
+     Create a DatabaseActionResult necessary to **remove** an Entity to the storage
+     
+     - parameter queue: The **concurrent** dispatch queue used to execute the timeout (if required).
+     
+     - parameter wrapper: A type erased wrapper "containing" the Entity to be added
+     
+     - parameter timeout: The interval to wait before timing out the **action**
+     
+     - returns: A DatabaseActionResult with a closure which when fired will return the promise of a DatabaseUpdateResult
+     reporting the outcome of the attempted database update
+     
+*/
+    func removeAction (queue: DispatchQueue, wrapper: EntityPersistenceWrapper, timeout: DispatchTimeInterval) -> DatabaseActionResult {
+        return wrapAction(queue: queue, wrapper: wrapper, action: removeActionImplementation, actionType: .remove, error: AccessorError.removeAction(wrapper.id), timeout: timeout)
+    }
+    
+/**
+    Wraps **action** with a timeout.
+     
+    - parameter queue: The **concurrent** dispatch queue used to execute the timeout (if required).
+     
+    - parameter wrapper: A type erased wrapper "containing" the Entity to be added
+     
+     - parameter action: The database update action to be wrapped in a timeout
+     
+     - parameter actionType: Enum indicating the type of action (for error reporting)
+     
+     - parameter timeout: The interval to wait before timing out the **action**
+     
+     - returns: A DatabaseActionResult containing the timeout wrapped closure
+*/
+    func wrapAction (
+        queue: DispatchQueue,
+        wrapper: EntityPersistenceWrapper,
+        action: ((EntityPersistenceWrapper, @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> ()),
+        actionType: DatabaseAction,
+        error: AccessorError,
+        timeout: DispatchTimeInterval
+    ) -> DatabaseActionResult {
+        let pending = Promise<DatabaseUpdateResult>.pending()
+        let cacheName = wrapper.cacheName
+        let id = wrapper.id.uuidString
+        let updateTask = DispatchWorkItem {
+            pending.resolver.fulfill(.error ("timeout.\(timeout):\(type (of: self)).\(actionType);database=\(self.hashValue);entityCache=\(cacheName);entityID=\(id)"))
+        }
+        do {
+            let updateAction = try action(wrapper) { databaseActionResult in
+                updateTask.cancel()
+                pending.resolver.fulfill(databaseActionResult)
+            }
+            let wrappedFunction: () -> Promise<DatabaseUpdateResult> = {
+                queue.asyncAfter(deadline: DispatchTime.now() + timeout, execute: updateTask)
+                if self.isSynchronous() {
+                    queue.async {
+                        updateAction()
+                    }
+                } else {
+                    updateAction()
+                }
+                return pending.promise
+            }
+            return DatabaseActionResult.ok(wrappedFunction)
+        } catch {
+            pending.resolver.reject(error)
+            return .error ("\(error)")
+        }
+    }
+
+    
+}
+
 
 public protocol SynchronousAccessor : DatabaseAccessor {
     
@@ -387,6 +529,29 @@ extension SynchronousAccessor {
                 }
             }
         }
+    }
+    
+    public func isSynchronous() -> Bool {
+        return true
+    }
+    
+}
+
+public protocol AsynchronousAccessor : DatabaseAccessor {}
+
+extension AsynchronousAccessor {
+    
+    public func getSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, id: UUID) throws -> Entity<T> {
+        return try get (type: type, cache: cache, id: id).wait()
+    }
+    
+    
+    public func scanSync<T> (type: Entity<T>.Type, cache: EntityCache<T>, criteria: ((T) -> Bool)? = nil) throws -> [Entity<T>] {
+        return try scan (type: type, cache: cache, criteria: criteria).wait()
+    }
+    
+    public func isSynchronous() -> Bool {
+        return false
     }
     
 }

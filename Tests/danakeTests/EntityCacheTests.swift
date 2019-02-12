@@ -225,12 +225,12 @@ class EntityCacheTests: XCTestCase {
             let _ = try cache.getSync(id: invalidDataUuid)
             XCTFail ("Expected error")
         } catch {
-            XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
+            XCTAssertEqual ("creation(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
         }
         logger.sync() { entries in
             XCTAssertEqual (2, entries.count)
             let entry = entries[1].asTestString()
-            XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
+            XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(database.accessor.hashValue);cache=myCollection;id=\(invalidDataUuid);errorMessage=creation(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", entry)
         }
         // Database Error
         let entity3 = newTestEntity(myInt: 30, myString: "A String 3")
@@ -575,9 +575,9 @@ class EntityCacheTests: XCTestCase {
                 XCTFail ("Expected error")
             }.catch { error in
                 #if os(Linux)
-                    XCTAssertEqual ("creationError(\"The operation could not be completed\")", "\(error)")
+                    XCTAssertEqual ("creation(\"The operation could not be completed\")", "\(error)")
                 #else
-                    XCTAssertEqual ("creationError(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
+                    XCTAssertEqual ("creation(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
                 #endif
             }.finally {
                 waitFor1.fulfill()
@@ -587,7 +587,7 @@ class EntityCacheTests: XCTestCase {
             }.done { item in
                 XCTFail ("Expected error")
             }.catch { error in
-                XCTAssertEqual ("creationError(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
+                XCTAssertEqual ("creation(\"keyNotFound(CodingKeys(stringValue: \\\"id\\\", intValue: nil), Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"No value associated with key CodingKeys(stringValue: \\\\\\\"id\\\\\\\", intValue: nil) (\\\\\\\"id\\\\\\\").\\\", underlyingError: nil))\")", "\(error)")
             }.finally {
                 waitFor2.fulfill()
             }
@@ -1434,6 +1434,9 @@ class EntityCacheTests: XCTestCase {
         let batch = EventuallyConsistentBatch()
         var entity: Entity<MyStruct>? = cache.new(batch: batch, item: myStruct)
         batch.commitSync()
+        batch.syncEntities { entities in
+            XCTAssertEqual (0, entities.count)
+        }
         let id = entity!.id
         let timeout1 = 0.01
         let start = Date().timeIntervalSince1970

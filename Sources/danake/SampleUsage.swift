@@ -869,10 +869,14 @@ public class SampleUsage  {
             // Using setThrowError() before committing an update will throw an unrecoverable serialization error
         }
         inMemoryAccessor.setThrowError()
-        batch.commitSync()
         logger.sync() { entries in
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1b", testResult: &overallTestResult, 0, entries.count)
+            //                                                               ERROR|BatchDelegate.commit|Database.unrecoverableError("updateActionError")|entityType=Entity<SampleEmployee>;entityId=05081CBC-5ABA-4EE9-A7B1-4882E047D715;batchId=19FDD736-E6DC-4472-928A-748F90AD168A
+        }
+        batch.commitSync()
+        logger.sync() { entries in           
             ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.2", testResult: &overallTestResult, 1, entries.count)
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"addActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"updateActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
         }
         
         // Demonstrate that the previous changes were lost due to the reported unrecoverable error

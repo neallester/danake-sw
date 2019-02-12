@@ -543,12 +543,12 @@ public class Entity<T: Codable> : EntityManagement, Codable {
     }
     
     // Not thread safe: to be called on self.queue
-    private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (EntityPersistenceWrapper) -> DatabaseActionResult) {
+    private func commit (successState: PersistenceState, failureState: PersistenceState, timeout: DispatchTimeInterval, completionHandler: @escaping (DatabaseUpdateResult) -> (), databaseActionSource: (DatabaseAccessor) -> (DispatchQueue, EntityPersistenceWrapper, DispatchTimeInterval) -> DatabaseActionResult) {
         _persistenceState = successState
         _version = _version + 1
         let wrapper = EntityPersistenceWrapper (cacheName: cache.name, entity: self)
         let actionSource = databaseActionSource (cache.database.accessor)
-        let actionResult = actionSource (wrapper)
+        let actionResult = actionSource (cache.database.workQueue, wrapper, timeout)
         var newItemData: Data? = nil
         do {
             newItemData = try Database.encoder.encode(item)
@@ -556,56 +556,40 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         switch actionResult {
         case .ok (let action):
             _persistenceState = .saving
-            var result: DatabaseUpdateResult? = nil
-            cache.database.workQueue.async {
-                let group = DispatchGroup()
-                group.enter()
-                self.cache.database.workQueue.async {
-                    let tempResult = action()
-                    self.queue.sync {
-                        result = tempResult
-                        group.leave()
-                    }
+            firstly {
+                action()
+            }.done (on: cache.database.workQueue) { result in
+                self.timeoutTestingHook()
+                switch result {
+                case .ok:
+                    self._persistenceState = successState
+                    self.itemData = newItemData
+                case .error, .unrecoverableError:
+                    self._persistenceState = failureState
+                    self._version = self._version - 1
                 }
-                self.cache.database.workQueue.async {
-                    self.timeoutTestingHook()
-                    let _ = group.wait(timeout: DispatchTime.now() + timeout)
-                    self.queue.sync {
-                        if result == nil {
-                            result = .error ("Entity.commit():timedOut:\(timeout)")
-                        }
-                        if let result = result {
-                            switch result {
-                            case .ok:
-                                self._persistenceState = successState
-                                self.itemData = newItemData
-                            case .error, .unrecoverableError:
-                                self._persistenceState = failureState
-                                self._version = self._version - 1
-                            }
-                            if let pendingAction = self.pendingAction {
-                                self.pendingAction = nil
-                                switch pendingAction {
-                                case .update:
-                                    self.handleAction(PersistenceAction.updateItem() { item in })
-                                case .remove:
-                                    self.handleAction(PersistenceAction.remove)
-                                }
-                                switch result {
-                                case .ok:
-                                    self.handleAction(.commit (timeout, completionHandler))
-                                // see https://github.com/neallester/danake-sw/issues/3
-                                case .error, .unrecoverableError:
-                                    self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
-                                }
-                                
-                            } else {
-                                self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
-                            }
-                        }
+                if let pendingAction = self.pendingAction {
+                    self.pendingAction = nil
+                    switch pendingAction {
+                    case .update:
+                        self.handleAction(PersistenceAction.updateItem() { item in })
+                    case .remove:
+                        self.handleAction(PersistenceAction.remove)
                     }
-
+                    switch result {
+                    case .ok:
+                        self.handleAction(.commit (timeout, completionHandler))
+                    // see https://github.com/neallester/danake-sw/issues/3
+                    case .error, .unrecoverableError:
+                        self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
+                    }
+                } else {
+                    self.callCommitCompletionHandler (completionHandler: completionHandler, result: result)
                 }
+            }.catch { error in
+                self._persistenceState = failureState
+                self._version = self._version - 1
+                self.callCommitCompletionHandler (completionHandler: completionHandler, result: .error("\(error)"))
             }
         case .error (let errorMessage):
             self._version = self._version - 1

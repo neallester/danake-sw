@@ -12,12 +12,16 @@ import Foundation
 */
 public class InMemoryAccessor: SynchronousAccessor {
     
+    
     /**
      Errors which Accessors may throw
      */
     public enum Errors: Error {
         case scanError
         case getError
+        case addActionError
+        case removeActionError
+        case updateActionError
     }
 
 
@@ -44,7 +48,7 @@ public class InMemoryAccessor: SynchronousAccessor {
                     case .ok (let entity):
                         result = entity
                     case .error (let creationError):
-                        throw AccessorError.creationError(creationError)
+                        throw AccessorError.creation(creationError)
                     }
                 }
             }
@@ -73,53 +77,53 @@ public class InMemoryAccessor: SynchronousAccessor {
         return result
     }
     
-    public func addAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        var errorResult: DatabaseActionResult? = nil
-        queue.sync {
+    public func addActionImplementation(wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> () {
+        try queue.sync {
             if let preFetch = preFetch {
                 preFetch (wrapper.id)
             }
             if throwError && !throwOnlyRecoverableErrors {
                 throwError = false
-                errorResult = .error ("addActionError")
+                throw Errors.addActionError
             }
         }
-        if let errorResult = errorResult {
-            return errorResult
-        }
-        do {
-            let data = try self.encoder.encode (wrapper)
-            let result = { () -> DatabaseUpdateResult in
-                return self.add (name: wrapper.cacheName, id: wrapper.id, data: data)
-            }
-            return .ok (result)
-        } catch {
-            return DatabaseActionResult.error("\(error)")
+        let data = try self.encoder.encode (wrapper)
+        return {
+            callback (self.add (name: wrapper.cacheName, id: wrapper.id, data: data))
         }
     }
     
-    public func updateAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        return addAction (wrapper: wrapper)
-    }
-    
-    public func removeAction (wrapper: EntityPersistenceWrapper) -> DatabaseActionResult {
-        var errorResult: DatabaseActionResult? = nil
-        queue.sync {
+    public func updateActionImplementation(wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> () {
+        try queue.sync {
             if let preFetch = preFetch {
                 preFetch (wrapper.id)
             }
             if throwError && !throwOnlyRecoverableErrors {
                 throwError = false
-                errorResult = .error ("removeActionError")
+                throw Errors.updateActionError
             }
         }
-        if let errorResult = errorResult {
-            return errorResult
+        let data = try self.encoder.encode (wrapper)
+        return {
+            callback (self.add (name: wrapper.cacheName, id: wrapper.id, data: data))
         }
-        let result = { () -> DatabaseUpdateResult in
-            return self.remove(name: wrapper.cacheName, id: wrapper.id)
+    }
+    
+    public func removeActionImplementation(wrapper: EntityPersistenceWrapper, callback: @escaping ((DatabaseUpdateResult) -> ())) throws -> () -> () {
+        try queue.sync {
+            if let preFetch = preFetch {
+                preFetch (wrapper.id)
+            }
+            if throwError && !throwOnlyRecoverableErrors {
+                throwError = false
+                throw Errors.removeActionError
+            }
         }
-        return .ok (result)
+        return {
+            do {
+                callback (self.remove (name: wrapper.cacheName, id: wrapper.id))
+            }
+        }
     }
     
     public func isValidCacheName(_ name: CacheName) -> ValidationResult {
