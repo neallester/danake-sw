@@ -432,7 +432,7 @@ extension DatabaseAccessor {
         let cacheName = wrapper.cacheName
         let id = wrapper.id.uuidString
         let updateTask = DispatchWorkItem {
-            pending.resolver.fulfill(.error ("timeout.\(timeout):\(type (of: self)).\(actionType);database=\(self.hashValue);entityCache=\(cacheName);entityID=\(id)"))
+            pending.resolver.fulfill(.error ("timeout:\(type (of: self)).\(actionType);database=\(self.hashValue);entityCache=\(cacheName);entityID=\(id)"))
         }
         do {
             let updateAction = try action(wrapper) { databaseActionResult in

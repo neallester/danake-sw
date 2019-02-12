@@ -203,7 +203,7 @@ class EntityCommitNewTests: XCTestCase {
             // FIXME
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -834,7 +834,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1422,7 +1422,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -1997,7 +1997,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2532,7 +2532,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -2960,7 +2960,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
@@ -3532,7 +3532,7 @@ class EntityCommitNewTests: XCTestCase {
         entity.commit(timeout: .nanoseconds(1)) { result in
             switch result {
             case .error(let errorMessage):
-                XCTAssertEqual ("timeout.nanoseconds(1):InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
+                XCTAssertEqual ("timeout:InMemoryAccessor.add;database=\(accessor.hashValue);entityCache=myCollection;entityID=\(entity.id.uuidString)", errorMessage)
             default:
                 XCTFail ("Expected .error")
             }
