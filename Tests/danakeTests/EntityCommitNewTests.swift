@@ -772,19 +772,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":30"))
-            XCTAssertTrue (json.contains("\"myString\":\"30\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":3"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and timeouts
