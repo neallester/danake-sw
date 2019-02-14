@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import JSONEquality
 import PromiseKit
 
 /*
@@ -881,26 +882,7 @@ public class SampleUsage  {
         
         // Demonstrate that the previous changes were lost due to the reported unrecoverable error
         // The order of attributes on serialized JSON is not always consistent on Linux
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.1", testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(employeeId.uuidString)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.2", testResult: &overallTestResult, employeeJson.contains("\"schemaVersion\":1"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.3", testResult: &overallTestResult, employeeJson.contains("\"created\":1525459064.9665"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.4", testResult: &overallTestResult, employeeJson.contains("\"saved\":1525459184.5832"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.5", testResult: &overallTestResult, employeeJson.contains("\"item\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.6", testResult: &overallTestResult, employeeJson.contains("\"name\":\"Name Two\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.7", testResult: &overallTestResult, employeeJson.contains("\"company\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.8", testResult: &overallTestResult, employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.9", testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.10", testResult: &overallTestResult, employeeJson.contains("\"isEager\":true"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.11", testResult: &overallTestResult, employeeJson.contains("\"qualifiedCacheName\":\"company\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.12", testResult: &overallTestResult, employeeJson.contains("\"version\":1"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.13", testResult: &overallTestResult, employeeJson.contains("\"address\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.14", testResult: &overallTestResult, employeeJson.contains("\"isEager\":false"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.15", testResult: &overallTestResult, employeeJson.contains("\"isNil\":true"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.3.Linux.16", testResult: &overallTestResult, employeeJson.contains("\"persistenceState\":\"persistent\""))
-        #if os(Linux)
-        #else
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.4", testResult: &overallTestResult, employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8))
-        #endif
+        try ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.4", testResult: &overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
         ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.5", testResult: &overallTestResult, inMemoryAccessor.isThrowError())
     
         // Modify the sampleEmployee again so that it is again added to the batch
@@ -928,26 +910,7 @@ public class SampleUsage  {
         }
         // Demonstrate that the data was updated in persistent media
         // The order of attributes on serialized JSON is not always consistent on Linux
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.1", testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(employeeId.uuidString)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.2", testResult: &overallTestResult, employeeJson.contains("\"schemaVersion\":1"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.3", testResult: &overallTestResult, employeeJson.contains("\"created\":1525459064.9665"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.4", testResult: &overallTestResult, employeeJson.contains("\"saved\":1525459184.5832"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.5", testResult: &overallTestResult, employeeJson.contains("\"item\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.6", testResult: &overallTestResult, employeeJson.contains("\"name\":\"Name Two\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.7", testResult: &overallTestResult, employeeJson.contains("\"company\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.8", testResult: &overallTestResult, employeeJson.contains("\"databaseId\":\"\(inMemoryAccessor.hashValue)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.9", testResult: &overallTestResult, employeeJson.contains("\"id\":\"\(companyId.uuidString)\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.10", testResult: &overallTestResult, employeeJson.contains("\"isEager\":true"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.11", testResult: &overallTestResult, employeeJson.contains("\"qualifiedCacheName\":\"company\""))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.12", testResult: &overallTestResult, employeeJson.contains("\"version\":1"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.13", testResult: &overallTestResult, employeeJson.contains("\"address\":{"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.14", testResult: &overallTestResult, employeeJson.contains("\"isEager\":false"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.15", testResult: &overallTestResult, employeeJson.contains("\"isNil\":true"))
-        ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.8.Linux.16", testResult: &overallTestResult, employeeJson.contains("\"persistenceState\":\"persistent\""))
-        #if os(Linux)
-        #else
-            ParallelTest.AssertNotEqual (label: "testDemonstrateUpdateErrors.9", testResult: &overallTestResult, employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8))
-        #endif
+        try ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.9", testResult: &overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
         return !overallTestResult.isFailed()
     }
 
