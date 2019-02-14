@@ -22,7 +22,7 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "danake",
-            dependencies: ["PromiseKit"]),
+            dependencies: ["PromiseKit", "JSONEquality"]),
         .testTarget(
             name: "danakeTests",
             dependencies: ["danake", "JSONEquality"]),
