@@ -37,10 +37,15 @@ Install the [danake-mongo](https://github.com/neallester/danake-mongo) Accessor 
    /path/to/binary/sourcery --sources Tests/ --templates sourcery/LinuxMain.stencil --args testimports='@testable import danakeTests' --output Tests
 1. chmod +x sourcery.sh
 
+## Short Term Goals
+
+* [MongoKitten Accessor](https://github.com/OpenKitten/MongoKitten)
+* [Foundation DB Accessor](https://github.com/kirilltitov/FDBSwift)
+* Batch Consistency (on media supporting it)
+
 ## Long Term Aspirations
 * Mismatch correction for persistent data structures which are incompatible with current application code
 * Compile time identification of persistent data structure changes which may be incompatible with existing stored data
-* Batch consistency for database writes
 * Full persistence (entity versioning)
 * Consistent database view within a batch
 * Additional adapters
