@@ -272,6 +272,7 @@ class BatchTests: XCTestCase {
         
         private var hasFired = false
         internal var semaphore = DispatchSemaphore(value: 1)
+
     }
     
     func testCommitWithBatchTimeout() {
@@ -295,11 +296,30 @@ class BatchTests: XCTestCase {
         }
         waitForExpectations(timeout: 10.0, handler: nil)
         batch.syncEntities() { entities in }
+        let timeout = Date().timeIntervalSince1970 + 10
+        var isPersistent = false
+        while !isPersistent && Date().timeIntervalSince1970 < timeout {
+            switch entity1.persistenceState {
+            case .persistent:
+                isPersistent = true
+            default:
+                break
+            }
+            switch entity2.persistenceState {
+            case .persistent:
+                isPersistent = true
+            default:
+                break
+            }
+            if !isPersistent {
+                Thread.sleep(forTimeInterval: (0.00001))
+            }
+        }
         switch entity1.persistenceState {
         case .persistent:
             break
         default:
-            XCTFail ("Expected .persistent")
+            XCTFail ("Expected .persistent  but got \(entity1.persistenceState)")
         }
         switch entity2.persistenceState {
         case .persistent:
