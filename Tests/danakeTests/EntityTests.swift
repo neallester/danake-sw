@@ -673,7 +673,11 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
+            #if os(Linux)
+                XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(The operation could not be completed)))", \(error))
+            #else
+                XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
+            #endif
         }
         // With illegal saved
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"saved\":\"AAA\",\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
