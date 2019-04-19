@@ -7,6 +7,7 @@
 
 import XCTest
 import PromiseKit
+import JSONEquality
 @testable import danake
 
 class InMemoryAccessorTests: XCTestCase {
@@ -110,7 +111,8 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         let _ = group.wait(timeout: DispatchTime.now() + 10)
-        XCTAssertEqual (String (data: accessor.getData (name: cache.name, id: retrievedEntity1!.id)!, encoding: .utf8), String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8))
+        try JSONEquality.JSONEquals (String (data: accessor.getData (name: cache.name, id: retrievedEntity1!.id)!, encoding: .utf8)!, String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8)!)
+        
         let id2 = UUID()
         let creationDateString2 = try jsonEncodedDate(date: Date())!
         let savedDateString2 = try jsonEncodedDate(date: Date())!
