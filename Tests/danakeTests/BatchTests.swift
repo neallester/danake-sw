@@ -305,14 +305,16 @@ class BatchTests: XCTestCase {
             default:
                 break
             }
-            switch entity2.persistenceState {
-            case .persistent:
-                isPersistent = true
-            default:
-                break
-            }
-            if !isPersistent {
-                Thread.sleep(forTimeInterval: (0.00001))
+            if isPersistent {
+                switch entity2.persistenceState {
+                case .persistent:
+                    isPersistent = true
+                default:
+                    break
+                }
+                if !isPersistent {
+                    Thread.sleep(forTimeInterval: (0.00001))
+                }
             }
         }
         switch entity1.persistenceState {
