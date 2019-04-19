@@ -1038,6 +1038,9 @@ class EntityCacheTests: XCTestCase {
                 }
                 logger.sync() { entries in
                     XCTAssertEqual (0, entries.count)
+                    for entry in entries {
+                        print (entry.asTestString())
+                    }
                 }
             }
         }
