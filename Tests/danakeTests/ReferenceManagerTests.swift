@@ -2952,6 +2952,9 @@ class ReferenceManagerTests: XCTestCase {
         XCTAssertFalse (containerCache.hasCached(id: containerId))
         logger.sync() { entries in
             XCTAssertEqual (0, entries.count)
+            for entry in entries {
+                print (entry.asTestString())
+            }
         }
         let structEntity2: Entity<MyStruct> = structCache.new(batch: batch!, item: MyStruct(myInt: 20, myString: "20"))
         batch!.commitSync()
