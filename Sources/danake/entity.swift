@@ -229,7 +229,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         case .persistent:
             let localItem = item
             if let itemData = itemData {
-//                cache.database.workQueue.async {
+                cache.database.workQueue.async {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
@@ -238,7 +238,7 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     } catch {
                         localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
                     }
-//                }
+                }
             } else {
                 cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
             }
