@@ -147,7 +147,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         cacheQueue.async() {
             self.cache[result.id] = WeakCodable (result)
         }
-        batch.insertSync(entity: result, closure: nil)
+        batch.insertAsync(entity: result, closure: nil)
         return result
     }
     
@@ -171,7 +171,7 @@ open class EntityCache<T: Codable> : UntypedEntityCache {
         cacheQueue.async() {
             self.cache[result.id] = WeakCodable (result)
         }
-        batch.insertSync(entity: result, closure: nil)
+        batch.insertAsync(entity: result, closure: nil)
         return result
     }
     

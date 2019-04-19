@@ -110,14 +110,14 @@ public class EventuallyConsistentBatch {
         delegate.commit (retryInterval: retryInterval, timeout: timeout, completionHandler: completionHandler)
     }
 
-//    internal func insertAsync (entity: EntityManagement, closure: (() -> Void)?) {
-//        queue.async {
-//            self.delegate.entities[entity.id] = entity
-//            if let closure = closure {
-//                closure()
-//            }
-//        }
-//    }
+    internal func insertAsync (entity: EntityManagement, closure: (() -> Void)?) {
+        queue.async {
+            self.delegate.entities[entity.id] = entity
+            if let closure = closure {
+                closure()
+            }
+        }
+    }
     
     internal func insertSync (entity: EntityManagement, closure: (() -> Void)?) {
         queue.sync {
