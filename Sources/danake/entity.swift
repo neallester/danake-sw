@@ -233,6 +233,8 @@ public class Entity<T: Codable> : EntityManagement, Codable {
                     do {
                         let currentData = try Database.encoder.encode(localItem)
                         if currentData != itemData {
+                            print ("currentData: " + String(decoding: currentData, as: UTF8.self))
+                            print ("itemData:    " + String(decoding: itemData, as: UTF8.self))
                             localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
                         }
                     } catch {
