@@ -8,6 +8,7 @@
 
 import XCTest
 @testable import danake
+import JSONEquality
 import PromiseKit
 
 class EntityTests: XCTestCase {
@@ -672,11 +673,7 @@ class EntityTests: XCTestCase {
             let _ = try decoder.decode(Entity<MyStruct>.self, from: json.data(using: .utf8)!)
             XCTFail("Expected Exception")
         } catch {
-            #if os(Linux)
-                XCTAssertEqual ("The operation could not be completed", "\(error)")
-            #else
-                XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
-            #endif
+            XCTAssertEqual ("dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \"The given data was not valid JSON.\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \"JSON text did not start with array or object and option to allow fragments not set.\" UserInfo={NSDebugDescription=JSON text did not start with array or object and option to allow fragments not set.})))", "\(error)")
         }
         // With illegal saved
         json = "{\"id\":\"\(id4.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString1),\"saved\":\"AAA\",\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"new\",\"version\":10}"
@@ -807,7 +804,7 @@ class EntityTests: XCTestCase {
         let wrapperData = try encoder.encode (wrapper)
         let entityJson = String (data: entityData, encoding: .utf8)
         let wrapperJson = String (data: wrapperData, encoding: .utf8)
-        XCTAssertEqual (entityJson, wrapperJson)
+        XCTAssertTrue (try JSONEquality.JSONEquals (entityJson!, wrapperJson!))
     }
     
     func testHandleActionUpdateItem () {
@@ -1190,7 +1187,7 @@ class EntityTests: XCTestCase {
     func testAsData() {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let encoder = JSONEncoder()
-        try! XCTAssertEqual (encoder.encode (entity), entity.asData(encoder: encoder))
+        try! XCTAssertTrue (JSONEquality.JSONEquals (String (data: encoder.encode (entity), encoding: .utf8)!, String (data: entity.asData(encoder: encoder)!, encoding: .utf8)!))
     }
     
     func testPersistenceStatePair() {
