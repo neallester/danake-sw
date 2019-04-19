@@ -111,8 +111,7 @@ class InMemoryAccessorTests: XCTestCase {
             XCTFail("Expected .ok")
         }
         let _ = group.wait(timeout: DispatchTime.now() + 10)
-        try JSONEquality.JSONEquals (String (data: accessor.getData (name: cache.name, id: retrievedEntity1!.id)!, encoding: .utf8)!, String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8)!)
-        
+        try XCTAssertTrue (JSONEquality.JSONEquals (String (data: accessor.getData (name: cache.name, id: retrievedEntity1!.id)!, encoding: .utf8)!, String (data: retrievedEntity1!.asData(encoder: accessor.encoder)!, encoding: .utf8)!))
         let id2 = UUID()
         let creationDateString2 = try jsonEncodedDate(date: Date())!
         let savedDateString2 = try jsonEncodedDate(date: Date())!
@@ -269,7 +268,7 @@ class InMemoryAccessorTests: XCTestCase {
         let _ = group.wait(timeout: DispatchTime.now() + 10)
         XCTAssertEqual (3, accessor.count(name: cache.name))
         XCTAssertEqual (prefetchUuid!, entity3.id.uuidString)
-        XCTAssertEqual (String (data: accessor.getData (name: standardCacheName, id: entity3.id)!, encoding: .utf8), String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8))
+        XCTAssertTrue (try JSONEquality.JSONEquals (String (data: accessor.getData (name: standardCacheName, id: entity3.id)!, encoding: .utf8)!, String (data: entity3.asData(encoder: accessor.encoder)!, encoding: .utf8)!))
         XCTAssertTrue (entity3 === cache.cachedEntity(id: entity3.id))
         prefetchUuid = nil
         do {
