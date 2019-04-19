@@ -6,8 +6,6 @@ import XCTest
 
 extension BatchTests {
   static var allTests = [
-    ("testInsertAsyncNoClosure", testInsertAsyncNoClosure),
-    ("testInsertAsyncWithClosure", testInsertAsyncWithClosure),
     ("testCommit", testCommit),
     ("testCommitWithUnrecoverableError", testCommitWithUnrecoverableError),
     ("testCommitWithError", testCommitWithError),
