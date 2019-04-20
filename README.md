@@ -16,7 +16,7 @@ Please see the [SampleUsage](https://github.com/neallester/danake-sw/blob/master
 
 ## Status
 
-This is library is currently tested on OSX High Sierra and Ubuntu 18.04.
+This is library is currently tested on OSX High Sierra and Ubuntu 18.04 with Swift 5.0
 
 ## Installation
 
