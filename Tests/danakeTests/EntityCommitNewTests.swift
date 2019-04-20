@@ -301,7 +301,12 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch entity.persistenceState {
@@ -362,7 +367,12 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch group.wait(timeout: DispatchTime.now() + 10.0) {
@@ -437,7 +447,12 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch entity.persistenceState {
@@ -470,7 +485,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+        try XCTAssertTrue (JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update and errors
@@ -961,7 +976,12 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("30", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch entity.persistenceState {
@@ -1004,7 +1024,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+        try XCTAssertTrue (JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and errors
@@ -1217,19 +1237,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            var json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":30"))
-            XCTAssertTrue (json.contains("\"myString\":\"30\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -1348,19 +1356,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":50"))
-            XCTAssertTrue (json.contains("\"myString\":\"50\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":3"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":50,\"myString\":\"50\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with 2 pending updates and timeouts
@@ -1548,7 +1544,12 @@ class EntityCommitNewTests: XCTestCase {
                 XCTAssertEqual ("20", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch entity.persistenceState {
@@ -1588,7 +1589,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+        try XCTAssertTrue (JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!))
     }
     
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and errors
@@ -1795,19 +1796,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            var json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":20"))
-            XCTAssertTrue (json.contains("\"myString\":\"20\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
         // Error occurs when firing the pending updateAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -1923,19 +1912,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":30"))
-            XCTAssertTrue (json.contains("\"myString\":\"30\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":3"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with pending remove followed by pending update and timeouts
@@ -2340,19 +2317,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            var json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":10"))
-            XCTAssertTrue (json.contains("\"myString\":\"10\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -2458,19 +2423,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":10"))
-            XCTAssertTrue (json.contains("\"myString\":\"10\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":3"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending remove and timeouts
@@ -2886,19 +2839,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            let json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue (json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue (json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue (json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue (json.contains("\"item\":{"))
-            XCTAssertTrue (json.contains("\"myInt\":10"))
-            XCTAssertTrue (json.contains("\"myString\":\"10\""))
-            XCTAssertTrue (json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue (json.contains("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":10,\"myString\":\"10\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with two pending removes and timeouts
@@ -3330,19 +3271,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            var json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue(json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue(json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue(json.contains("\"item\":{"))
-            XCTAssertTrue(json.contains("\"myInt\":20"))
-            XCTAssertTrue(json.contains("\"myString\":\"20\""))
-            XCTAssertTrue(json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue(json.contains("\"version\":1"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":20,\"myString\":\"20\"},\"persistenceState\":\"persistent\",\"version\":1}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
         // Error occurs when firing the pending removeAction closure
         entity.remove(batch: batch)
         group.enter()
@@ -3458,19 +3387,7 @@ class EntityCommitNewTests: XCTestCase {
         default:
             XCTFail ("Expected Success")
         }
-        #if os(Linux)
-            json = String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!
-            XCTAssertTrue(json.contains("\"id\":\"\(entity.id.uuidString)\""))
-            XCTAssertTrue(json.contains("\"schemaVersion\":5"))
-            try XCTAssertTrue(json.contains("\"created\":\(jsonEncodedDate(date: entity.created)!)"))
-            XCTAssertTrue(json.contains("\"item\":{"))
-            XCTAssertTrue(json.contains("\"myInt\":30"))
-            XCTAssertTrue(json.contains("\"myString\":\"30\""))
-            XCTAssertTrue(json.contains("\"persistenceState\":\"persistent\""))
-            XCTAssertTrue(json.contains("\"version\":3"))
-        #else
-            try XCTAssertEqual ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!)
-        #endif
+        try XCTAssertTrue (JSONEquality.JSONEquals ("{\"id\":\"\(entity.id.uuidString)\",\"schemaVersion\":5,\"created\":\(jsonEncodedDate(date: entity.created)!),\"item\":{\"myInt\":30,\"myString\":\"30\"},\"persistenceState\":\"persistent\",\"version\":3}", String (data: accessor.getData(name: cacheName, id: id)!, encoding: .utf8)!))
     }
 
     // Test implementation of Entity.commit() from the PersistenceState.new state with a pending update followed by a pending remove and timeouts

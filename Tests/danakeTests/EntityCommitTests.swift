@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import JSONEquality
 @testable import danake
 
 class EntityCommitTests: XCTestCase {
@@ -47,7 +48,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+        try XCTAssertTrue (JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!))
         group.enter()
         entity.commit() { result in
             switch result {
@@ -75,7 +76,7 @@ class EntityCommitTests: XCTestCase {
         default:
             XCTFail ("Expected .persistent")
         }
-        XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: entity.id))
+        try XCTAssertTrue (JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: entity.id)!))
     }
 
     // Test calling entity.commit() when entity is PersistenceState.abandoned
@@ -198,7 +199,12 @@ class EntityCommitTests: XCTestCase {
                 XCTAssertEqual ("10", item.myString)
             }
             XCTAssertNil (entity.getPendingAction())
-            XCTAssertEqual (entity.asData(encoder: accessor.encoder), accessor.getData(name: cacheName, id: id))
+            do {
+                let isEqual = try JSONEquality.JSONEquals (entity.asData(encoder: accessor.encoder)!, accessor.getData(name: cacheName, id: id)!)
+                XCTAssertTrue (isEqual)
+            } catch {
+                XCTFail ("Expected success but got \(error)")
+            }
             group.leave()
         }
         switch entity.persistenceState {
