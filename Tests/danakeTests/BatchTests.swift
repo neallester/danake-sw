@@ -431,6 +431,14 @@ class BatchTests: XCTestCase {
                 let delayAt = ParallelTest.randomInteger(maxValue: Int (1000000 * delay))
                 let msDelayMultiplier = Double (300000 + ParallelTest.randomInteger(maxValue: 1000000))
                 timeout = .microseconds(Int (delay * msDelayMultiplier))
+                #if os(Linux)
+                switch timeout {
+                case .microseconds (let delay):
+                    timeout = .microseconds (delay * 3)
+                default:
+                    break
+                }
+                #endif
                 accessor.setPreFetch() { uuid in
                     if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
                         usleep(UInt32 (delay * 1000000.0))
