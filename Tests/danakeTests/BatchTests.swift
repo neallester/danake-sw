@@ -433,7 +433,7 @@ class BatchTests: XCTestCase {
                 #if os(Linux)
                     maxValue = maxValue * 3
                 #endif
-                let msDelayMultiplier = Double (300000 + ParallelTest.randomInteger(maxValue: 1000000))
+                let msDelayMultiplier = Double (300000 + ParallelTest.randomInteger(maxValue: maxValue))
                 timeout = .microseconds(Int (delay * msDelayMultiplier))
                 accessor.setPreFetch() { uuid in
                     if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
