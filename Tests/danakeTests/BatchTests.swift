@@ -432,7 +432,7 @@ class BatchTests: XCTestCase {
                 var maxValue = 1000000
                 var base = 300000
                 #if os(Linux)
-                    maxValue = maxValue * 10
+                    maxValue = maxValue * 100
                     base = 300
                 #endif
                 let msDelayMultiplier = Double (base + ParallelTest.randomInteger(maxValue: maxValue))
