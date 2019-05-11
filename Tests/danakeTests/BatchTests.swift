@@ -11,7 +11,6 @@ import XCTest
 class BatchTests: XCTestCase {
 
     func testInsertAsyncNoClosure() {
-        XCTFail();
         // No Closure
         let batch = EventuallyConsistentBatch()
         let entity = newTestEntity(myInt: 10, myString: "Test Completed")
