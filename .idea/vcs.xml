@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/JSONEquality.git-4668490301176818220" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/AVFoundation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Accounts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/AddressBook" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Alamofire" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/AssetsLibrary" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Bolts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/CloudKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/CoreBluetooth" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/CoreLocation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/EventKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Foundation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/HealthKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/HomeKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/MapKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/MessagesUI" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/OMGHTTPURLRQ" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Photos" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/QuartzCore" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/Social" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/StoreKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/SystemConfiguration" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/UIKit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.build/checkouts/PromiseKit--3916240556924587876/Extensions/WatchConnectivity" vcs="Git" />
+  </component>
+</project>

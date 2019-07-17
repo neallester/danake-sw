@@ -415,45 +415,54 @@ class BatchTests: XCTestCase {
     public func testRandomTimeout() {
         var testCount = 0
         var totalExecutionTime = 0.0
-        var delay = 0.0
-        var timeout = BatchDefaults.timeout
         var batchTimeoutCount = 0
         var entityTimeoutCount = 0
         var succeededEventuallyCount = 0
         var noTimeoutCount = 0
         while testCount < 3000 {
             let logger = InMemoryLogger(level: .warning)
+            logger.log(level: .emergency, source: self, featureName: "", message: "Start: \(testCount)")
             let accessor = InMemoryAccessor()
-            var needsDelay = true
+            var needsDelay = ParallelTest.randomInteger(maxValue: 100) < 50
+            var hasDelayed = false
             var startTime = Date()
-            if testCount > 0 {
-                delay = totalExecutionTime / Double (testCount)
-                let delayAt = ParallelTest.randomInteger(maxValue: Int (1000000 * delay))
-                var maxValue = 1000000
-                #if os(Linux)
-                    maxValue = maxValue * 3
-                #endif
-                let msDelayMultiplier = Double (300000 + ParallelTest.randomInteger(maxValue: 1000000))
-                timeout = .microseconds(Int (delay * msDelayMultiplier))
-                accessor.setPreFetch() { uuid in
-                    if needsDelay && Int ((1000000 * (Date().timeIntervalSince1970 - startTime.timeIntervalSince1970))) > delayAt {
-                        usleep(UInt32 (delay * 1000000.0))
-                        needsDelay = false
-                    }
+            var maxValue = 800
+            #if os(Linux)
+                maxValue = maxValue * 20
+            #endif
+            // Some delay should end before entity times out (at timeout) (no timeout)
+            // Some delay should end after entity times out but before batch times out (eventually swucceeded)
+            // Some delay shoud end after batch times out (batcvh timeout)
+            // Increasing maxValue seems to make the numbers less random and more ven, probably because
+            // It reduces the impact of variations in context switching time
+            let timeoutUs = Int (ParallelTest.randomInteger(maxValue: Int (maxValue)))
+            let timeout = DispatchTimeInterval.microseconds(timeoutUs);
+            let delay = Int (Double (timeoutUs) / 3) + ParallelTest.randomInteger(maxValue: timeoutUs)
+            accessor.setPreFetch() { uuid in
+                if needsDelay {
+                    usleep(UInt32 (delay))
+                    needsDelay = false
+                    hasDelayed = true
+                } else if (!hasDelayed) {
+                    needsDelay = true
                 }
             }
             let persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             startTime = Date()
-            let batch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: timeout, logger: persistenceObjects.logger)
+            let batch = EventuallyConsistentBatch(retryInterval: .microseconds(5), timeout: timeout, logger: persistenceObjects.logger)
             let structs = ParallelTest.newStructs (persistenceObjects: persistenceObjects, batch: batch)
             let result = structs.ids
             batch.commitSync()
             let endTime = Date()
-            totalExecutionTime = totalExecutionTime + endTime.timeIntervalSince1970 - startTime.timeIntervalSince1970 - delay
+            totalExecutionTime = totalExecutionTime + endTime.timeIntervalSince1970 - startTime.timeIntervalSince1970 - (Double (delay) / 1000000.0)
             var batchTimedOut = false
             var entityTimedOut = false
+            var entryCount = 0
+            logger.log(level: .emergency, source: self, featureName: "", message: "End: \(testCount)")
             logger.sync() { entries in
+                
                 for entry in entries {
+                    entryCount = entryCount + 1
                     batchTimedOut = batchTimedOut || entry.message.contains ("batchTimeout")
                     entityTimedOut = entityTimedOut || entry.message.contains ("timeout")
                 }
