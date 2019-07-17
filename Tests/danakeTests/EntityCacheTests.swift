@@ -576,7 +576,7 @@ class EntityCacheTests: XCTestCase {
             }.catch { error in
                 #if os(Linux)
                 
-                    XCTAssertEqual ("creation(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(The operation could not be completed)))\")", "\(error)")
+                    XCTAssertEqual ("creation(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"The data is not in the correct format.\\\")))")
                 #else
                     XCTAssertEqual ("creation(\"dataCorrupted(Swift.DecodingError.Context(codingPath: [], debugDescription: \\\"The given data was not valid JSON.\\\", underlyingError: Optional(Error Domain=NSCocoaErrorDomain Code=3840 \\\"Unexpected end of file during JSON parse.\\\" UserInfo={NSDebugDescription=Unexpected end of file during JSON parse.})))\")", "\(error)")
                 #endif
