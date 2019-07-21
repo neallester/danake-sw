@@ -2051,6 +2051,7 @@ class ReferenceManagerTests: XCTestCase {
         let parent = Entity (cache: cache, id: parentId, version: 10, item: MyStruct (myInt: 10, myString: "10"))
         let parentData = EntityReferenceData<MyStruct> (cache: parent.cache, id: parentId, version: 10)
         var reference = ReferenceManager<MyStruct, MyStruct> (parent: parentData, entity: nil)
+        print ("testAsync1")
         // loaded nil
         reference.sync() { contents in
             switch contents.state {
@@ -2061,17 +2062,23 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         var wasNil = false
+        print ("testAsync1.1")
         var waitFor = expectation(description: "wait1")
         firstly {
             reference.get()
         }.done { entity in
             wasNil = (entity == nil)
+            print ("testAsync1.1.3")
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync1.1.4")
             waitFor.fulfill()
+            print ("testAsync1.1.5")
         }
+        print ("testAsync1.2")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync1.3")
         XCTAssert (wasNil)
         reference.sync() { contents in
             switch contents.state {
@@ -2081,10 +2088,14 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
         }
+        print ("testAsync1.4")
         let batch = EventuallyConsistentBatch()
         // loaded not nil
+        print ("testAsync2.0")
         let entity = cache.new (batch: batch, item: MyStruct (myInt: 20, myString: "20"))
+        print ("testAsync2.1")
         reference.set(entity: entity, batch: batch)
+        print ("testAsync2.2")
         var retrievedEntity: Entity<MyStruct>? = nil
         reference.sync() { contents in
             switch contents.state {
@@ -2094,17 +2105,23 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
         }
+        print ("testAsync2.3")
         waitFor = expectation(description: "wait2")
+        print ("testAsync2.4")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync2.4.1")
             retrievedEntity = entity
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync2.4.2")
             waitFor.fulfill()
+            print ("testAsync2.4.3")
         }
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync2.5")
         XCTAssertTrue (entity === retrievedEntity)
         reference.sync() { contents in
             switch contents.state {
@@ -2114,7 +2131,9 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
         }
+        print ("testAsync2.6")
         // Decoded with valid reference
+        print ("testAsync3.0")
         reference = ReferenceManager (parent: parentData, referenceData: entity.referenceData())
         retrievedEntity = nil
         reference.sync() { contents in
@@ -2125,18 +2144,25 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
         }
+        print ("testAsync3.1")
         waitFor = expectation(description: "wait3")
-        
+        print ("testAsync3.2")
+
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync3.2.1")
             retrievedEntity = entity
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync3.2.2")
             waitFor.fulfill()
+            print ("testAsync3.2.3")
         }
+        print ("testAsync3.3")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync3.4")
         XCTAssertTrue (entity === retrievedEntity)
         reference.sync() { contents in
             switch contents.state {
@@ -2146,9 +2172,12 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
         }
+        print ("testAsync3.5")
         // Decoded with invalid reference
         let invalidReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: UUID(), version: 1)
+        print ("testAsync4.0")
         reference = ReferenceManager (parent: parentData, referenceData: invalidReferenceData)
+        print ("testAsync4.1")
         reference.sync() { contents in
             switch contents.state {
             case .decoded:
@@ -2157,18 +2186,24 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .decoded")
             }
         }
+        print ("testAsync4.2")
         waitFor = expectation(description: "wait4")
-        
+        print ("testAsync4.3")
         firstly {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
         }.catch { error in
+            print ("testAsync4.3.1")
             XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
         }.finally {
+            print ("testAsync4.3.2")
             waitFor.fulfill()
+            print ("testAsync4.3.3")
         }
+        print ("testAsync4.4")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync4.5")
         var suspendSeconds: TimeInterval = 0.0
         reference.sync() { contents in
             switch contents.state {
@@ -2182,19 +2217,26 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrievalError")
             }
         }
+        print ("testAsync4.6")
         // retrievalError during suspense period        
         waitFor = expectation(description: "wait5")
-        
+        print ("testAsync5.0")
         firstly {
             reference.get()
         }.done { entity in
                 XCTFail ("Expected .error")
         }.catch { error in
                 XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
+            print ("testAsync5.0.1")
+
         }.finally {
+            print ("testAsync5.0.2")
             waitFor.fulfill()
+            print ("testAsync5.0.3")
         }
+        print ("testAsync5.1")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync5.2")
         reference.sync() { contents in
             switch contents.state {
             case .retrievalError(let suspendtime, let error):
@@ -2209,17 +2251,22 @@ class ReferenceManagerTests: XCTestCase {
         let badId = UUID()
         reference.setState(state: .retrievalError(oldTime, AccessorError.unknownUUID (badId)))
         waitFor = expectation(description: "wait6")
-
+        print ("testAsync6.0")
         firstly {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
         }.catch { error in
+            print ("testAsync6.0.1")
             XCTAssertEqual ("unknownUUID(\(invalidReferenceData.id.uuidString))", "\(error)")
         }.finally {
+            print ("testAsync6.0.2")
             waitFor.fulfill()
+            print ("testAsync6.0.3")
         }
+        print ("testAsync6.1")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync6.2")
         suspendSeconds = 0.0
         reference.sync() { contents in
             switch contents.state {
@@ -2233,27 +2280,37 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrievalError")
             }
         }
+        print ("testAsync6.3")
         // retrievalError after suspense period; no subsequent retrieval error
         var persistentUUID = UUID()
         let creationDateString = try! jsonEncodedDate (date: Date())!
         let savedDateString = try! jsonEncodedDate (date: Date())!
         var json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        print ("testAsync7.0")
         var persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
+        print ("testAsync7.1")
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
+        print ("testAsync7.2")
         reference.setState(state: .retrievalError(oldTime, AccessorError.unknownUUID (badId)))
+        print ("testAsync7.3")
         waitFor = expectation(description: "wait7")
-
+        print ("testAsync7.4")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync7.4.1")
             XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync7.4.2")
             waitFor.fulfill()
+            print ("testAsync7.4.3")
         }
+        print ("testAsync7.5")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync7.6")
         suspendSeconds = 0.0
         reference.sync() { contents in
             switch contents.state {
@@ -2263,6 +2320,7 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .loaded")
             }
         }
+        print ("testAsync7.7")
         // .retrieving with retrieval success
         var semaphore = DispatchSemaphore(value: 1)
         var preFetchCount = 0
@@ -2279,28 +2337,39 @@ class ReferenceManagerTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
+        print ("testAsync8.0")
         accessor.setPreFetch (prefetch)
+        print ("testAsync8.1")
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        print ("testAsync8.2")
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        print ("testAsync8.3")
         persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
+        print ("testAsync8.4")
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
+        print ("testAsync8.5")
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
+        print ("testAsync8.6")
         waitFor = expectation(description: "wait7a")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync8.6.1")
             XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync8.6.2")
             waitFor.fulfill()
+            print ("testAsync8.6.3")
         }
+        print ("testAsync8.7")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2311,16 +2380,21 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync8.8")
         var waitFor2 = expectation(description: "wait7a")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync8.8.1")
             XCTAssertEqual (persistentUUID.uuidString, entity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync8.8.2")
             waitFor2.fulfill()
+            print ("testAsync8.8.3")
         }
+        print ("testAsync8.9")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2331,9 +2405,11 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
-
+        print ("testAsync8.10")
         semaphore.signal()
+        print ("testAsync8.11")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync8.12")
         // .retrieving with retrieval failure
         semaphore = DispatchSemaphore(value: 1)
         preFetchCount = 0
@@ -2351,30 +2427,37 @@ class ReferenceManagerTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
+        print ("testAsync9.0")
         accessor.setPreFetch (prefetch)
+        print ("testAsync9.1")
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
         persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
+        print ("testAsync9.2")
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
+        print ("testAsync9.3")
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
-        
+        print ("testAsync9.4")
         waitFor = expectation(description: "wait8")
-        
         firstly {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
         }.catch { error in
+            print ("testAsync9.4.1")
             XCTAssertEqual ("getError", "\(error)")
         }.finally {
+            print ("testAsync9.4.2")
             waitFor.fulfill()
+            print ("testAsync9.4.3")
         }
+        print ("testAsync9.5")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2385,16 +2468,22 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync9.6")
         waitFor2 = expectation(description: "wait8a")
+        print ("testAsync9.7")
         firstly {
             reference.get()
         }.done { entity in
             XCTFail ("Expected .error")
         }.catch { error in
+            print ("testAsync9.7.1")
             XCTAssertEqual ("getError", "\(error)")
         }.finally {
+            print ("testAsync9.7.2")
             waitFor2.fulfill()
+            print ("testAsync9.7.3")
         }
+        print ("testAsync9.8")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2405,8 +2494,11 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync9.9")
         semaphore.signal()
+        print ("testAsync9.10")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync9.11")
         // Obsolete callback set entity
         semaphore = DispatchSemaphore(value: 1)
         preFetchCount = 0
@@ -2423,29 +2515,39 @@ class ReferenceManagerTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
+        print ("testAsync10.0")
         accessor.setPreFetch (prefetch)
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
+        print ("testAsync10.1")
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        print ("testAsync10.2")
         persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
+        print ("testAsync10.3")
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
+        print ("testAsync10.4")
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
+        print ("testAsync10.5")
         waitFor = expectation(description: "wait9")
 
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync10.5.1")
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync10.5.2")
             waitFor.fulfill()
+            print ("testAsync10.5.2")
         }
+        print ("testAsync10.6")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2457,16 +2559,20 @@ class ReferenceManagerTests: XCTestCase {
             }
         }
         waitFor2 = expectation(description: "wait9a")
-        
+        print ("testAsync10.7")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync10.7.1")
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync10.7.2")
             waitFor2.fulfill()
+            print ("testAsync10.7.3")
         }
+        print ("testAsync10.8")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2477,9 +2583,13 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync10.9")
         reference.set (entity: entity, batch: batch)
+        print ("testAsync10.10")
         semaphore.signal()
+        print ("testAsync10.11")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync10.12")
         // Obsolete callback set referenceData
         semaphore = DispatchSemaphore(value: 1)
         preFetchCount = 0
@@ -2496,29 +2606,37 @@ class ReferenceManagerTests: XCTestCase {
             preFetchCount = preFetchCount + 1
             
         }
+        print ("testAsync11.0")
         accessor.setPreFetch (prefetch)
         persistentUUID = UUID()
         json = "{\"id\":\"\(persistentUUID.uuidString)\",\"schemaVersion\":3,\"created\":\(creationDateString),\"saved\":\(savedDateString),\"item\":{\"myInt\":100,\"myString\":\"A \\\"Quoted\\\" String\"},\"persistenceState\":\"persistent\",\"version\":10}"
         let _ = accessor.add(name: cache.name, id: persistentUUID, data: json.data(using: .utf8)!)
+        print ("testAsync11.1")
         persistentReferenceData = ReferenceManagerData (databaseId: database.accessor.hashValue, cacheName: cache.name, id: persistentUUID, version: 10)
+        print ("testAsync11.2")
         reference = ReferenceManager (parent: parentData, referenceData: persistentReferenceData)
+        print ("testAsync11.3")
         switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
         case .success:
             break
         default:
             XCTFail ("Expected .success")
         }
+        print ("testAsync11.4")
         waitFor = expectation(description: "wait9")
-        
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync11.4.1")
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync11.4.2")
             waitFor.fulfill()
+            print ("testAsync11.4.3")
         }
+        print ("testAsync11.5")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2529,16 +2647,21 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync11.6")
         waitFor2 = expectation(description: "wait9a")
         firstly {
             reference.get()
         }.done { entity in
+            print ("testAsync11.6.1")
             XCTAssertEqual (entity!.id.uuidString, retrievedEntity!.id.uuidString)
         }.catch { error in
             XCTFail ("Expected success but got \(error)")
         }.finally {
+            print ("testAsync11.6.2")
             waitFor2.fulfill()
+            print ("testAsync11.6.3")
         }
+        print ("testAsync11.7")
         reference.sync() { contents in
             switch contents.state {
             case .retrieving (let data):
@@ -2549,9 +2672,13 @@ class ReferenceManagerTests: XCTestCase {
                 XCTFail ("Expected .retrieving")
             }
         }
+        print ("testAsync11.8")
         reference.set (referenceData: entity.referenceData(), batch: batch)
+        print ("testAsync11.9")
         semaphore.signal()
+        print ("testAsync11.10")
         waitForExpectations(timeout: 10.0, handler: nil)
+        print ("testAsync11.11")
     }
     
     public func testGet() throws {
