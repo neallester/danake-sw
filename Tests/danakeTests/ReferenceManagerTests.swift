@@ -2044,6 +2044,7 @@ class ReferenceManagerTests: XCTestCase {
     }
     
     public func testAsync() {
+        print ("testAsync0")
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
         let cache = EntityCache<MyStruct> (database: database, name: "myCollection")
