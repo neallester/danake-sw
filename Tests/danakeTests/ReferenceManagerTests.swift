@@ -10,6 +10,16 @@ import XCTest
 import PromiseKit
 
 class ReferenceManagerTests: XCTestCase {
+    
+    override func setUp() {
+        print ("ReferenceManagerTests.setUp")
+    }
+    
+    override func tearDown() {
+        print ("ReferenceManagerTests.tearDown.1")
+        usleep(5000)
+        print ("ReferenceManagerTests.tearDown.2")
+    }
 
     func testCreationEncodeDecode() throws {
         let accessor = InMemoryAccessor()
