@@ -17,7 +17,8 @@ class ReferenceManagerTests: XCTestCase {
     
     override func tearDown() {
         print ("ReferenceManagerTests.tearDown.1")
-        usleep(5000)
+//        usleep(5000)
+        sleep (1)
         print ("ReferenceManagerTests.tearDown.2")
     }
 
