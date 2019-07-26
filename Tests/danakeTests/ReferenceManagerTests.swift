@@ -10,17 +10,6 @@ import XCTest
 import PromiseKit
 
 class ReferenceManagerTests: XCTestCase {
-    
-    override func setUp() {
-        print ("ReferenceManagerTests.setUp")
-    }
-    
-    override func tearDown() {
-        print ("ReferenceManagerTests.tearDown.1")
-//        usleep(5000)
-        sleep (1)
-        print ("ReferenceManagerTests.tearDown.2")
-    }
 
     func testCreationEncodeDecode() throws {
         let accessor = InMemoryAccessor()
@@ -2052,6 +2041,9 @@ class ReferenceManagerTests: XCTestCase {
             XCTAssertEqual ("EMERGENCY|InMemoryAccessor.getSync|Database Error|databaseHashValue=\(accessor.hashValue);cache=myCollection;id=\(childId.uuidString);errorMessage=getError", entities[0].asTestString())
             XCTAssertEqual ("ERROR|ReferenceManager<MyStruct, MyStruct>.getSync|error|parentId=\(parentId.uuidString);entityCollection=\(cache.qualifiedName);entityId=\(childId.uuidString);message=getError", entities[1].asTestString())
         }
+        print ("testGetSyncWithError1")
+        sleep(1)
+        print ("testGetSyncWithError2")
     }
     
     public func testAsync() {
