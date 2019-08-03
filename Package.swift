@@ -15,6 +15,7 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
     .package(url: "https://github.com/mxcl/PromiseKit", from: "6.0.0"),
     .package(url: "https://github.com/neallester/JSONEquality.git", .branch ("master")),
+    .package(url: "https://github.com/ianpartridge/swift-backtrace.git", from: "1.0.0"),
         // .package(url: "https://github.com/apple/example-package-fisheryates.git", from: "2.0.0"),
     ],
     targets: [
@@ -25,6 +26,6 @@ let package = Package(
             dependencies: ["PromiseKit", "JSONEquality"]),
         .testTarget(
             name: "danakeTests",
-            dependencies: ["danake", "JSONEquality"]),
+            dependencies: ["danake", "JSONEquality", "Backtrace"]),
     ]
 )

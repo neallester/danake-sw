@@ -8,6 +8,7 @@
 import XCTest
 @testable import danake
 import PromiseKit
+import Backtrace
 
 class ReferenceManagerTests: XCTestCase {
 
@@ -2017,6 +2018,7 @@ class ReferenceManagerTests: XCTestCase {
 
     
     public func testGetSyncWithError() throws {
+        Backtrace.install()
         let logger = InMemoryLogger(level: .warning)
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
