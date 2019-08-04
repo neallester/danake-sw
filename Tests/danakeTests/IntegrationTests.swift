@@ -10,6 +10,10 @@ import XCTest
 
 class IntegrationTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     func testParallel() {
         let accessor = InMemoryAccessor()
         var repetitions = 100

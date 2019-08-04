@@ -11,6 +11,10 @@ import PromiseKit
 
 class SampleUsageTests: XCTestCase {
     
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     public func testSamples() {
         let accessor = SampleInMemoryAccessor()
         XCTAssertTrue (SampleUsage.runSample (accessor: accessor))

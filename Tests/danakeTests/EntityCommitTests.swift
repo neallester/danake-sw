@@ -11,6 +11,10 @@ import JSONEquality
 
 class EntityCommitTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     // Test calling entity.commit() when entity is PersistenceState.persistent
     func testEntityCommitPersistent() {
         let accessor = InMemoryAccessor()

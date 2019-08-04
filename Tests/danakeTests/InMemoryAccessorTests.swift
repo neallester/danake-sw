@@ -12,6 +12,10 @@ import JSONEquality
 
 class InMemoryAccessorTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     func testInMemoryAccessor() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)

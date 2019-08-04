@@ -9,6 +9,10 @@ import XCTest
 @testable import danake
 
 class BatchTests: XCTestCase {
+    
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
 
     func testInsertAsyncNoClosure() {
         // No Closure

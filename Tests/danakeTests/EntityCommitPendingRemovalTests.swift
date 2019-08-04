@@ -11,6 +11,10 @@ import JSONEquality
 
 class EntityCommitPendingRemovalTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     // Test implementation of Entity.commit() from the PersistenceState.pendingRemoval state
     func testCommitPendingRemove() {
         let accessor = InMemoryAccessor()

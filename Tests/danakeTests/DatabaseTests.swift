@@ -20,6 +20,10 @@ class RegistrarTestItem {
 }
 
 class DatabaseTests: XCTestCase {
+    
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
 
     func testDatabaseCreation() {
         // XCTAssertEqual (0, Database.registrar.count()) occasionally fails on Linux. That is, this test occasionally starts

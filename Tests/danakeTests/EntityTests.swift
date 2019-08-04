@@ -15,6 +15,7 @@ class EntityTests: XCTestCase {
     
     override class func setUp() {
         PromiseKit.conf.logHandler = { event in }
+        BacktraceInstallation.install()
     }
     
     func testCreation() {

@@ -11,6 +11,10 @@ import XCTest
 
 class LoggingTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     func testLogLevel() {
         XCTAssertEqual ("none", LogLevel.none.rawValue)
         XCTAssertEqual ("debug", LogLevel.debug.rawValue)

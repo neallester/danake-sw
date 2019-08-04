@@ -11,6 +11,10 @@ import PromiseKit
 
 class EntityCacheTests: XCTestCase {
     
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     func testCreation() {
         let myKey: CodingUserInfoKey = CodingUserInfoKey(rawValue: "myKey")!
         let accessor = InMemoryAccessor()

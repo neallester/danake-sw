@@ -12,6 +12,10 @@ import Backtrace
 
 class ReferenceManagerTests: XCTestCase {
 
+    override func setUp() {
+        BacktraceInstallation.install()
+    }
+    
     func testCreationEncodeDecode() throws {
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: nil)
@@ -2018,7 +2022,6 @@ class ReferenceManagerTests: XCTestCase {
 
     
     public func testGetSyncWithError() throws {
-        Backtrace.install()
         let logger = InMemoryLogger(level: .warning)
         let accessor = InMemoryAccessor()
         let database = Database (accessor: accessor, schemaVersion: 5, logger: logger)
