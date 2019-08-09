@@ -432,7 +432,11 @@ class BatchTests: XCTestCase {
             var startTime = Date()
             var maxValue = 800
             #if os(Linux)
-                maxValue = maxValue * 20
+                if (testCount % 200) == 0 {
+                    maxValue = 20
+                } else {
+                    maxValue = maxValue * 20
+                }
             #endif
             // Some delay should end before entity times out (at timeout) (no timeout)
             // Some delay should end after entity times out but before batch times out (eventually swucceeded)
