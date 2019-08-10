@@ -443,7 +443,10 @@ class BatchTests: XCTestCase {
             // Some delay shoud end after batch times out (batcvh timeout)
             // Increasing maxValue seems to make the numbers less random and more ven, probably because
             // It reduces the impact of variations in context switching time
-            let timeoutUs = Int (ParallelTest.randomInteger(maxValue: Int (maxValue)))
+            var timeoutUs = Int (ParallelTest.randomInteger(maxValue: Int (maxValue)))
+            if timeoutUs == 0 {
+                timeoutUs = 2
+            }
             let timeout = DispatchTimeInterval.microseconds(timeoutUs);
             let delay = Int (Double (timeoutUs) / 3) + ParallelTest.randomInteger(maxValue: timeoutUs)
             accessor.setPreFetch() { uuid in
