@@ -141,8 +141,8 @@ class LoggingTests: XCTestCase {
         }
         XCTAssertFalse(foundEntry)
         logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "FIRST", data: nil)
-        foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
-            return entries.last!.asTestString().contains("FIRST")
+        foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 1.0) { entries in
+            return entries.last?.asTestString().contains("FIRST") ?? false
         }
         XCTAssertTrue (foundEntry)
         foundEntry = false
@@ -151,12 +151,54 @@ class LoggingTests: XCTestCase {
             logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
         }
         foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
-            return entries.last!.asTestString().contains("SECOND")
+            return entries.last?.asTestString().contains("SECOND") ?? false
         }
         XCTAssertFalse (foundEntry)
         foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 10.0) { entries in
-            return entries.last!.asTestString().contains("SECOND")
+            return entries.last?.asTestString().contains("SECOND") ?? false
         }
         XCTAssertTrue (foundEntry)
+    }
+    
+    func testQueueIsolation() {
+        
+        var accessedEmptyCount = 0
+        var timeoutCount = 0
+        var foundFirstCount = 0
+        for counter in 0...9999 {
+            usleep(1000)
+            let arrayQueue = DispatchQueue (label: "Array\(counter)")
+            let workQueue = DispatchQueue (label: "Work\(counter)")
+            var i: [String] = []
+            workQueue.asyncAfter(deadline: DispatchTime.now() + 0.001) {
+                arrayQueue.async {
+                    i.append ("FIRST")
+                }
+            }
+            var arrayIsEmpty = true
+            let endTime = Date().timeIntervalSince1970 + 10.0
+            while arrayIsEmpty && Date().timeIntervalSince1970 < endTime {
+                arrayQueue.sync {
+                    var item: String? = nil
+                    if i.count > 0 {
+                        item = i.last
+                        if let item = item {
+                            if item == "FIRST" {
+                                foundFirstCount = foundFirstCount + 1
+                            }
+                        } else {
+                            accessedEmptyCount = accessedEmptyCount + 1
+                        }
+                        arrayIsEmpty = false
+                    }
+                }
+            }
+            if arrayIsEmpty {
+                timeoutCount = timeoutCount + 1
+            }
+        }
+        XCTAssertEqual (10000, foundFirstCount)
+        XCTAssertEqual (0, accessedEmptyCount)
+        XCTAssertEqual (0, timeoutCount)
     }
 }
