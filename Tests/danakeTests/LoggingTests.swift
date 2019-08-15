@@ -192,6 +192,7 @@ class LoggingTests: XCTestCase {
                         arrayIsEmpty = false
                     }
                 }
+                usleep(10)
             }
             if arrayIsEmpty {
                 timeoutCount = timeoutCount + 1
