@@ -228,27 +228,22 @@ public class Entity<T: Codable> : EntityManagement, Codable {
         let localId = id
         switch self._persistenceState {
         case .persistent:
-            break
-//            queue.async {
-//                let localItem: T? = self.item
-//                let localItemData: Data? = self.itemData
-//                if let localItemData = localItemData {
-//                    self.cache.database.workQueue.async {
-//                        do {
-//                            let currentData = try Database.encoder.encode(localItem)
-//                            if try !JSONEquality.JSONEquals (currentData, localItemData) {
-//                                print ("currentData: " + String(decoding: currentData, as: UTF8.self))
-//                                print ("localItemData:    " + String(decoding: localItemData, as: UTF8.self))
-//                                localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
-//                            }
-//                        } catch {
-//                            localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
-//                        }
-//                    }
-//                } else {
-//                    self.cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: self.cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
-//                }
-//            }
+            let localItem: T? = self.item
+            let localItemData: Data? = self.itemData
+            if let localItemData = localItemData {
+                    do {
+                    let currentData = try Database.encoder.encode(localItem)
+                    if try !JSONEquality.JSONEquals (currentData, localItemData) {
+                        print ("currentData: " + String(decoding: currentData, as: UTF8.self))
+                        print ("localItemData:    " + String(decoding: localItemData, as: UTF8.self))
+                        localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedOutsideOfBatch", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
+                    }
+                } catch {
+                    localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "exceptionSerailizingItem", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString), (name: "message", value: "\(error)")])
+                }
+            } else {
+                self.cache.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "noCurrentData", data: [(name:"cacheName", value: self.cache.qualifiedName), (name: "entityId", value: self.id.uuidString)])
+            }
         case .dirty:
             localCollection.database.logger?.log(level: .error, source: Entity.self, featureName: "deinit", message: "lostData:itemModifiedBatchAbandoned", data: [(name:"cacheName", value: localCollection.qualifiedName), (name: "entityId", value: localId.uuidString)])
         case .pendingRemoval:
