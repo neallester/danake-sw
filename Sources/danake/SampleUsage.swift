@@ -315,7 +315,7 @@ public class SampleUsage  {
      - returns: **True** if all operations succeeded; **False** if a failure occurred
 */
     public static func runSample (accessor: SampleAccessor) -> Bool {
-        var overallTestResult = TestResult()
+        let overallTestResult = TestResult()
         // Application code can run with any DatabaseAccessor implementing SampleAccessor
         
         // Declare SampleCaches with `let'
@@ -325,15 +325,15 @@ public class SampleUsage  {
         
         // Creating a database logs INFO
         logger.sync() { entries in
-            ParallelTest.AssertEqual (label: "runSample.1", testResult: &overallTestResult, 1, entries.count)
-            ParallelTest.AssertEqual (label: "runSample.2", testResult: &overallTestResult, "INFO|SampleDatabase.init|created|hashValue=\(caches.employees.database.accessor.hashValue)", entries[0].asTestString())
+            ParallelTest.AssertEqual (label: "runSample.1", testResult: overallTestResult, 1, entries.count)
+            ParallelTest.AssertEqual (label: "runSample.2", testResult: overallTestResult, "INFO|SampleDatabase.init|created|hashValue=\(caches.employees.database.accessor.hashValue)", entries[0].asTestString())
         }
 
         // Start test in known state by ensuring persistent media is empty
         do {
             try removeAll(caches: caches)
         } catch {
-            ParallelTest.Fail(testResult: &overallTestResult, message: "Unable to removeAll()")
+            ParallelTest.Fail(testResult: overallTestResult, message: "Unable to removeAll()")
         }
         
         var company1id: UUID?
@@ -355,9 +355,9 @@ public class SampleUsage  {
             // Performing the query in synchronous style
             do {
                 let companies = try caches.companies.scanSync()
-                ParallelTest.AssertEqual (label: "runSample.3", testResult: &overallTestResult, 0, companies.count)
+                ParallelTest.AssertEqual (label: "runSample.3", testResult: overallTestResult, 0, companies.count)
             } catch {
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.4: Expected valid item")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.4: Expected valid item")
             }
 
             // Performing the query in asynchronous style
@@ -367,9 +367,9 @@ public class SampleUsage  {
             firstly {
                 caches.companies.scan()
             }.done { (companies: [Entity<SampleCompany>]) in
-                ParallelTest.AssertEqual (label: "runSample.3async", testResult: &overallTestResult, 0, companies.count)
+                ParallelTest.AssertEqual (label: "runSample.3async", testResult: overallTestResult, 0, companies.count)
             }.catch { error in
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.4async: Expected valid item")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.4async: Expected valid item")
             }.finally {
                 group.leave()
             }
@@ -386,9 +386,9 @@ public class SampleUsage  {
             // After commit our companies are in the persistent media
             do {
                 let companies = try caches.companies.scanSync()
-                ParallelTest.AssertEqual (label: "runSample.5", testResult: &overallTestResult, 2, companies.count)
+                ParallelTest.AssertEqual (label: "runSample.5", testResult: overallTestResult, 2, companies.count)
             } catch {
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.6: Expected valid item")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.6: Expected valid item")
             }
             
             // There is only one instance representing any particular persistent Entity
@@ -398,9 +398,9 @@ public class SampleUsage  {
             // not occur until after the persistent objects are retrieved and partially deserialized)
             do {
                 let entity = try caches.companies.getSync(id: company1.id)
-                ParallelTest.AssertTrue (label: "runSample.7", testResult: &overallTestResult, company1 === entity)
+                ParallelTest.AssertTrue (label: "runSample.7", testResult: overallTestResult, company1 === entity)
             } catch {
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.8: Expected valid item")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.8: Expected valid item")
             }
             
             // Because EntityCache.get() can be expensive,
@@ -409,9 +409,9 @@ public class SampleUsage  {
             firstly {
                 caches.companies.get(id: company2.id)
             }.done { sampleCompanyEntity in
-                ParallelTest.AssertTrue (label: "runSample.9", testResult: &overallTestResult, sampleCompanyEntity === company2)
+                ParallelTest.AssertTrue (label: "runSample.9", testResult: overallTestResult, sampleCompanyEntity === company2)
             }.catch { error in
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.10: Expected valid (\(error))")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.10: Expected valid (\(error))")
             }.finally {
                 group.leave()
             }
@@ -422,9 +422,9 @@ public class SampleUsage  {
             firstly {
                 caches.companies.scan()
             }.done { companies in
-                ParallelTest.AssertEqual (label: "runSample.11", testResult: &overallTestResult, 2, companies.count)
+                ParallelTest.AssertEqual (label: "runSample.11", testResult: overallTestResult, 2, companies.count)
             }.catch { error in
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.12: Expected valid")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.12: Expected valid")
             }.finally {
                 group.leave()
             }
@@ -436,9 +436,9 @@ public class SampleUsage  {
             firstly {
                 caches.companies.get(id: badId)
             }.done { retrievalResult in
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.13: Expected Error")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.13: Expected Error")
             }.catch { error in
-                ParallelTest.AssertEqual(label: "runSample.14", testResult: &overallTestResult, "unknownUUID(\(badId.uuidString))", "\(error)")
+                ParallelTest.AssertEqual(label: "runSample.14", testResult: overallTestResult, "unknownUUID(\(badId.uuidString))", "\(error)")
             }.finally {
                 group.leave()
             }
@@ -446,8 +446,8 @@ public class SampleUsage  {
             
             // And the unsuccessful EntityCache.get logs a WARNING
             logger.sync() { entries in
-                ParallelTest.AssertEqual (label: "runSample.15", testResult: &overallTestResult, 2, entries.count)
-                ParallelTest.AssertEqual (label: "runSample.16", testResult: &overallTestResult, "WARNING|\(type (of: accessor)).getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
+                ParallelTest.AssertEqual (label: "runSample.15", testResult: overallTestResult, 2, entries.count)
+                ParallelTest.AssertEqual (label: "runSample.16", testResult: overallTestResult, "WARNING|\(type (of: accessor)).getSync|Unknown id|databaseHashValue=\(caches.employees.database.accessor.hashValue);cache=company;id=\(badId.uuidString)", entries[1].asTestString())
             }
 
             // Retrieving persisted objects by criteria
@@ -459,10 +459,10 @@ public class SampleUsage  {
                     sampleCompany.id.uuidString == company2.id.uuidString
                 }
             }.done { companies in
-                ParallelTest.AssertEqual (label: "runSample.17", testResult: &overallTestResult, 1, companies.count)
-                ParallelTest.AssertEqual (label: "runSample.18", testResult: &overallTestResult, companies[0].id.uuidString, company2.id.uuidString)
+                ParallelTest.AssertEqual (label: "runSample.17", testResult: overallTestResult, 1, companies.count)
+                ParallelTest.AssertEqual (label: "runSample.18", testResult: overallTestResult, companies[0].id.uuidString, company2.id.uuidString)
             }.catch { error in
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.19: Expected valid item")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.19: Expected valid item")
             }.finally {
                 group.leave()
             }
@@ -510,9 +510,9 @@ public class SampleUsage  {
             }.referenceFromItem { employee in
                 return employee.company                         // The promise of the company entity referenced by employee.company
             }.done { companyEntity in
-                ParallelTest.AssertTrue(label: "runSample.20", testResult: &overallTestResult, companyEntity! === company2)
+                ParallelTest.AssertTrue(label: "runSample.20", testResult: overallTestResult, companyEntity! === company2)
             }.catch { error in
-                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.21: Expected success but got \(error)")
+                ParallelTest.Fail(testResult: overallTestResult, message: "runSample.21: Expected success but got \(error)")
             }.finally {
                 group.leave()
             }
@@ -525,10 +525,10 @@ public class SampleUsage  {
             }.promiseFromItem { company in
                 return company.employees()                      // The promise of the employee list for that company
             }.done { employees in
-                ParallelTest.AssertEqual (label: "runSample.22a", testResult: &overallTestResult, 1, employees.count)
-                ParallelTest.AssertTrue(label: "runSample.22b", testResult: &overallTestResult, employees[0] === employee2)
+                ParallelTest.AssertEqual (label: "runSample.22a", testResult: overallTestResult, 1, employees.count)
+                ParallelTest.AssertTrue(label: "runSample.22b", testResult: overallTestResult, employees[0] === employee2)
             }.catch { error in
-                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22c: Expected success but got \(error)")
+                ParallelTest.Fail(testResult: overallTestResult, message: "runSample.22c: Expected success but got \(error)")
             }.finally {
                 group.leave()
             }
@@ -539,9 +539,9 @@ public class SampleUsage  {
             firstly {
                 caches.employees.get(id: employee2!.id)         // The promise of a specific employee entity by id
             }.sync{ employee in
-                ParallelTest.AssertEqual (label: "runSample22d", testResult: &overallTestResult, "Name Updated2", employee.name)
+                ParallelTest.AssertEqual (label: "runSample22d", testResult: overallTestResult, "Name Updated2", employee.name)
             }.catch { error in
-                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22e: Expected success but got \(error)")
+                ParallelTest.Fail(testResult: overallTestResult, message: "runSample.22e: Expected success but got \(error)")
             }.finally {
                 group.leave()
             }
@@ -554,14 +554,14 @@ public class SampleUsage  {
             }.update(batch: batch) { employee in
                 employee.name = "Updated3"                      // Update the employee's name
             }.catch { error in
-                ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.22f: Expected success but got \(error)")
+                ParallelTest.Fail(testResult: overallTestResult, message: "runSample.22f: Expected success but got \(error)")
             }.finally {
                 group.leave()
             }
             group.wait()
             batch.commitSync()
             employee2!.sync() { employee in
-                ParallelTest.AssertEqual (label: "runSample.22g", testResult: &overallTestResult, "Updated3", employee.name)
+                ParallelTest.AssertEqual (label: "runSample.22g", testResult: overallTestResult, "Updated3", employee.name)
         
             }
 
@@ -583,7 +583,7 @@ public class SampleUsage  {
                 // i.e. avoid doing the following:
                 // employeeItem = sampleEmployee
             }
-            ParallelTest.AssertNil (label: "runSample.23", testResult: &overallTestResult, employeeItem)
+            ParallelTest.AssertNil (label: "runSample.23", testResult: overallTestResult, employeeItem)
 
             // ================================================
             // Beware of item functions which modify item state
@@ -599,7 +599,7 @@ public class SampleUsage  {
             }
             batch.commitSync()
             logger.sync() { entries in
-                ParallelTest.AssertEqual (label: "runSample.24", testResult: &overallTestResult, 2, entries.count)
+                ParallelTest.AssertEqual (label: "runSample.24", testResult: overallTestResult, 2, entries.count)
             }
             
             // ============================================================
@@ -625,7 +625,7 @@ public class SampleUsage  {
                 do {
                     let _ = try sampleEmployee.company.getSync()
                 } catch {
-                    ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.24b")
+                    ParallelTest.Fail(testResult: overallTestResult, message: "runSample.24b")
                 }
                 
             }
@@ -659,14 +659,14 @@ public class SampleUsage  {
                         lostChangesEmployeeUuidString = employeeEntity.id.uuidString
                         employeeEntity.update(batch: batch) { sampleEmployee in
                             sampleEmployee.name = "Name Updated1"
-                            ParallelTest.AssertEqual (label: "runSample.25", testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
+                            ParallelTest.AssertEqual (label: "runSample.25", testResult: overallTestResult, "Name Updated1", sampleEmployee.name)
                         }
                     } catch {
-                        ParallelTest.Fail(testResult: &overallTestResult, message: "runSample.26: Expected .ok")
+                        ParallelTest.Fail(testResult: overallTestResult, message: "runSample.26: Expected .ok")
                     }
                 }
             } catch {
-                ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.27: Expected valid")
+                ParallelTest.Fail (testResult: overallTestResult, message: "runSample.27: Expected valid")
             }
         }
         
@@ -689,9 +689,9 @@ public class SampleUsage  {
         
         // An error has indeed been logged and the update has indeed been lost
         logger.sync() { entries in
-            ParallelTest.AssertEqual (label: "runSample.28", testResult: &overallTestResult, 4, entries.count)
-            ParallelTest.AssertEqual (label: "runSample.29", testResult: &overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<SampleEmployee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
-            ParallelTest.AssertEqual (label: "runSample.30", testResult: &overallTestResult, "ERROR|Entity<SampleEmployee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).sampleEmployee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
+            ParallelTest.AssertEqual (label: "runSample.28", testResult: overallTestResult, 4, entries.count)
+            ParallelTest.AssertEqual (label: "runSample.29", testResult: overallTestResult, "ERROR|BatchDelegate.deinit|notCommitted:lostData|entityType=Entity<SampleEmployee>;entityId=\(lostChangesEmployeeUuidString);entityPersistenceState=dirty", entries[2].asTestString())
+            ParallelTest.AssertEqual (label: "runSample.30", testResult: overallTestResult, "ERROR|Entity<SampleEmployee>.Type.deinit|lostData:itemModifiedBatchAbandoned|cacheName=\(caches.employees.database.accessor.hashValue).sampleEmployee;entityId=\(lostChangesEmployeeUuidString)", entries[3].asTestString())
         }
         do {
             let companyEntity = try caches.companies.getSync (id: company1id!)
@@ -699,21 +699,21 @@ public class SampleUsage  {
                 do {
                     let employees = try sampleCompany.employeesSync()
                     employees[0].sync() { sampleEmployee in
-                        ParallelTest.AssertEqual (label: "runSample.31", testResult: &overallTestResult, "Name One", sampleEmployee.name)
+                        ParallelTest.AssertEqual (label: "runSample.31", testResult: overallTestResult, "Name One", sampleEmployee.name)
                     }
                 } catch {
-                    ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.32: Expected .ok")
+                    ParallelTest.Fail (testResult: overallTestResult, message: "runSample.32: Expected .ok")
                 }
             }
         } catch {
-            ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.33: Expected valid")
+            ParallelTest.Fail (testResult: overallTestResult, message: "runSample.33: Expected valid")
         }
 
         // Clean up
         do {
             try removeAll(caches: caches)
         } catch {
-            ParallelTest.Fail (testResult: &overallTestResult, message: "runSample.34: Unable to perform final cleanup")
+            ParallelTest.Fail (testResult: overallTestResult, message: "runSample.34: Unable to perform final cleanup")
         }
         return !overallTestResult.isFailed()
     }
@@ -725,7 +725,7 @@ public class SampleUsage  {
      ===========================================================
 */
     static func demonstrateThrowError() -> Bool {
-        var overallTestResult = TestResult()
+        let overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
@@ -736,7 +736,7 @@ public class SampleUsage  {
         case .ok:
             break
         default:
-            ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
+            ParallelTest.Fail (testResult: overallTestResult, message: "Expected .ok")
         }
         // Use InMemoryAccessor.setThrowError() to simulate persistent media errors for testing
         let group = DispatchGroup()
@@ -745,12 +745,12 @@ public class SampleUsage  {
         firstly {
             caches.companies.get(id: companyId)
         }.done { companyEntity in
-            ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowerror.4: Expected error")
+            ParallelTest.Fail (testResult: overallTestResult, message: "demonstrateThrowerror.4: Expected error")
         }.catch { error in
-            ParallelTest.AssertEqual (label: "demonstrateThrowError.1", testResult: &overallTestResult, "getError", "\(error)")
+            ParallelTest.AssertEqual (label: "demonstrateThrowError.1", testResult: overallTestResult, "getError", "\(error)")
             logger.sync() { entries in
-                ParallelTest.AssertEqual (label: "demonstrateThrowError.2", testResult: &overallTestResult, 1, entries.count)
-                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: &overallTestResult, "EMERGENCY|SampleInMemoryAccessor.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
+                ParallelTest.AssertEqual (label: "demonstrateThrowError.2", testResult: overallTestResult, 1, entries.count)
+                ParallelTest.AssertEqual (label: "demonstrateThrowError.3", testResult: overallTestResult, "EMERGENCY|SampleInMemoryAccessor.getSync|Database Error|databaseHashValue=\(caches.companies.database.accessor.hashValue);cache=company;id=\(companyId.uuidString);errorMessage=getError", entries[0].asTestString())
             }
         }.finally {
             group.leave()
@@ -762,12 +762,12 @@ public class SampleUsage  {
         firstly {
             caches.companies.get(id: companyId)
         }.done { sampleCompany in
-            ParallelTest.AssertEqual (label: "demonstrateThrowError.5", testResult: &overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
+            ParallelTest.AssertEqual (label: "demonstrateThrowError.5", testResult: overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
             logger.sync() { entries in
-                ParallelTest.AssertEqual (label: "demonstrateThrowError.6", testResult: &overallTestResult, 1, entries.count)
+                ParallelTest.AssertEqual (label: "demonstrateThrowError.6", testResult: overallTestResult, 1, entries.count)
             }
         }.catch { error in
-            ParallelTest.Fail (testResult: &overallTestResult, message: "demonstrateThrowError.7: Expected success")
+            ParallelTest.Fail (testResult: overallTestResult, message: "demonstrateThrowError.7: Expected success")
         }.finally {
             group.leave()
         }
@@ -780,7 +780,7 @@ public class SampleUsage  {
         Use InMemoryAccessor.prefetch to control the timing of persistent media operations
      */
     static func testDemonstratePrefetchWithGet () -> Bool {
-        var overallTestResult = TestResult()
+        let overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
@@ -791,7 +791,7 @@ public class SampleUsage  {
         case .ok:
             break
         default:
-            ParallelTest.Fail (testResult: &overallTestResult, message: "testDemonstratePrefetchWithGet.1: Expected .ok")
+            ParallelTest.Fail (testResult: overallTestResult, message: "testDemonstratePrefetchWithGet.1: Expected .ok")
         }
         let semaphore = DispatchSemaphore (value: 1)
         semaphore.wait()
@@ -809,21 +809,21 @@ public class SampleUsage  {
         firstly {
             caches.companies.get(id: companyId)
         }.done { sampleCompany in
-            ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.2", testResult: &overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
+            ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.2", testResult: overallTestResult, sampleCompany.id.uuidString, companyId.uuidString)
             retrievedCompany = sampleCompany
         }.catch { error in
-            ParallelTest.Fail (testResult: &overallTestResult, message: "testDemonstratePrefetchWithGet.3: Expected .ok")
+            ParallelTest.Fail (testResult: overallTestResult, message: "testDemonstratePrefetchWithGet.3: Expected .ok")
         }.finally {
             group.leave()
         }
         // SampleCompany has not yet been retrieved
-        ParallelTest.AssertNil (label: "testDemonstratePrefetchWithGet.4", testResult: &overallTestResult, retrievedCompany)
+        ParallelTest.AssertNil (label: "testDemonstratePrefetchWithGet.4", testResult: overallTestResult, retrievedCompany)
         semaphore.signal()
         group.wait()
         // SampleCompany has now been retrieved
-        ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.5", testResult: &overallTestResult, retrievedCompany!.id.uuidString, companyId.uuidString)
+        ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.5", testResult: overallTestResult, retrievedCompany!.id.uuidString, companyId.uuidString)
         logger.sync() { entries in
-            ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.6", testResult: &overallTestResult, 0, entries.count)
+            ParallelTest.AssertEqual (label: "testDemonstratePrefetchWithGet.6", testResult: overallTestResult, 0, entries.count)
         }
         return !overallTestResult.isFailed()
     }
@@ -838,7 +838,7 @@ public class SampleUsage  {
      Both kinds of errors may be simulated by InMemoryAccessor
 */
     static func testDemonstrateUpdateErrors () throws -> Bool {
-        var overallTestResult = TestResult()
+        let overallTestResult = TestResult()
         let inMemoryAccessor = SampleInMemoryAccessor()
         let logger = InMemoryLogger(level: .warning)
         let caches = SampleCaches(accessor: inMemoryAccessor, schemaVersion: 1, logger: logger)
@@ -849,7 +849,7 @@ public class SampleUsage  {
         case .ok:
             break
         default:
-            ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
+            ParallelTest.Fail (testResult: overallTestResult, message: "Expected .ok")
         }
         let employeeId = UUID(uuidString: "05081CBC-5ABA-4EE9-A7B1-4882E047D715")!
         let employeeJson = "{\"id\":\"\(employeeId.uuidString)\",\"schemaVersion\":1,\"created\":1525459064.9665,\"saved\":1525459184.5832,\"item\":{\"name\":\"Name Two\",\"company\":{\"databaseId\":\"\(inMemoryAccessor.hashValue)\",\"id\":\"\(companyId.uuidString)\",\"isEager\":true,\"qualifiedCacheName\":\"company\",\"version\":1},\"address\":{\"isEager\":false,\"isNil\":true}},\"persistenceState\":\"persistent\",\"version\":1}"
@@ -857,7 +857,7 @@ public class SampleUsage  {
         case .ok:
             break
         default:
-            ParallelTest.Fail (testResult: &overallTestResult, message: "Expected .ok")
+            ParallelTest.Fail (testResult: overallTestResult, message: "Expected .ok")
         }
         let batch = EventuallyConsistentBatch (retryInterval: .milliseconds(10), timeout: .seconds(60), logger: logger)
         var batchIdString = batch.delegateId().uuidString
@@ -866,29 +866,29 @@ public class SampleUsage  {
         let employeeEntity = try caches.employees.getSync(id: employeeId)
         employeeEntity.update(batch: batch) { sampleEmployee in
             sampleEmployee.name = "Name Updated1"
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1", testResult: &overallTestResult, "Name Updated1", sampleEmployee.name)
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1", testResult: overallTestResult, "Name Updated1", sampleEmployee.name)
             // Using setThrowError() before committing an update will throw an unrecoverable serialization error
         }
         inMemoryAccessor.setThrowError()
         logger.sync() { entries in
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1b", testResult: &overallTestResult, 0, entries.count)
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.1b", testResult: overallTestResult, 0, entries.count)
             //                                                               ERROR|BatchDelegate.commit|Database.unrecoverableError("updateActionError")|entityType=Entity<SampleEmployee>;entityId=05081CBC-5ABA-4EE9-A7B1-4882E047D715;batchId=19FDD736-E6DC-4472-928A-748F90AD168A
         }
         batch.commitSync()
         logger.sync() { entries in           
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.2", testResult: &overallTestResult, 1, entries.count)
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: &overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"updateActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.2", testResult: overallTestResult, 1, entries.count)
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.3", testResult: overallTestResult, "ERROR|BatchDelegate.commit|Database.unrecoverableError(\"updateActionError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[0].asTestString())
         }
         
         // Demonstrate that the previous changes were lost due to the reported unrecoverable error
         // The order of attributes on serialized JSON is not always consistent on Linux
-        try ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.4", testResult: &overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
-        ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.5", testResult: &overallTestResult, inMemoryAccessor.isThrowError())
+        try ParallelTest.AssertTrue (label: "testDemonstrateUpdateErrors.4", testResult: overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
+        ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.5", testResult: overallTestResult, inMemoryAccessor.isThrowError())
     
         // Modify the sampleEmployee again so that it is again added to the batch
         employeeEntity.update(batch: batch) { sampleEmployee in
             sampleEmployee.name = "Name Updated2"
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.6", testResult: &overallTestResult, "Name Updated2", sampleEmployee.name)
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.6", testResult: overallTestResult, "Name Updated2", sampleEmployee.name)
         }
         
         // Use preFetch to setup a recoverable update error
@@ -905,12 +905,12 @@ public class SampleUsage  {
         batchIdString = batch.delegateId().uuidString
         batch.commitSync()
         logger.sync() { entries in
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.7", testResult: &overallTestResult, 2, entries.count)
-            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.8", testResult: &overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.7", testResult: overallTestResult, 2, entries.count)
+            ParallelTest.AssertEqual (label: "testDemonstrateUpdateErrors.8", testResult: overallTestResult, "EMERGENCY|BatchDelegate.commit|Database.error(\"addError\")|entityType=Entity<SampleEmployee>;entityId=\(employeeId.uuidString);batchId=\(batchIdString)", entries[1].asTestString())
         }
         // Demonstrate that the data was updated in persistent media
         // The order of attributes on serialized JSON is not always consistent on Linux
-        try ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.9", testResult: &overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
+        try ParallelTest.AssertFalse (label: "testDemonstrateUpdateErrors.9", testResult: overallTestResult, JSONEquality.JSONEquals (employeeJson, String (data: inMemoryAccessor.getData(name: caches.employees.name, id: employeeId)!, encoding: .utf8)!))
         return !overallTestResult.isFailed()
     }
 

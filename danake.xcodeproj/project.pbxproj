@@ -9,11 +9,11 @@
 /* Begin PBXAggregateTarget section */
 		"danake::danakePackageTests::ProductTarget" /* danakePackageTests */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = OBJ_133 /* Build configuration list for PBXAggregateTarget "danakePackageTests" */;
+			buildConfigurationList = OBJ_147 /* Build configuration list for PBXAggregateTarget "danakePackageTests" */;
 			buildPhases = (
 			);
 			dependencies = (
-				OBJ_136 /* PBXTargetDependency */,
+				OBJ_150 /* PBXTargetDependency */,
 			);
 			name = danakePackageTests;
 			productName = danakePackageTests;
@@ -21,95 +21,115 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		OBJ_105 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_41 /* Package.swift */; };
-		OBJ_111 /* EntityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* EntityCache.swift */; };
-		OBJ_112 /* InMemoryAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* InMemoryAccessor.swift */; };
-		OBJ_113 /* ParallelTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* ParallelTest.swift */; };
-		OBJ_114 /* ReferenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* ReferenceManager.swift */; };
-		OBJ_115 /* SampleUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* SampleUsage.swift */; };
-		OBJ_116 /* batch.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* batch.swift */; };
-		OBJ_117 /* database.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* database.swift */; };
-		OBJ_118 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* entity.swift */; };
-		OBJ_119 /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* logging.swift */; };
-		OBJ_120 /* promise.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* promise.swift */; };
-		OBJ_122 /* JSONEquality.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "JSONEquality::JSONEquality::Product" /* JSONEquality.framework */; };
-		OBJ_123 /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "PromiseKit::PromiseKit::Product" /* PromiseKit.framework */; };
-		OBJ_131 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
-		OBJ_142 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* BatchTests.swift */; };
-		OBJ_143 /* DatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* DatabaseTests.swift */; };
-		OBJ_144 /* EntityCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* EntityCacheTests.swift */; };
-		OBJ_145 /* EntityCommitDirtyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* EntityCommitDirtyTests.swift */; };
-		OBJ_146 /* EntityCommitNewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* EntityCommitNewTests.swift */; };
-		OBJ_147 /* EntityCommitPendingRemovalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* EntityCommitPendingRemovalTests.swift */; };
-		OBJ_148 /* EntityCommitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_27 /* EntityCommitTests.swift */; };
-		OBJ_149 /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_28 /* EntityTests.swift */; };
-		OBJ_150 /* InMemoryAccessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_29 /* InMemoryAccessorTests.swift */; };
-		OBJ_151 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_30 /* IntegrationTests.swift */; };
-		OBJ_152 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_31 /* LoggingTests.swift */; };
-		OBJ_153 /* ReferenceManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_32 /* ReferenceManagerTests.swift */; };
-		OBJ_154 /* SampleUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_33 /* SampleUsageTests.swift */; };
-		OBJ_155 /* common.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_34 /* common.swift */; };
-		OBJ_157 /* danake.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "danake::danake::Product" /* danake.framework */; };
-		OBJ_158 /* JSONEquality.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "JSONEquality::JSONEquality::Product" /* JSONEquality.framework */; };
-		OBJ_159 /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "PromiseKit::PromiseKit::Product" /* PromiseKit.framework */; };
-		OBJ_71 /* JSONEquality.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_38 /* JSONEquality.swift */; };
-		OBJ_78 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_39 /* Package.swift */; };
-		OBJ_84 /* Box.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_42 /* Box.swift */; };
-		OBJ_85 /* Catchable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_43 /* Catchable.swift */; };
-		OBJ_86 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_44 /* Configuration.swift */; };
-		OBJ_87 /* CustomStringConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_45 /* CustomStringConvertible.swift */; };
-		OBJ_88 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* Error.swift */; };
-		OBJ_89 /* Guarantee.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* Guarantee.swift */; };
-		OBJ_90 /* LogEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* LogEvent.swift */; };
-		OBJ_91 /* Promise.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_49 /* Promise.swift */; };
-		OBJ_92 /* Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_50 /* Resolver.swift */; };
-		OBJ_93 /* Thenable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_51 /* Thenable.swift */; };
-		OBJ_94 /* after.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_52 /* after.swift */; };
-		OBJ_95 /* firstly.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_53 /* firstly.swift */; };
-		OBJ_96 /* hang.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_54 /* hang.swift */; };
-		OBJ_97 /* race.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_55 /* race.swift */; };
-		OBJ_98 /* when.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_56 /* when.swift */; };
+		08ED06A622F72C48004F0B34 /* BacktraceInstallation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ED06A122F72B5B004F0B34 /* BacktraceInstallation.swift */; };
+		OBJ_100 /* Configuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_49 /* Configuration.swift */; };
+		OBJ_101 /* CustomStringConvertible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_50 /* CustomStringConvertible.swift */; };
+		OBJ_102 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_51 /* Error.swift */; };
+		OBJ_103 /* Guarantee.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_52 /* Guarantee.swift */; };
+		OBJ_104 /* LogEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_53 /* LogEvent.swift */; };
+		OBJ_105 /* Promise.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_54 /* Promise.swift */; };
+		OBJ_106 /* Resolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_55 /* Resolver.swift */; };
+		OBJ_107 /* Thenable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_56 /* Thenable.swift */; };
+		OBJ_108 /* after.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_57 /* after.swift */; };
+		OBJ_109 /* firstly.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_58 /* firstly.swift */; };
+		OBJ_110 /* hang.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_59 /* hang.swift */; };
+		OBJ_111 /* race.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_60 /* race.swift */; };
+		OBJ_112 /* when.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_61 /* when.swift */; };
+		OBJ_119 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* Package.swift */; };
+		OBJ_125 /* EntityCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* EntityCache.swift */; };
+		OBJ_126 /* InMemoryAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* InMemoryAccessor.swift */; };
+		OBJ_127 /* ParallelTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* ParallelTest.swift */; };
+		OBJ_128 /* ReferenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* ReferenceManager.swift */; };
+		OBJ_129 /* SampleUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* SampleUsage.swift */; };
+		OBJ_130 /* batch.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* batch.swift */; };
+		OBJ_131 /* database.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* database.swift */; };
+		OBJ_132 /* entity.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* entity.swift */; };
+		OBJ_133 /* logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* logging.swift */; };
+		OBJ_134 /* promise.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* promise.swift */; };
+		OBJ_136 /* JSONEquality.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "JSONEquality::JSONEquality::Product" /* JSONEquality.framework */; };
+		OBJ_137 /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "PromiseKit::PromiseKit::Product" /* PromiseKit.framework */; };
+		OBJ_145 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
+		OBJ_156 /* BatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* BatchTests.swift */; };
+		OBJ_157 /* DatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* DatabaseTests.swift */; };
+		OBJ_158 /* EntityCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* EntityCacheTests.swift */; };
+		OBJ_159 /* EntityCommitDirtyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* EntityCommitDirtyTests.swift */; };
+		OBJ_160 /* EntityCommitNewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* EntityCommitNewTests.swift */; };
+		OBJ_161 /* EntityCommitPendingRemovalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* EntityCommitPendingRemovalTests.swift */; };
+		OBJ_162 /* EntityCommitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_27 /* EntityCommitTests.swift */; };
+		OBJ_163 /* EntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_28 /* EntityTests.swift */; };
+		OBJ_164 /* InMemoryAccessorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_29 /* InMemoryAccessorTests.swift */; };
+		OBJ_165 /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_30 /* IntegrationTests.swift */; };
+		OBJ_166 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_31 /* LoggingTests.swift */; };
+		OBJ_167 /* ReferenceManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_32 /* ReferenceManagerTests.swift */; };
+		OBJ_168 /* SampleUsageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_33 /* SampleUsageTests.swift */; };
+		OBJ_169 /* common.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_34 /* common.swift */; };
+		OBJ_171 /* Backtrace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-backtrace::Backtrace::Product" /* Backtrace.framework */; };
+		OBJ_172 /* danake.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "danake::danake::Product" /* danake.framework */; };
+		OBJ_173 /* JSONEquality.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "JSONEquality::JSONEquality::Product" /* JSONEquality.framework */; };
+		OBJ_174 /* PromiseKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "PromiseKit::PromiseKit::Product" /* PromiseKit.framework */; };
+		OBJ_184 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_40 /* Package.swift */; };
+		OBJ_77 /* Backtrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_38 /* Backtrace.swift */; };
+		OBJ_78 /* Demangle.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_39 /* Demangle.swift */; };
+		OBJ_85 /* JSONEquality.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_43 /* JSONEquality.swift */; };
+		OBJ_92 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_44 /* Package.swift */; };
+		OBJ_98 /* Box.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* Box.swift */; };
+		OBJ_99 /* Catchable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* Catchable.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		08E5366F2277BABE00A0DF4A /* PBXContainerItemProxy */ = {
+		08ED069B22F62C41004F0B34 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "JSONEquality::JSONEquality";
 			remoteInfo = JSONEquality;
 		};
-		08E536702277BABE00A0DF4A /* PBXContainerItemProxy */ = {
+		08ED069C22F62C41004F0B34 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "PromiseKit::PromiseKit";
 			remoteInfo = PromiseKit;
 		};
-		08E536712277BABE00A0DF4A /* PBXContainerItemProxy */ = {
+		08ED069D22F62C41004F0B34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "swift-backtrace::Backtrace";
+			remoteInfo = Backtrace;
+		};
+		08ED069E22F62C41004F0B34 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "danake::danake";
 			remoteInfo = danake;
 		};
-		08E536722277BABE00A0DF4A /* PBXContainerItemProxy */ = {
+		08ED069F22F62C41004F0B34 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "JSONEquality::JSONEquality";
 			remoteInfo = JSONEquality;
 		};
-		08E536732277BABE00A0DF4A /* PBXContainerItemProxy */ = {
+		08ED06A022F62C41004F0B34 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "PromiseKit::PromiseKit";
 			remoteInfo = PromiseKit;
 		};
+		08ED06A322F72B5C004F0B34 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "danake::danakeTests";
+			remoteInfo = danakeTests;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		08ED06A122F72B5B004F0B34 /* BacktraceInstallation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacktraceInstallation.swift; sourceTree = "<group>"; };
 		"JSONEquality::JSONEquality::Product" /* JSONEquality.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = JSONEquality.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_10 /* InMemoryAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryAccessor.swift; sourceTree = "<group>"; };
 		OBJ_11 /* ParallelTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallelTest.swift; sourceTree = "<group>"; };
@@ -134,63 +154,75 @@
 		OBJ_32 /* ReferenceManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceManagerTests.swift; sourceTree = "<group>"; };
 		OBJ_33 /* SampleUsageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleUsageTests.swift; sourceTree = "<group>"; };
 		OBJ_34 /* common.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = common.swift; sourceTree = "<group>"; };
-		OBJ_38 /* JSONEquality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONEquality.swift; sourceTree = "<group>"; };
-		OBJ_39 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/neal/xcode/danake-sw/.build/checkouts/JSONEquality.git-4668490301176818220/Package.swift"; sourceTree = "<group>"; };
-		OBJ_41 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/neal/xcode/danake-sw/.build/checkouts/PromiseKit--3916240556924587876/Package.swift"; sourceTree = "<group>"; };
-		OBJ_42 /* Box.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Box.swift; sourceTree = "<group>"; };
-		OBJ_43 /* Catchable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catchable.swift; sourceTree = "<group>"; };
-		OBJ_44 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
-		OBJ_45 /* CustomStringConvertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomStringConvertible.swift; sourceTree = "<group>"; };
-		OBJ_46 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
-		OBJ_47 /* Guarantee.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Guarantee.swift; sourceTree = "<group>"; };
-		OBJ_48 /* LogEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEvent.swift; sourceTree = "<group>"; };
-		OBJ_49 /* Promise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Promise.swift; sourceTree = "<group>"; };
-		OBJ_50 /* Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Resolver.swift; sourceTree = "<group>"; };
-		OBJ_51 /* Thenable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thenable.swift; sourceTree = "<group>"; };
-		OBJ_52 /* after.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = after.swift; sourceTree = "<group>"; };
-		OBJ_53 /* firstly.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = firstly.swift; sourceTree = "<group>"; };
-		OBJ_54 /* hang.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hang.swift; sourceTree = "<group>"; };
-		OBJ_55 /* race.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = race.swift; sourceTree = "<group>"; };
-		OBJ_56 /* when.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = when.swift; sourceTree = "<group>"; };
+		OBJ_38 /* Backtrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backtrace.swift; sourceTree = "<group>"; };
+		OBJ_39 /* Demangle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demangle.swift; sourceTree = "<group>"; };
+		OBJ_40 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/neal/xcode/danake/.build/checkouts/swift-backtrace/Package.swift"; sourceTree = "<group>"; };
+		OBJ_43 /* JSONEquality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONEquality.swift; sourceTree = "<group>"; };
+		OBJ_44 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = /Users/neal/xcode/danake/.build/checkouts/JSONEquality/Package.swift; sourceTree = "<group>"; };
+		OBJ_46 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = /Users/neal/xcode/danake/.build/checkouts/PromiseKit/Package.swift; sourceTree = "<group>"; };
+		OBJ_47 /* Box.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Box.swift; sourceTree = "<group>"; };
+		OBJ_48 /* Catchable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catchable.swift; sourceTree = "<group>"; };
+		OBJ_49 /* Configuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Configuration.swift; sourceTree = "<group>"; };
+		OBJ_50 /* CustomStringConvertible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomStringConvertible.swift; sourceTree = "<group>"; };
+		OBJ_51 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		OBJ_52 /* Guarantee.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Guarantee.swift; sourceTree = "<group>"; };
+		OBJ_53 /* LogEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEvent.swift; sourceTree = "<group>"; };
+		OBJ_54 /* Promise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Promise.swift; sourceTree = "<group>"; };
+		OBJ_55 /* Resolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Resolver.swift; sourceTree = "<group>"; };
+		OBJ_56 /* Thenable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thenable.swift; sourceTree = "<group>"; };
+		OBJ_57 /* after.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = after.swift; sourceTree = "<group>"; };
+		OBJ_58 /* firstly.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = firstly.swift; sourceTree = "<group>"; };
+		OBJ_59 /* hang.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = hang.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		OBJ_62 /* sourcery */ = {isa = PBXFileReference; lastKnownFileType = folder; path = sourcery; sourceTree = SOURCE_ROOT; };
-		OBJ_63 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		OBJ_64 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		OBJ_65 /* sourcery.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = sourcery.sh; sourceTree = "<group>"; };
+		OBJ_60 /* race.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = race.swift; sourceTree = "<group>"; };
+		OBJ_61 /* when.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = when.swift; sourceTree = "<group>"; };
+		OBJ_68 /* sourcery */ = {isa = PBXFileReference; lastKnownFileType = folder; path = sourcery; sourceTree = SOURCE_ROOT; };
+		OBJ_69 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		OBJ_70 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		OBJ_71 /* sourcery.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = sourcery.sh; sourceTree = "<group>"; };
 		OBJ_9 /* EntityCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntityCache.swift; sourceTree = "<group>"; };
 		"PromiseKit::PromiseKit::Product" /* PromiseKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = PromiseKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"danake::danake::Product" /* danake.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = danake.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"danake::danakeTests::Product" /* danakeTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = danakeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		"swift-backtrace::Backtrace::Product" /* Backtrace.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Backtrace.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		OBJ_121 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_122 /* JSONEquality.framework in Frameworks */,
-				OBJ_123 /* PromiseKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_156 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_157 /* danake.framework in Frameworks */,
-				OBJ_158 /* JSONEquality.framework in Frameworks */,
-				OBJ_159 /* PromiseKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_72 /* Frameworks */ = {
+		OBJ_113 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_99 /* Frameworks */ = {
+		OBJ_135 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_136 /* JSONEquality.framework in Frameworks */,
+				OBJ_137 /* PromiseKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_170 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_171 /* Backtrace.framework in Frameworks */,
+				OBJ_172 /* danake.framework in Frameworks */,
+				OBJ_173 /* JSONEquality.framework in Frameworks */,
+				OBJ_174 /* PromiseKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_79 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_86 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
@@ -225,6 +257,7 @@
 				OBJ_32 /* ReferenceManagerTests.swift */,
 				OBJ_33 /* SampleUsageTests.swift */,
 				OBJ_34 /* common.swift */,
+				08ED06A122F72B5B004F0B34 /* BacktraceInstallation.swift */,
 			);
 			name = danakeTests;
 			path = Tests/danakeTests;
@@ -233,52 +266,72 @@
 		OBJ_35 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_36 /* JSONEquality */,
-				OBJ_40 /* PromiseKit 6.8.4 */,
+				OBJ_36 /* swift-backtrace 1.1.0 */,
+				OBJ_41 /* JSONEquality */,
+				OBJ_45 /* PromiseKit 6.10.0 */,
 			);
 			name = Dependencies;
 			sourceTree = "<group>";
 		};
-		OBJ_36 /* JSONEquality */ = {
+		OBJ_36 /* swift-backtrace 1.1.0 */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_37 /* JSONEquality */,
-				OBJ_39 /* Package.swift */,
+				OBJ_37 /* Backtrace */,
+				OBJ_40 /* Package.swift */,
+			);
+			name = "swift-backtrace 1.1.0";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_37 /* Backtrace */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_38 /* Backtrace.swift */,
+				OBJ_39 /* Demangle.swift */,
+			);
+			name = Backtrace;
+			path = ".build/checkouts/swift-backtrace/Sources/Backtrace";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_41 /* JSONEquality */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_42 /* JSONEquality */,
+				OBJ_44 /* Package.swift */,
 			);
 			name = JSONEquality;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_37 /* JSONEquality */ = {
+		OBJ_42 /* JSONEquality */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_38 /* JSONEquality.swift */,
+				OBJ_43 /* JSONEquality.swift */,
 			);
 			name = JSONEquality;
-			path = ".build/checkouts/JSONEquality.git-4668490301176818220/Sources/JSONEquality";
+			path = .build/checkouts/JSONEquality/Sources/JSONEquality;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_40 /* PromiseKit 6.8.4 */ = {
+		OBJ_45 /* PromiseKit 6.10.0 */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_41 /* Package.swift */,
-				OBJ_42 /* Box.swift */,
-				OBJ_43 /* Catchable.swift */,
-				OBJ_44 /* Configuration.swift */,
-				OBJ_45 /* CustomStringConvertible.swift */,
-				OBJ_46 /* Error.swift */,
-				OBJ_47 /* Guarantee.swift */,
-				OBJ_48 /* LogEvent.swift */,
-				OBJ_49 /* Promise.swift */,
-				OBJ_50 /* Resolver.swift */,
-				OBJ_51 /* Thenable.swift */,
-				OBJ_52 /* after.swift */,
-				OBJ_53 /* firstly.swift */,
-				OBJ_54 /* hang.swift */,
-				OBJ_55 /* race.swift */,
-				OBJ_56 /* when.swift */,
+				OBJ_46 /* Package.swift */,
+				OBJ_47 /* Box.swift */,
+				OBJ_48 /* Catchable.swift */,
+				OBJ_49 /* Configuration.swift */,
+				OBJ_50 /* CustomStringConvertible.swift */,
+				OBJ_51 /* Error.swift */,
+				OBJ_52 /* Guarantee.swift */,
+				OBJ_53 /* LogEvent.swift */,
+				OBJ_54 /* Promise.swift */,
+				OBJ_55 /* Resolver.swift */,
+				OBJ_56 /* Thenable.swift */,
+				OBJ_57 /* after.swift */,
+				OBJ_58 /* firstly.swift */,
+				OBJ_59 /* hang.swift */,
+				OBJ_60 /* race.swift */,
+				OBJ_61 /* when.swift */,
 			);
-			name = "PromiseKit 6.8.4";
-			path = ".build/checkouts/PromiseKit--3916240556924587876/Sources";
+			name = "PromiseKit 6.10.0";
+			path = .build/checkouts/PromiseKit/Sources;
 			sourceTree = SOURCE_ROOT;
 		};
 		OBJ_5 /*  */ = {
@@ -288,22 +341,23 @@
 				OBJ_7 /* Sources */,
 				OBJ_19 /* Tests */,
 				OBJ_35 /* Dependencies */,
-				OBJ_57 /* Products */,
-				OBJ_62 /* sourcery */,
-				OBJ_63 /* LICENSE */,
-				OBJ_64 /* README.md */,
-				OBJ_65 /* sourcery.sh */,
+				OBJ_62 /* Products */,
+				OBJ_68 /* sourcery */,
+				OBJ_69 /* LICENSE */,
+				OBJ_70 /* README.md */,
+				OBJ_71 /* sourcery.sh */,
 			);
 			name = "";
 			sourceTree = "<group>";
 		};
-		OBJ_57 /* Products */ = {
+		OBJ_62 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				"danake::danake::Product" /* danake.framework */,
 				"danake::danakeTests::Product" /* danakeTests.xctest */,
 				"PromiseKit::PromiseKit::Product" /* PromiseKit.framework */,
+				"danake::danake::Product" /* danake.framework */,
 				"JSONEquality::JSONEquality::Product" /* JSONEquality.framework */,
+				"swift-backtrace::Backtrace::Product" /* Backtrace.framework */,
 			);
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
@@ -339,10 +393,10 @@
 /* Begin PBXNativeTarget section */
 		"JSONEquality::JSONEquality" /* JSONEquality */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_67 /* Build configuration list for PBXNativeTarget "JSONEquality" */;
+			buildConfigurationList = OBJ_81 /* Build configuration list for PBXNativeTarget "JSONEquality" */;
 			buildPhases = (
-				OBJ_70 /* Sources */,
-				OBJ_72 /* Frameworks */,
+				OBJ_84 /* Sources */,
+				OBJ_86 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -355,9 +409,9 @@
 		};
 		"JSONEquality::SwiftPMPackageDescription" /* JSONEqualityPackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_74 /* Build configuration list for PBXNativeTarget "JSONEqualityPackageDescription" */;
+			buildConfigurationList = OBJ_88 /* Build configuration list for PBXNativeTarget "JSONEqualityPackageDescription" */;
 			buildPhases = (
-				OBJ_77 /* Sources */,
+				OBJ_91 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -369,10 +423,10 @@
 		};
 		"PromiseKit::PromiseKit" /* PromiseKit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_80 /* Build configuration list for PBXNativeTarget "PromiseKit" */;
+			buildConfigurationList = OBJ_94 /* Build configuration list for PBXNativeTarget "PromiseKit" */;
 			buildPhases = (
-				OBJ_83 /* Sources */,
-				OBJ_99 /* Frameworks */,
+				OBJ_97 /* Sources */,
+				OBJ_113 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -385,9 +439,9 @@
 		};
 		"PromiseKit::SwiftPMPackageDescription" /* PromiseKitPackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_101 /* Build configuration list for PBXNativeTarget "PromiseKitPackageDescription" */;
+			buildConfigurationList = OBJ_115 /* Build configuration list for PBXNativeTarget "PromiseKitPackageDescription" */;
 			buildPhases = (
-				OBJ_104 /* Sources */,
+				OBJ_118 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -399,9 +453,9 @@
 		};
 		"danake::SwiftPMPackageDescription" /* danakePackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_127 /* Build configuration list for PBXNativeTarget "danakePackageDescription" */;
+			buildConfigurationList = OBJ_141 /* Build configuration list for PBXNativeTarget "danakePackageDescription" */;
 			buildPhases = (
-				OBJ_130 /* Sources */,
+				OBJ_144 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -413,16 +467,16 @@
 		};
 		"danake::danake" /* danake */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_107 /* Build configuration list for PBXNativeTarget "danake" */;
+			buildConfigurationList = OBJ_121 /* Build configuration list for PBXNativeTarget "danake" */;
 			buildPhases = (
-				OBJ_110 /* Sources */,
-				OBJ_121 /* Frameworks */,
+				OBJ_124 /* Sources */,
+				OBJ_135 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_124 /* PBXTargetDependency */,
-				OBJ_125 /* PBXTargetDependency */,
+				OBJ_138 /* PBXTargetDependency */,
+				OBJ_139 /* PBXTargetDependency */,
 			);
 			name = danake;
 			productName = danake;
@@ -431,23 +485,53 @@
 		};
 		"danake::danakeTests" /* danakeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_138 /* Build configuration list for PBXNativeTarget "danakeTests" */;
+			buildConfigurationList = OBJ_152 /* Build configuration list for PBXNativeTarget "danakeTests" */;
 			buildPhases = (
-				OBJ_141 /* Sources */,
-				OBJ_156 /* Frameworks */,
-				08E536742277BAF900A0DF4A /* ShellScript */,
+				OBJ_155 /* Sources */,
+				OBJ_170 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_160 /* PBXTargetDependency */,
-				OBJ_161 /* PBXTargetDependency */,
-				OBJ_162 /* PBXTargetDependency */,
+				OBJ_175 /* PBXTargetDependency */,
+				OBJ_176 /* PBXTargetDependency */,
+				OBJ_177 /* PBXTargetDependency */,
+				OBJ_178 /* PBXTargetDependency */,
 			);
 			name = danakeTests;
 			productName = danakeTests;
 			productReference = "danake::danakeTests::Product" /* danakeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		"swift-backtrace::Backtrace" /* Backtrace */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_73 /* Build configuration list for PBXNativeTarget "Backtrace" */;
+			buildPhases = (
+				OBJ_76 /* Sources */,
+				OBJ_79 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Backtrace;
+			productName = Backtrace;
+			productReference = "swift-backtrace::Backtrace::Product" /* Backtrace.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"swift-backtrace::SwiftPMPackageDescription" /* swift-backtracePackageDescription */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_180 /* Build configuration list for PBXNativeTarget "swift-backtracePackageDescription" */;
+			buildPhases = (
+				OBJ_183 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "swift-backtracePackageDescription";
+			productName = "swift-backtracePackageDescription";
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -460,17 +544,17 @@
 			};
 			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "danake" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
 			);
 			mainGroup = OBJ_5 /*  */;
-			productRefGroup = OBJ_57 /* Products */;
+			productRefGroup = OBJ_62 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				"swift-backtrace::Backtrace" /* Backtrace */,
 				"JSONEquality::JSONEquality" /* JSONEquality */,
 				"JSONEquality::SwiftPMPackageDescription" /* JSONEqualityPackageDescription */,
 				"PromiseKit::PromiseKit" /* PromiseKit */,
@@ -479,178 +563,182 @@
 				"danake::SwiftPMPackageDescription" /* danakePackageDescription */,
 				"danake::danakePackageTests::ProductTarget" /* danakePackageTests */,
 				"danake::danakeTests" /* danakeTests */,
+				"swift-backtrace::SwiftPMPackageDescription" /* swift-backtracePackageDescription */,
 			);
 		};
 /* End PBXProject section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		08E536742277BAF900A0DF4A /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "$SRCROOT/sourcery.sh\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
-		OBJ_104 /* Sources */ = {
+		OBJ_118 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_105 /* Package.swift in Sources */,
+				OBJ_119 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_110 /* Sources */ = {
+		OBJ_124 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_111 /* EntityCache.swift in Sources */,
-				OBJ_112 /* InMemoryAccessor.swift in Sources */,
-				OBJ_113 /* ParallelTest.swift in Sources */,
-				OBJ_114 /* ReferenceManager.swift in Sources */,
-				OBJ_115 /* SampleUsage.swift in Sources */,
-				OBJ_116 /* batch.swift in Sources */,
-				OBJ_117 /* database.swift in Sources */,
-				OBJ_118 /* entity.swift in Sources */,
-				OBJ_119 /* logging.swift in Sources */,
-				OBJ_120 /* promise.swift in Sources */,
+				OBJ_125 /* EntityCache.swift in Sources */,
+				OBJ_126 /* InMemoryAccessor.swift in Sources */,
+				OBJ_127 /* ParallelTest.swift in Sources */,
+				OBJ_128 /* ReferenceManager.swift in Sources */,
+				OBJ_129 /* SampleUsage.swift in Sources */,
+				OBJ_130 /* batch.swift in Sources */,
+				OBJ_131 /* database.swift in Sources */,
+				OBJ_132 /* entity.swift in Sources */,
+				OBJ_133 /* logging.swift in Sources */,
+				OBJ_134 /* promise.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_130 /* Sources */ = {
+		OBJ_144 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_131 /* Package.swift in Sources */,
+				OBJ_145 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_141 /* Sources */ = {
+		OBJ_155 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_142 /* BatchTests.swift in Sources */,
-				OBJ_143 /* DatabaseTests.swift in Sources */,
-				OBJ_144 /* EntityCacheTests.swift in Sources */,
-				OBJ_145 /* EntityCommitDirtyTests.swift in Sources */,
-				OBJ_146 /* EntityCommitNewTests.swift in Sources */,
-				OBJ_147 /* EntityCommitPendingRemovalTests.swift in Sources */,
-				OBJ_148 /* EntityCommitTests.swift in Sources */,
-				OBJ_149 /* EntityTests.swift in Sources */,
-				OBJ_150 /* InMemoryAccessorTests.swift in Sources */,
-				OBJ_151 /* IntegrationTests.swift in Sources */,
-				OBJ_152 /* LoggingTests.swift in Sources */,
-				OBJ_153 /* ReferenceManagerTests.swift in Sources */,
-				OBJ_154 /* SampleUsageTests.swift in Sources */,
-				OBJ_155 /* common.swift in Sources */,
+				OBJ_156 /* BatchTests.swift in Sources */,
+				OBJ_157 /* DatabaseTests.swift in Sources */,
+				OBJ_158 /* EntityCacheTests.swift in Sources */,
+				OBJ_159 /* EntityCommitDirtyTests.swift in Sources */,
+				08ED06A622F72C48004F0B34 /* BacktraceInstallation.swift in Sources */,
+				OBJ_160 /* EntityCommitNewTests.swift in Sources */,
+				OBJ_161 /* EntityCommitPendingRemovalTests.swift in Sources */,
+				OBJ_162 /* EntityCommitTests.swift in Sources */,
+				OBJ_163 /* EntityTests.swift in Sources */,
+				OBJ_164 /* InMemoryAccessorTests.swift in Sources */,
+				OBJ_165 /* IntegrationTests.swift in Sources */,
+				OBJ_166 /* LoggingTests.swift in Sources */,
+				OBJ_167 /* ReferenceManagerTests.swift in Sources */,
+				OBJ_168 /* SampleUsageTests.swift in Sources */,
+				OBJ_169 /* common.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_70 /* Sources */ = {
+		OBJ_183 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_71 /* JSONEquality.swift in Sources */,
+				OBJ_184 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_77 /* Sources */ = {
+		OBJ_76 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_78 /* Package.swift in Sources */,
+				OBJ_77 /* Backtrace.swift in Sources */,
+				OBJ_78 /* Demangle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_83 /* Sources */ = {
+		OBJ_84 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_84 /* Box.swift in Sources */,
-				OBJ_85 /* Catchable.swift in Sources */,
-				OBJ_86 /* Configuration.swift in Sources */,
-				OBJ_87 /* CustomStringConvertible.swift in Sources */,
-				OBJ_88 /* Error.swift in Sources */,
-				OBJ_89 /* Guarantee.swift in Sources */,
-				OBJ_90 /* LogEvent.swift in Sources */,
-				OBJ_91 /* Promise.swift in Sources */,
-				OBJ_92 /* Resolver.swift in Sources */,
-				OBJ_93 /* Thenable.swift in Sources */,
-				OBJ_94 /* after.swift in Sources */,
-				OBJ_95 /* firstly.swift in Sources */,
-				OBJ_96 /* hang.swift in Sources */,
-				OBJ_97 /* race.swift in Sources */,
-				OBJ_98 /* when.swift in Sources */,
+				OBJ_85 /* JSONEquality.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_91 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_92 /* Package.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_97 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_98 /* Box.swift in Sources */,
+				OBJ_99 /* Catchable.swift in Sources */,
+				OBJ_100 /* Configuration.swift in Sources */,
+				OBJ_101 /* CustomStringConvertible.swift in Sources */,
+				OBJ_102 /* Error.swift in Sources */,
+				OBJ_103 /* Guarantee.swift in Sources */,
+				OBJ_104 /* LogEvent.swift in Sources */,
+				OBJ_105 /* Promise.swift in Sources */,
+				OBJ_106 /* Resolver.swift in Sources */,
+				OBJ_107 /* Thenable.swift in Sources */,
+				OBJ_108 /* after.swift in Sources */,
+				OBJ_109 /* firstly.swift in Sources */,
+				OBJ_110 /* hang.swift in Sources */,
+				OBJ_111 /* race.swift in Sources */,
+				OBJ_112 /* when.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		OBJ_124 /* PBXTargetDependency */ = {
+		OBJ_138 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "JSONEquality::JSONEquality" /* JSONEquality */;
-			targetProxy = 08E5366F2277BABE00A0DF4A /* PBXContainerItemProxy */;
+			targetProxy = 08ED069B22F62C41004F0B34 /* PBXContainerItemProxy */;
 		};
-		OBJ_125 /* PBXTargetDependency */ = {
+		OBJ_139 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "PromiseKit::PromiseKit" /* PromiseKit */;
-			targetProxy = 08E536702277BABE00A0DF4A /* PBXContainerItemProxy */;
+			targetProxy = 08ED069C22F62C41004F0B34 /* PBXContainerItemProxy */;
 		};
-		OBJ_136 /* PBXTargetDependency */ = {
+		OBJ_150 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "danake::danakeTests" /* danakeTests */;
-			targetProxy = "danake::danakeTests" /* danakeTests */;
+			targetProxy = 08ED06A322F72B5C004F0B34 /* PBXContainerItemProxy */;
 		};
-		OBJ_160 /* PBXTargetDependency */ = {
+		OBJ_175 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "swift-backtrace::Backtrace" /* Backtrace */;
+			targetProxy = 08ED069D22F62C41004F0B34 /* PBXContainerItemProxy */;
+		};
+		OBJ_176 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "danake::danake" /* danake */;
-			targetProxy = 08E536712277BABE00A0DF4A /* PBXContainerItemProxy */;
+			targetProxy = 08ED069E22F62C41004F0B34 /* PBXContainerItemProxy */;
 		};
-		OBJ_161 /* PBXTargetDependency */ = {
+		OBJ_177 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "JSONEquality::JSONEquality" /* JSONEquality */;
-			targetProxy = 08E536722277BABE00A0DF4A /* PBXContainerItemProxy */;
+			targetProxy = 08ED069F22F62C41004F0B34 /* PBXContainerItemProxy */;
 		};
-		OBJ_162 /* PBXTargetDependency */ = {
+		OBJ_178 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "PromiseKit::PromiseKit" /* PromiseKit */;
-			targetProxy = 08E536732277BABE00A0DF4A /* PBXContainerItemProxy */;
+			targetProxy = 08ED06A022F62C41004F0B34 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		OBJ_102 /* Debug */ = {
+		OBJ_116 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 5";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		OBJ_103 /* Release */ = {
+		OBJ_117 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 5";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
-		OBJ_108 /* Debug */ = {
+		OBJ_122 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -674,7 +762,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_109 /* Release */ = {
+		OBJ_123 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -698,37 +786,37 @@
 			};
 			name = Release;
 		};
-		OBJ_128 /* Debug */ = {
+		OBJ_142 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 4 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 4";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
-		OBJ_129 /* Release */ = {
+		OBJ_143 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 4 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 4";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
-		OBJ_134 /* Debug */ = {
+		OBJ_148 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 			};
 			name = Debug;
 		};
-		OBJ_135 /* Release */ = {
+		OBJ_149 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 			};
 			name = Release;
 		};
-		OBJ_139 /* Debug */ = {
+		OBJ_153 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
@@ -749,7 +837,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_140 /* Release */ = {
+		OBJ_154 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
@@ -767,6 +855,24 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
 				SWIFT_VERSION = 4.0;
 				TARGET_NAME = danakeTests;
+			};
+			name = Release;
+		};
+		OBJ_181 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 5";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		OBJ_182 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 5 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 5";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -821,7 +927,63 @@
 			};
 			name = Release;
 		};
-		OBJ_68 /* Debug */ = {
+		OBJ_74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = danake.xcodeproj/Backtrace_Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_CFLAGS = "$(inherited)";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Backtrace;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_VERSION = 5.0;
+				TARGET_NAME = Backtrace;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+				WATCHOS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Debug;
+		};
+		OBJ_75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = danake.xcodeproj/Backtrace_Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_CFLAGS = "$(inherited)";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Backtrace;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_VERSION = 5.0;
+				TARGET_NAME = Backtrace;
+				TVOS_DEPLOYMENT_TARGET = 9.0;
+				WATCHOS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Release;
+		};
+		OBJ_82 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -845,7 +1007,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_69 /* Release */ = {
+		OBJ_83 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -869,25 +1031,25 @@
 			};
 			name = Release;
 		};
-		OBJ_75 /* Debug */ = {
+		OBJ_89 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4.2 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 4.2 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 4.2";
 				SWIFT_VERSION = 4.2;
 			};
 			name = Debug;
 		};
-		OBJ_76 /* Release */ = {
+		OBJ_90 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4.2 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk";
+				OTHER_SWIFT_FLAGS = "-swift-version 4.2 -I $(TOOLCHAIN_DIR)/usr/lib/swift/pm/4_2 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk -package-description-version 4.2";
 				SWIFT_VERSION = 4.2;
 			};
 			name = Release;
 		};
-		OBJ_81 /* Debug */ = {
+		OBJ_95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -915,7 +1077,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_82 /* Release */ = {
+		OBJ_96 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -946,47 +1108,56 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		OBJ_101 /* Build configuration list for PBXNativeTarget "PromiseKitPackageDescription" */ = {
+		OBJ_115 /* Build configuration list for PBXNativeTarget "PromiseKitPackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_102 /* Debug */,
-				OBJ_103 /* Release */,
+				OBJ_116 /* Debug */,
+				OBJ_117 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_107 /* Build configuration list for PBXNativeTarget "danake" */ = {
+		OBJ_121 /* Build configuration list for PBXNativeTarget "danake" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_108 /* Debug */,
-				OBJ_109 /* Release */,
+				OBJ_122 /* Debug */,
+				OBJ_123 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_127 /* Build configuration list for PBXNativeTarget "danakePackageDescription" */ = {
+		OBJ_141 /* Build configuration list for PBXNativeTarget "danakePackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_128 /* Debug */,
-				OBJ_129 /* Release */,
+				OBJ_142 /* Debug */,
+				OBJ_143 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_133 /* Build configuration list for PBXAggregateTarget "danakePackageTests" */ = {
+		OBJ_147 /* Build configuration list for PBXAggregateTarget "danakePackageTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_134 /* Debug */,
-				OBJ_135 /* Release */,
+				OBJ_148 /* Debug */,
+				OBJ_149 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_138 /* Build configuration list for PBXNativeTarget "danakeTests" */ = {
+		OBJ_152 /* Build configuration list for PBXNativeTarget "danakeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_139 /* Debug */,
-				OBJ_140 /* Release */,
+				OBJ_153 /* Debug */,
+				OBJ_154 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		OBJ_180 /* Build configuration list for PBXNativeTarget "swift-backtracePackageDescription" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_181 /* Debug */,
+				OBJ_182 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1000,29 +1171,38 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_67 /* Build configuration list for PBXNativeTarget "JSONEquality" */ = {
+		OBJ_73 /* Build configuration list for PBXNativeTarget "Backtrace" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_68 /* Debug */,
-				OBJ_69 /* Release */,
+				OBJ_74 /* Debug */,
+				OBJ_75 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_74 /* Build configuration list for PBXNativeTarget "JSONEqualityPackageDescription" */ = {
+		OBJ_81 /* Build configuration list for PBXNativeTarget "JSONEquality" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_75 /* Debug */,
-				OBJ_76 /* Release */,
+				OBJ_82 /* Debug */,
+				OBJ_83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		OBJ_80 /* Build configuration list for PBXNativeTarget "PromiseKit" */ = {
+		OBJ_88 /* Build configuration list for PBXNativeTarget "JSONEqualityPackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_81 /* Debug */,
-				OBJ_82 /* Release */,
+				OBJ_89 /* Debug */,
+				OBJ_90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		OBJ_94 /* Build configuration list for PBXNativeTarget "PromiseKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_95 /* Debug */,
+				OBJ_96 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

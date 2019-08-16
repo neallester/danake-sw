@@ -224,9 +224,9 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
         var result: Entity<T>? = nil
         firstly {
             get()
-        }.done { entity in
+        }.done (on: queue) { entity in
             result = entity
-        }.catch() { error in
+        }.catch(on: queue) { error in
             var entityId: UUID? = self.entity?.id
             if entityId == nil {
                 entityId = self.referenceData?.id
@@ -271,38 +271,33 @@ open class ReferenceManager<P: Codable, T: Codable> : ReferenceManagerContainer,
                 self.retrievalGetHook()
                 firstly {
                     cache.get(id: referenceData.id)
-                }.done { retrievedEntity in
-                    self.queue.sync {
-                        switch self.state {
-                        case .retrieving (let pendingReferenceData):
-                            if referenceData.id.uuidString == pendingReferenceData.id.uuidString, retrievedEntity.id.uuidString == referenceData.id.uuidString {
-                                self.state = .loaded
-                                self.entity = retrievedEntity
-                                self.referenceData = nil
-                                for resolver in self.pendingResolvers {
-                                    retrievedEntity.cache.database.workQueue.async {
-                                        resolver.fulfill(retrievedEntity)
-                                    }
+                }.done (on: self.queue) { retrievedEntity in
+                    switch self.state {
+                    case .retrieving (let pendingReferenceData):
+                        if referenceData.id.uuidString == pendingReferenceData.id.uuidString, retrievedEntity.id.uuidString == referenceData.id.uuidString {
+                            self.state = .loaded
+                            self.entity = retrievedEntity
+                            self.referenceData = nil
+                            for resolver in self.pendingResolvers {
+                                retrievedEntity.cache.database.workQueue.async {
+                                    resolver.fulfill(retrievedEntity)
                                 }
-                                self.pendingResolvers = []
                             }
-                        default:
-                            break
+                            self.pendingResolvers = []
                         }
-                        
+                    default:
+                        break
                     }
-                }.catch { error in
-                    self.queue.sync {
-                        switch self.state {
-                        case .retrieving:
-                                self.state = .retrievalError(Date() + cache.database.referenceRetryInterval, error)
-                                for resolver in self.pendingResolvers {
-                                    resolver.reject(error)
-                                }
-                                self.pendingResolvers = []
-                        default:
-                            break
-                        }
+                }.catch (on: self.queue) { error in
+                    switch self.state {
+                    case .retrieving:
+                            self.state = .retrievalError(Date() + cache.database.referenceRetryInterval, error)
+                            for resolver in self.pendingResolvers {
+                                resolver.reject(error)
+                            }
+                            self.pendingResolvers = []
+                    default:
+                        break
                     }
                 }
             }

@@ -148,7 +148,7 @@ class LoggingTests: XCTestCase {
         foundEntry = false
         let queue = DispatchQueue (label: "Test", attributes: .concurrent)
         queue.asyncAfter(deadline: DispatchTime.now() + 0.2) {
-            logger.logImplementation(level: .business, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
+            logger.log(level: .business, source: self, featureName: "testWaitForEntry", message: "SECOND", data: nil)
         }
         foundEntry = logger.waitForEntry(intervalUseconds: 10, timeoutSeconds: 0.0001) { entries in
             return entries.last?.asTestString().contains("SECOND") ?? false
