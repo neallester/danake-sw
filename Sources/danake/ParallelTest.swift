@@ -57,7 +57,7 @@ public class ParallelTest {
 
             
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testStart", data: [(name: "testCount", value: testCount), (name: "separator", value:"<<<<<<<<<<<<<<<<<<<<<<<")])
+            persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testStart", data: [(name: "testCount", value: testCount), (name: "separator", value:"<<<<<<<<<<<<<<<<<<<<<<<")])
             let setupBatch = EventuallyConsistentBatch(retryInterval: .microseconds(50), timeout: BatchDefaults.timeout, logger: persistenceObjects!.logger)
             let setupGroup = DispatchGroup()
             let removeExisting = ParallelTest.newStructs (persistenceObjects: persistenceObjects!, batch: setupBatch).ids
@@ -86,13 +86,13 @@ public class ParallelTest {
                 let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
+                    persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
                 }
                 test300prInput = (containers: containers.ids, newRefs)
                 test300uResults.append((containers: containers.ids, myStructs: newStructs.ids))
                 for id in newStructs.ids {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
+                    persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
                 }
             }
             var test300prplInput: (containers: [UUID], newRefs: [ReferenceManagerData]) = ([], [])
@@ -101,13 +101,13 @@ public class ParallelTest {
                 let newStructs = ParallelTest.newStructs(persistenceObjects: persistenceObjects!, batch: setupBatch)
                 var newRefs: [ReferenceManagerData] = []
                 for myStruct in newStructs.structs {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
+                    persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "300u:build300pr", message: "myStruct.id", data: [(name:"id", value: myStruct.id.uuidString)])
                     newRefs.append(myStruct.referenceData())
                 }
                 test300prplInput = (containers: containers.ids, newRefs)
                 test300uResults.append((containers: containers.ids, myStructs: newStructs.ids))
                 for id in newStructs.ids {
-                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "300u:build300prpl", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
+                    persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "300u:build300prpl", message: "myStructs.myStruct.id", data: [(name:"id", value: id.uuidString)])
                 }
             }
             setupGroup.enter()
@@ -120,140 +120,140 @@ public class ParallelTest {
             Database.cacheRegistrar.clear()
             persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
             let test1 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.start", data: nil)
                 let result = ParallelTest.myStructTest1(persistenceObjects: persistenceObjects!, group: testGroup, timeout: BatchDefaults.timeout)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test1.end", data: nil)
                 resultQueue.async {
                     test1Results.append (result)
                 }
             }
             let test2 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.start", data: nil)
                 let result = ParallelTest.myStructTest2(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
                 }
                 
             }
             let test2p = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.start", data: nil)
                 let result = ParallelTest.myStructTest2p(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2p.end", data: nil)
                 resultQueue.async {
                     test2Results.append (result)
                 }
                 
             }
             let test2r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.start", data: nil)
                 ParallelTest.myStructTest2r(testResult: overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: removeExisting)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test2r.end", data: nil)
             }
             let test3 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.start", data: nil)
                 let result = ParallelTest.myStructTest3(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
                 }
             }
             let test3p = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.start", data: nil)
                 let result = ParallelTest.myStructTest3p(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3p.end", data: nil)
                 resultQueue.async {
                     test3Results.append (result)
                 }
             }
             let test3r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.start", data: nil)
                 ParallelTest.myStructTest3r(testResult: overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, ids: editExisting)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test3r.end", data: nil)
             }
             let test4 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.start", data: nil)
                 let result = ParallelTest.myStructTest4(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
                 }
             }
             let test4b = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.start", data: nil)
                 let result = ParallelTest.myStructTest4b(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test4b.end", data: nil)
                 resultQueue.async {
                     test4Results.append (result)
                 }
             }
             let test100 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.start", data: nil)
                 let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100.end", data: nil)
                 resultQueue.async {
                     test100Results.append (result)
                 }
             }
             let test100a = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.start", data: nil)
                 let result = ParallelTest.containerTest100(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100a.end", data: nil)
                 resultQueue.async {
                     test100aResults.append (result)
                 }
             }
             let test100n = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.start", data: nil)
                 let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100n.end", data: nil)
                 resultQueue.async {
                     test100nResults.append (result)
                 }
             }
             let test100na = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.start", data: nil)
                 let result = ParallelTest.containerTest100n(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test100na.end", data: nil)
                 resultQueue.async {
                     test100naResults.append (result)
                 }
             }
             let test200r = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.start", data: nil)
                 ParallelTest.containerTest200r(persistenceObjects: persistenceObjects!, group: testGroup, ids: containerRemoveExistingContainertIds)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test200r.end", data: nil)
             }
             let test300 = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.start", data: nil)
                 let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
                     test100nResults.append (result.containers)
                 }
             }
             let test300a = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.start", data: nil)
                 let result = ParallelTest.containerTest300(persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300a.end", data: nil)
                 resultQueue.async {
                     test1Results.append(result.myStructs)
                     test100naResults.append (result.containers)
                 }
             }
             let test300u = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.start", data: nil)
                 let result = ParallelTest.containerTest300u(testResult: overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300u.end", data: nil)
                 resultQueue.async {
                     test300uResults.append(result)
                 }
             }
             let test300pr = {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.start", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.start", data: nil)
                 ParallelTest.containerTest300pr(testResult: overallTestResult, persistenceObjects: persistenceObjects!, group: testGroup, containers: test300prInput.containers, structRefs: test300prInput.newRefs)
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.end", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "test300pr.end", data: nil)
             }
             let test300prpl = {
                 let localLogger = persistenceObjects!.logger
@@ -276,11 +276,11 @@ public class ParallelTest {
                     let newTest = {
                         let maxSleepTime = totalExecutionTime / (Double (testCount) + 1.0)
                         let sleepTime = UInt32 (ParallelTest.randomInteger(maxValue:Int ((1000000 * maxSleepTime))))
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
+                        persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: [(name:"maxSleepTime", value: sleepTime)])
                         usleep (sleepTime)
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: nil)
+                        persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError", data: nil)
                         inMemoryAccessor.setThrowError()
-                        persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError.group.leave()", data: nil)
+                        persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "setThrowError.group.leave()", data: nil)
                         testGroup.leave()
                     }
                     finalTests.append (newTest)
@@ -289,16 +289,16 @@ public class ParallelTest {
             }
             finalTests.append (contentsOf: randomTests)
             for test in finalTests {
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testGroup.enter()", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testGroup.enter()", data: nil)
                 testGroup.enter()
                 testDispatcher.async(execute: test)
             }
             let executionStart = Date()
-            persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting", data: [(name: "testCount", value: testCount), (name:"separator", value: "--------------------------------")])
+            persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting", data: [(name: "testCount", value: testCount), (name:"separator", value: "--------------------------------")])
             testGroup.wait()
             resultQueue.sync {
                 totalExecutionTime = totalExecutionTime + Date().timeIntervalSince1970 - executionStart.timeIntervalSince1970
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting.finished", data: [(name: "testCount", value: testCount), (name:"separator", value: "================================")])
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "waiting.finished", data: [(name: "testCount", value: testCount), (name:"separator", value: "================================")])
                 if let inMemoryAccessor = accessor as? InMemoryAccessor {
                     inMemoryAccessor.setThrowError(false)
                 }
@@ -307,7 +307,7 @@ public class ParallelTest {
                 Database.cacheRegistrar.clear()
                 persistenceObjects = ParallelTestPersistence (accessor: accessor, logger: logger)
                 // Test 1
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.1", data: nil)
                 for testResult in test1Results {
                     ParallelTest.AssertEqual (label: "test1Results.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for (index, uuid) in testResult.enumerated() {
@@ -353,7 +353,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 2
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.2", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.2", data: nil)
                 for testResult in test2Results {
                     ParallelTest.AssertEqual (label: "test2Results.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for uuid in testResult {
@@ -378,7 +378,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 3
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.3", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.3", data: nil)
                 for testResult in test3Results {
                     ParallelTest.AssertEqual (label: "test3Results.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for (index, uuid) in testResult.enumerated() {
@@ -425,7 +425,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 4
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.4", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.4", data: nil)
                 for testResult in test4Results {
                     ParallelTest.AssertEqual (label: "test4Results.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for (index, uuid) in testResult.enumerated() {
@@ -468,7 +468,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 100
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100", data: nil)
                 for testResult in test100Results {
                     ParallelTest.AssertEqual (label: "test100Results.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for (index, uuid) in testResult.enumerated() {
@@ -528,7 +528,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 100a
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100a", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100a", data: nil)
                 for testResult in test100aResults {
                     ParallelTest.AssertEqual (label: "test100aResults.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     let group = DispatchGroup()
@@ -596,7 +596,7 @@ public class ParallelTest {
                     group.wait()
                 }
                 // Test 100n
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100n", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.100n", data: nil)
                 for testResult in test100nResults {
                     ParallelTest.AssertEqual (label: "test100nResults.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.count)
                     for (index, uuid) in testResult.enumerated() {
@@ -648,7 +648,7 @@ public class ParallelTest {
                     }
                 }
                 // Test 300u
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.300u", data: nil)
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testResults.300u", data: nil)
                 var resultCount = 0
                 for testResult in test300uResults {
                     ParallelTest.AssertEqual (label: "test100uResults.1", testResult: overallTestResult, ParallelTest.myStructCount, testResult.containers.count)
@@ -660,7 +660,7 @@ public class ParallelTest {
                             containerEntity.sync() { container in
                                 do {
                                     let myStruct = try container.myStruct.getSync()
-                                    persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
+                                    persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "expectedMyStructId", message: "testResults.300u", data: [(name: "resultCount", value: resultCount), (name: "expected", value: testResult.myStructs[index].uuidString), (name: "actual", value: myStruct!.id.uuidString)])
                                     ParallelTest.AssertEqual (label: "test100uResults.3", testResult: overallTestResult, testResult.myStructs[index].uuidString, myStruct!.id.uuidString)
                                     myStruct!.sync() { myStruct in
                                         let expectedInt = (index + 1) * 100
@@ -684,7 +684,7 @@ public class ParallelTest {
                         }
                     }
                 }
-                persistenceObjects!.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
+                persistenceObjects?.logger?.log(level: .debug, source: self, featureName: "performTest", message: "testEnd", data: [(name: "testCount", value: testCount), (name: "separator", value:">>>>>>>>>>>>>>>>>>>>>>>")])
                 Database.registrar.clear()
                 Database.cacheRegistrar.clear()
                 testCount = testCount + 1
