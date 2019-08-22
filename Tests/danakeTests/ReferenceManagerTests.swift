@@ -2332,9 +2332,10 @@ class ReferenceManagerTests: XCTestCase {
         print ("testAsync7.7")
         // .retrieving with retrieval success
         let semaphore = DispatchSemaphore(value: 1)
-        var preFetchCount = 0
+        let preFetchCount = AtomicCounter()
         var prefetch: (UUID) -> () = { id in
-            if preFetchCount == 1 {
+            
+            if preFetchCount.counter == 1 {
                 switch semaphore.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
                     break
@@ -2343,7 +2344,7 @@ class ReferenceManagerTests: XCTestCase {
                 }
                 semaphore.signal()
             }
-            preFetchCount = preFetchCount + 1
+            preFetchCount.increment()
             
         }
         print ("testAsync8.0")
@@ -2421,9 +2422,9 @@ class ReferenceManagerTests: XCTestCase {
         print ("testAsync8.12")
         // .retrieving with retrieval failure
         let semaphore2 = DispatchSemaphore(value: 1)
-        preFetchCount = 0
+        preFetchCount.reset()
         prefetch = { id in
-            if preFetchCount == 1 {
+            if preFetchCount.counter == 1 {
                 switch semaphore2.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
                     accessor.setThrowError()
@@ -2433,7 +2434,7 @@ class ReferenceManagerTests: XCTestCase {
                 }
                 semaphore2.signal()
             }
-            preFetchCount = preFetchCount + 1
+            preFetchCount.increment()
             
         }
         print ("testAsync9.0")
@@ -2510,9 +2511,9 @@ class ReferenceManagerTests: XCTestCase {
         print ("testAsync9.11")
         // Obsolete callback set entity
         let semaphore3 = DispatchSemaphore(value: 1)
-        preFetchCount = 0
+        preFetchCount.reset()
         prefetch = { id in
-            if preFetchCount == 1 {
+            if preFetchCount.counter == 1 {
                 switch semaphore3.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
                     break
@@ -2521,7 +2522,7 @@ class ReferenceManagerTests: XCTestCase {
                 }
                 semaphore3.signal()
             }
-            preFetchCount = preFetchCount + 1
+            preFetchCount.increment()
             
         }
         print ("testAsync10.0")
@@ -2601,9 +2602,9 @@ class ReferenceManagerTests: XCTestCase {
         print ("testAsync10.12")
         // Obsolete callback set referenceData
         let semaphore4 = DispatchSemaphore(value: 1)
-        preFetchCount = 0
+        preFetchCount.reset()
         prefetch = { id in
-            if preFetchCount == 1 {
+            if preFetchCount.counter == 1 {
                 switch semaphore4.wait(timeout: DispatchTime.now() + 10.0) {
                 case .success:
                     break
@@ -2612,7 +2613,7 @@ class ReferenceManagerTests: XCTestCase {
                 }
                 semaphore4.signal()
             }
-            preFetchCount = preFetchCount + 1
+            preFetchCount.increment()
             
         }
         print ("testAsync11.0")

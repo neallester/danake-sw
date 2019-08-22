@@ -169,4 +169,43 @@ class ExpectedOutput {
     
 }
 
+struct AtomicCounter {
+    
+    func increment() {
+        queue.sync() {
+            self._counter.item = self._counter.item + 1
+        }
+    }
+    
+    func reset() {
+        queue.sync() {
+            self._counter.item = 0
+        }
+    }
+    
+    var counter: Int {
+        get {
+            var result = 0
+            queue.sync {
+                result = _counter.item
+            }
+            return result
+            
+        }
+        set (newValue) {
+            queue.sync {
+                self._counter.item = newValue
+            }
+        }
+    }
+    
+    private var _counter = IntegerContainer()
+    
+    private let queue = DispatchQueue (label: "AtomicInteger")
+    
+    private class IntegerContainer {
+        var item = 0
+    }
+}
+
 
