@@ -28,6 +28,7 @@ public class InMemoryAccessor: SynchronousAccessor {
     init() {
         id = UUID()
         queue = DispatchQueue (label: "InMemoryAccessor \(id.uuidString)")
+        preFetchQueue = DispatchQueue (label: "InMemoryAccessor.preFetch \(id.uuidString)")
     }
 
     
@@ -313,12 +314,27 @@ public class InMemoryAccessor: SynchronousAccessor {
         return result
     }
     
-    private var preFetch: ((UUID) -> Void)? = nil
+    private var preFetch: ((UUID) -> Void)? {
+        get {
+            var result: ((UUID) -> Void)? = nil
+            preFetchQueue.sync {
+                result = self._preFetch
+            }
+            return result
+        }
+        set (newPreFetch) {
+            preFetchQueue.async {
+                self._preFetch = newPreFetch
+            }
+        }
+    }
+    private var _preFetch: ((UUID) -> Void)? = nil
     internal var throwError = false
     internal var throwOnlyRecoverableErrors = false
     private var storage = Dictionary<CacheName, Dictionary<UUID, Data>>()
     private var id: UUID
     private let queue: DispatchQueue
+    private let preFetchQueue: DispatchQueue
     private let entityCreator = EntityCreation()
     
 }
