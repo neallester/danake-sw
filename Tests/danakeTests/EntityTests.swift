@@ -1195,22 +1195,6 @@ class EntityTests: XCTestCase {
         try! XCTAssertTrue (JSONEquality.JSONEquals (String (data: encoder.encode (entity), encoding: .utf8)!, String (data: entity.asData(encoder: encoder)!, encoding: .utf8)!))
     }
     
-    func testPersistenceStatePair() {
-        let pair = PersistenceStatePair (success: .persistent, failure: .dirty)
-        switch pair.success {
-        case .persistent:
-            break
-        default:
-            XCTFail("Expected .persistent")
-        }
-        switch pair.failure {
-        case .dirty:
-            break
-        default:
-            XCTFail("Expected .dirty")
-        }
-    }
-    
     func testEntityReferenceData() {
         let entity = newTestEntity(myInt: 10, myString: "10")
         let entity2 = newTestEntity(myInt: 20, myString: "20")
